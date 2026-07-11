@@ -8,7 +8,9 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
 import 'package:price_catalog_app/features/trader/catalog/screens/trader_product_detail_screen.dart';
+import 'package:price_catalog_app/features/trader/orders/screens/trader_select_products_screen.dart';
 import 'package:price_catalog_app/providers/category_provider.dart';
+import 'package:price_catalog_app/providers/order_provider.dart';
 import 'package:price_catalog_app/providers/product_provider.dart';
 import 'package:price_catalog_app/shared/widgets/shimmer_loading.dart';
 
@@ -35,8 +37,10 @@ class _TraderCatalogScreenState
   Widget build(BuildContext context) {
     final filteredProductsAsync = ref.watch(filteredProductsProvider);
     final searchQuery = ref.watch(searchQueryProvider);
-    final selectedCategory =
-        ref.watch(selectedCategoryFilterProvider);
+    final selectedCategory = ref.watch(selectedCategoryFilterProvider);
+
+    // ✅ FIX: selectedItems ko provider se lelo, not from undefined variable
+    final selectedItems = ref.watch(selectedOrderItemsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -57,7 +61,7 @@ class _TraderCatalogScreenState
               ),
             ),
             actions: [
-              // Grid/List toggle
+              // ✅ FIX: Grid/List toggle button add kiya
               IconButton(
                 onPressed: () =>
                     setState(() => _isGridView = !_isGridView),
@@ -69,6 +73,36 @@ class _TraderCatalogScreenState
                   size: 22.sp,
                 ),
               ),
+
+              // ✅ FIX: Cart button - selectedItems from provider
+              IconButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const TraderSelectProductsScreen(),
+                  ),
+                ),
+                icon: Badge(
+                  label: Text(
+                    '${selectedItems.length}',
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  isLabelVisible: selectedItems.isNotEmpty,
+                  backgroundColor: AppColors.rejected,
+                  child: Icon(
+                    Iconsax.shopping_cart,
+                    color: AppColors.textPrimary,
+                    size: 22.sp,
+                  ),
+                ),
+              ),
+
+              SizedBox(width: 8.w),
             ],
             bottom: PreferredSize(
               preferredSize: Size.fromHeight(116.h),
@@ -85,13 +119,13 @@ class _TraderCatalogScreenState
           loading: () => _isGridView
               ? _buildGridShimmer()
               : _buildListShimmer(),
-          error: (_, __) =>
-              const Center(child: Text('Failed to load products')),
+          error: (_, __) => const Center(
+            child: Text('Failed to load products'),
+          ),
           data: (products) {
             if (products.isEmpty) {
               return _buildEmpty(
-                searchQuery.isNotEmpty ||
-                    selectedCategory != null,
+                searchQuery.isNotEmpty || selectedCategory != null,
               );
             }
 
@@ -127,22 +161,21 @@ class _TraderCatalogScreenState
             size: 20.sp,
             color: AppColors.textHint,
           ),
-          suffixIcon:
-              ref.watch(searchQueryProvider).isNotEmpty
-                  ? IconButton(
-                      onPressed: () {
-                        _searchController.clear();
-                        ref
-                            .read(searchQueryProvider.notifier)
-                            .state = '';
-                      },
-                      icon: Icon(
-                        Icons.close_rounded,
-                        size: 18.sp,
-                        color: AppColors.textHint,
-                      ),
-                    )
-                  : null,
+          suffixIcon: ref.watch(searchQueryProvider).isNotEmpty
+              ? IconButton(
+                  onPressed: () {
+                    _searchController.clear();
+                    ref
+                        .read(searchQueryProvider.notifier)
+                        .state = '';
+                  },
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 18.sp,
+                    color: AppColors.textHint,
+                  ),
+                )
+              : null,
           filled: true,
           fillColor: AppColors.background,
           border: OutlineInputBorder(
@@ -184,7 +217,9 @@ class _TraderCatalogScreenState
                 'All',
                 selectedCategory == null,
                 () => ref
-                    .read(selectedCategoryFilterProvider.notifier)
+                    .read(
+                      selectedCategoryFilterProvider.notifier,
+                    )
                     .state = null,
               );
             }
@@ -194,7 +229,9 @@ class _TraderCatalogScreenState
               cat.name,
               selectedCategory == cat.id,
               () => ref
-                  .read(selectedCategoryFilterProvider.notifier)
+                  .read(
+                    selectedCategoryFilterProvider.notifier,
+                  )
                   .state = cat.id,
             );
           },
@@ -320,15 +357,16 @@ class _TraderCatalogScreenState
     );
   }
 
+  // ═══════════════════════════════════════
+  // EMPTY STATE
+  // ═══════════════════════════════════════
   Widget _buildEmpty(bool hasFilters) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            hasFilters
-                ? Iconsax.search_normal
-                : Iconsax.box,
+            hasFilters ? Iconsax.search_normal : Iconsax.box,
             size: 52.sp,
             color: AppColors.textHint,
           ),
@@ -348,9 +386,13 @@ class _TraderCatalogScreenState
             TextButton(
               onPressed: () {
                 _searchController.clear();
-                ref.read(searchQueryProvider.notifier).state = '';
                 ref
-                    .read(selectedCategoryFilterProvider.notifier)
+                    .read(searchQueryProvider.notifier)
+                    .state = '';
+                ref
+                    .read(
+                      selectedCategoryFilterProvider.notifier,
+                    )
                     .state = null;
               },
               child: Text(
@@ -358,6 +400,7 @@ class _TraderCatalogScreenState
                 style: TextStyle(
                   color: AppColors.traderPrimary,
                   fontWeight: FontWeight.w600,
+                  fontSize: 14.sp,
                 ),
               ),
             ),
@@ -367,6 +410,9 @@ class _TraderCatalogScreenState
     );
   }
 
+  // ═══════════════════════════════════════
+  // SHIMMER LOADERS
+  // ═══════════════════════════════════════
   Widget _buildGridShimmer() {
     return GridView.builder(
       padding: EdgeInsets.all(16.w),
@@ -430,7 +476,7 @@ class _TraderProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
+            // ─── Image Section ───────────────────────────
             Expanded(
               flex: 5,
               child: Stack(
@@ -445,30 +491,28 @@ class _TraderProductCard extends StatelessWidget {
                             width: double.infinity,
                             height: double.infinity,
                             fit: BoxFit.cover,
-                          )
-                        : Container(
-                            color: AppColors.traderPrimary
-                                .withOpacity(0.06),
-                            child: Icon(
-                              Iconsax.box,
-                              size: 36.sp,
+                            placeholder: (_, __) => Container(
                               color: AppColors.traderPrimary
-                                  .withOpacity(0.3),
+                                  .withOpacity(0.06),
                             ),
-                          ),
+                            errorWidget: (_, __, ___) =>
+                                _buildImagePlaceholder(),
+                          )
+                        : _buildImagePlaceholder(),
                   ),
-                  // Availability
+                  // Availability Badge
                   Positioned(
                     top: 8,
                     left: 8,
                     child: _availabilityBadge(
-                        product.availability),
+                      product.availability,
+                    ),
                   ),
                 ],
               ),
             ),
 
-            // Info
+            // ─── Info Section ────────────────────────────
             Expanded(
               flex: 4,
               child: Padding(
@@ -483,6 +527,8 @@ class _TraderProductCard extends StatelessWidget {
                         color: AppColors.traderPrimary,
                         fontWeight: FontWeight.w600,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Gap(2.h),
                     Text(
@@ -523,7 +569,7 @@ class _TraderProductCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        // Add button
+                        // Add to cart button
                         Container(
                           width: 28.w,
                           height: 28.w,
@@ -531,6 +577,14 @@ class _TraderProductCard extends StatelessWidget {
                             gradient: AppColors.traderGradient,
                             borderRadius:
                                 BorderRadius.circular(8.r),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.traderPrimary
+                                    .withOpacity(0.3),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                           ),
                           child: Icon(
                             Icons.add_rounded,
@@ -550,19 +604,40 @@ class _TraderProductCard extends StatelessWidget {
     );
   }
 
+  Widget _buildImagePlaceholder() {
+    return Container(
+      color: AppColors.traderPrimary.withOpacity(0.06),
+      child: Center(
+        child: Icon(
+          Iconsax.box,
+          size: 36.sp,
+          color: AppColors.traderPrimary.withOpacity(0.3),
+        ),
+      ),
+    );
+  }
+
   Widget _availabilityBadge(ProductAvailability availability) {
     final (color, text) = switch (availability) {
-      ProductAvailability.inStock =>
-        (AppColors.approved, 'In Stock'),
-      ProductAvailability.outOfStock =>
-        (AppColors.rejected, 'Out of Stock'),
-      ProductAvailability.limitedStock =>
-        (AppColors.counter, 'Limited'),
+      ProductAvailability.inStock => (
+          AppColors.approved,
+          'In Stock',
+        ),
+      ProductAvailability.outOfStock => (
+          AppColors.rejected,
+          'Out of Stock',
+        ),
+      ProductAvailability.limitedStock => (
+          AppColors.counter,
+          'Limited',
+        ),
     };
 
     return Container(
-      padding:
-          EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: 7.w,
+        vertical: 3.h,
+      ),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(6.r),
@@ -610,7 +685,7 @@ class _TraderProductListTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Image
+            // ─── Image ───────────────────────────────────
             ClipRRect(
               borderRadius: BorderRadius.circular(12.r),
               child: SizedBox(
@@ -620,6 +695,20 @@ class _TraderProductListTile extends StatelessWidget {
                     ? CachedNetworkImage(
                         imageUrl: product.primaryImage,
                         fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(
+                          color: AppColors.traderPrimary
+                              .withOpacity(0.06),
+                        ),
+                        errorWidget: (_, __, ___) => Container(
+                          color: AppColors.traderPrimary
+                              .withOpacity(0.08),
+                          child: Icon(
+                            Iconsax.box,
+                            color: AppColors.traderPrimary
+                                .withOpacity(0.4),
+                            size: 28.sp,
+                          ),
+                        ),
                       )
                     : Container(
                         color: AppColors.traderPrimary
@@ -636,7 +725,7 @@ class _TraderProductListTile extends StatelessWidget {
 
             Gap(12.w),
 
-            // Info
+            // ─── Info ─────────────────────────────────────
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -658,16 +747,25 @@ class _TraderProductListTile extends StatelessWidget {
                       fontSize: 11.sp,
                       color: AppColors.textHint,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   Gap(6.h),
                   Row(
                     children: [
                       Text(
-                        '₹${product.currentPrice.sellingPrice.toStringAsFixed(0)}/${product.unit}',
+                        '₹${product.currentPrice.sellingPrice.toStringAsFixed(0)}',
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w800,
                           color: AppColors.traderPrimary,
+                        ),
+                      ),
+                      Text(
+                        '/${product.unit}',
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: AppColors.textHint,
                         ),
                       ),
                     ],
@@ -678,14 +776,38 @@ class _TraderProductListTile extends StatelessWidget {
 
             Gap(8.w),
 
-            // Arrow
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 14.sp,
-              color: AppColors.textHint,
+            // ─── Availability + Arrow ─────────────────────
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _availabilityDot(product.availability),
+                Gap(12.h),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14.sp,
+                  color: AppColors.textHint,
+                ),
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _availabilityDot(ProductAvailability availability) {
+    final color = switch (availability) {
+      ProductAvailability.inStock => AppColors.approved,
+      ProductAvailability.outOfStock => AppColors.rejected,
+      ProductAvailability.limitedStock => AppColors.counter,
+    };
+
+    return Container(
+      width: 8.w,
+      height: 8.w,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
       ),
     );
   }
