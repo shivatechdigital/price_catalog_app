@@ -2,6 +2,8 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
+    // Apply the Google Services plugin (Firebase / google-services.json)
+    id("com.google.gms.google-services")
 }
 
 android {
