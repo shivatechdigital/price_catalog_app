@@ -152,6 +152,49 @@ service cloud.firestore {
     }
 
     // ═══════════════════════════════════════
+    // ORDERS COLLECTION (multi-product trader orders)
+    // ═══════════════════════════════════════
+    match /orders/{orderId} {
+
+      // Read:
+      // - Admin can read ALL orders
+      // - Trader can only read THEIR OWN orders
+      allow read: if isLoggedIn() && (
+        isAdmin()
+        || (isApprovedTrader() && resource.data.traderId == request.auth.uid)
+      );
+
+      // Create: Only approved trader, for themselves, starting as pending
+      allow create: if isApprovedTrader()
+        && request.resource.data.traderId == request.auth.uid
+        && request.resource.data.orderStatus == 'pending';
+
+      // Update:
+      // - Admin can update anything (approve/reject/counter items, notes, etc.)
+      // - Trader can only respond to counter offers on their own order
+      allow update: if isLoggedIn() && (
+        isAdmin()
+        || (isApprovedTrader()
+            && resource.data.traderId == request.auth.uid
+            && onlyUpdatingOrderResponseFields())
+      );
+
+      // Delete: Only admin
+      allow delete: if isAdmin();
+
+      // Helper: Trader can only update item/status fields when
+      // accepting or rejecting a counter offer
+      function onlyUpdatingOrderResponseFields() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly([
+            'items', 'approvedCount', 'rejectedCount',
+            'counterCount', 'pendingCount', 'orderStatus',
+            'approvedOrderValue', 'lastActionAt'
+          ]);
+      }
+    }
+
+    // ═══════════════════════════════════════
     // NOTIFICATIONS COLLECTION
     // ═══════════════════════════════════════
     match /notifications/{userId}/items/{notificationId} {

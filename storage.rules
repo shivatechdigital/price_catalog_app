@@ -1,0 +1,70 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ═══════════════════════════════════════
+    // HELPER FUNCTIONS
+    // (mirrors firestore.rules logic, reading the same
+    //  users/{uid} doc via the firestore.get()/exists() bridge)
+    // ═══════════════════════════════════════
+
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return isLoggedIn()
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && userDoc().data.get('role', null) == 'admin';
+    }
+
+    function isOwner(userId) {
+      return isLoggedIn() && request.auth.uid == userId;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // ═══════════════════════════════════════
+    // PRODUCT IMAGES — products/{productId}/{fileName}
+    // Read: any logged in user. Write: admin only (matches products
+    // collection rule in firestore.rules).
+    // ═══════════════════════════════════════
+    match /products/{productId}/{fileName} {
+      allow read: if isLoggedIn();
+      allow write: if isAdmin() && isImage();
+    }
+
+    // ═══════════════════════════════════════
+    // USER PROFILE IMAGES — users/{userId}/{fileName}
+    // Read: any logged in user. Write: the user themself or admin.
+    // ═══════════════════════════════════════
+    match /users/{userId}/{fileName} {
+      allow read: if isLoggedIn();
+      allow write: if (isOwner(userId) || isAdmin()) && isImage();
+    }
+
+    // ═══════════════════════════════════════
+    // APP SETTINGS IMAGES — settings/{fileName}
+    // Read: any logged in user. Write: admin only.
+    // ═══════════════════════════════════════
+    match /settings/{fileName} {
+      allow read: if isLoggedIn();
+      allow write: if isAdmin() && isImage();
+    }
+
+    // ═══════════════════════════════════════
+    // TRADER CATALOGS — catalogs/{userId}/{fileName}
+    // Read: any logged in user. Write: the owning trader or admin.
+    // ═══════════════════════════════════════
+    match /catalogs/{userId}/{fileName} {
+      allow read: if isLoggedIn();
+      allow write: if (isOwner(userId) || isAdmin()) && isImage();
+    }
+  }
+}

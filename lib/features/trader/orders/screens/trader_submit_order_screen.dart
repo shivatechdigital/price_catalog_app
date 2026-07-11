@@ -172,6 +172,7 @@ class _TraderSubmitOrderScreenState
         '✅ Order submitted! ${updatedItems.length} products sent for approval.',
       );
     } catch (e) {
+      debugPrint('Failed to submit order: $e');
       if (!mounted) return;
       setState(() => _isLoading = false);
       CustomSnackbar.showError(

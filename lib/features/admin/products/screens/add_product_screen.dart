@@ -299,13 +299,26 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           createdBy: currentUser?.uid ?? '',
         );
 
-        // Upload new images
-        for (int i = 0; i < _newImages.length; i++) {
-          await repo.uploadProductImage(
-            productId: newProduct.id,
-            imageFile: _newImages[i],
-            index: i,
+        // Upload new images. If this fails, roll back the product doc
+        // we just created instead of leaving an image-less product behind.
+        try {
+          for (int i = 0; i < _newImages.length; i++) {
+            await repo.uploadProductImage(
+              productId: newProduct.id,
+              imageFile: _newImages[i],
+              index: i,
+            );
+          }
+        } catch (imageError) {
+          debugPrint('Product image upload failed: $imageError');
+          await repo.deleteProduct(newProduct.id);
+          if (!mounted) return;
+          setState(() => _isLoading = false);
+          CustomSnackbar.showError(
+            context,
+            'Failed to upload image(s). Product was not saved.',
           );
+          return;
         }
 
         // Update category product count
@@ -325,6 +338,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             : 'Product added successfully!',
       );
     } catch (e) {
+      debugPrint('Failed to save product: $e');
       if (!mounted) return;
       setState(() => _isLoading = false);
       CustomSnackbar.showError(
