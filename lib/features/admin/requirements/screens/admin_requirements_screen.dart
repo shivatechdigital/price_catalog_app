@@ -95,17 +95,21 @@ class _AdminRequirementsScreenState
   @override
   Widget build(BuildContext context) {
     // Pending orders count for badge
-    final pendingOrdersCount =
-        ref.watch(pendingOrdersCountProvider).valueOrNull ?? 0;
+    final pendingOrdersCount = ref.watch(
+      pendingOrdersCountProvider,
+    ).when(
+      data: (count) => count,
+      loading: () => 0,
+      error: (_, __) => 0,
+    );
 
-    // Pending requirements count for badge
-    final pendingReqCount = ref
-            .watch(
-              requirementsByStatusProvider(RequirementStatus.pending),
-            )
-            .valueOrNull
-            ?.length ??
-        0;
+    final pendingReqCount = ref.watch(
+      requirementsByStatusProvider(RequirementStatus.pending),
+    ).when(
+      data: (requirements) => requirements.length,
+      loading: () => 0,
+      error: (_, __) => 0,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
