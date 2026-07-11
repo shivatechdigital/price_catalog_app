@@ -14,6 +14,7 @@ import 'package:price_catalog_app/providers/notification_provider.dart';
 import 'package:price_catalog_app/providers/product_provider.dart';
 import 'package:price_catalog_app/providers/requirement_provider.dart';
 import 'package:price_catalog_app/shared/widgets/shimmer_loading.dart';
+import 'package:price_catalog_app/features/admin/dashboard/widgets/trader_request_notification.dart';
 
 class AdminHomeScreen extends ConsumerWidget {
   const AdminHomeScreen({super.key});
@@ -103,7 +104,9 @@ class AdminHomeScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Gap(20.h),
-
+                  
+                  const PendingTradersBanner(),
+                  
                   // ═══════════════════════════════════════
                   // STATS CARDS
                   // ═══════════════════════════════════════

@@ -104,6 +104,18 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     });
   }
 
+
+  Future<void> loadUserDataPublic(String uid) async {
+    await _loadUserData(uid);
+  }
+
+  // Alternatively, seedha expose karo:
+  Future<void> reloadUserData() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid != null) {
+      await _loadUserData(uid);
+    }
+  }
   // ═══════════════════════════════════════
   // LOAD USER DATA FROM FIRESTORE
   // ═══════════════════════════════════════

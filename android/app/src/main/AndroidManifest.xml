@@ -33,7 +33,7 @@
 
     <application
         android:name="${applicationName}"
-        android:label="price_catalog_app"
+        android:label="Anandeshwar Traders"
         android:icon="@mipmap/ic_launcher">
 
         <activity

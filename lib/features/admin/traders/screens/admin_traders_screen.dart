@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,21 +65,176 @@ class _AdminTradersScreenState
   // ═══════════════════════════════════════
   Future<void> _updateTraderStatus(
     UserModel trader,
-    TraderStatus status,
+    TraderStatus newStatus,
   ) async {
-    await FirebaseService.usersRef.doc(trader.uid).update({
-      'traderStatus': status.name,
-    });
-
-    if (!mounted) return;
-
-    final message = switch (status) {
-      TraderStatus.approved => '${trader.name} approved! ✅',
-      TraderStatus.blocked => '${trader.name} blocked ❌',
-      TraderStatus.pending => '${trader.name} set to pending',
+    // ─── Confirmation Dialog ─────────────────────────
+    final action = switch (newStatus) {
+      TraderStatus.approved => 'Approve',
+      TraderStatus.blocked => 'Block',
+      TraderStatus.pending => 'Set Pending',
     };
 
-    CustomSnackbar.showSuccess(context, message);
+    final color = switch (newStatus) {
+      TraderStatus.approved => AppColors.approved,
+      TraderStatus.blocked => AppColors.rejected,
+      TraderStatus.pending => AppColors.counter,
+    };
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        title: Text(
+          '$action Trader?',
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Trader: ${trader.name}',
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            Gap(4.h),
+            Text(
+              'Business: ${trader.businessName}',
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            Gap(4.h),
+            Text(
+              'Phone: ${trader.phone}',
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            Gap(12.h),
+            Text(
+              newStatus == TraderStatus.approved
+                  ? '✅ Trader will be able to login and use the app immediately.'
+                  : newStatus == TraderStatus.blocked
+                      ? '❌ Trader will be logged out and cannot access the app.'
+                      : '⏳ Trader will be set back to pending review.',
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              elevation: 0,
+            ),
+            child: Text(
+              action,
+              style: const TextStyle(
+                color: AppColors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // ─── Firestore Update ────────────────────────────
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(trader.uid)
+          .update({
+        'traderStatus': newStatus.name,
+        'statusUpdatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // ─── Notify Trader ───────────────────────────────
+      await _notifyTrader(trader, newStatus);
+
+      if (!mounted) return;
+
+      final message = switch (newStatus) {
+        TraderStatus.approved =>
+          '✅ ${trader.name} approved! They can now login.',
+        TraderStatus.blocked =>
+          '🚫 ${trader.name} has been blocked.',
+        TraderStatus.pending =>
+          '⏳ ${trader.name} set to pending.',
+      };
+
+      CustomSnackbar.showSuccess(context, message);
+    } catch (e) {
+      if (!mounted) return;
+      CustomSnackbar.showError(
+        context,
+        'Failed to update status. Please try again.',
+      );
+    }
+  }
+
+  // ─── Notify Trader via Firestore Notification ────────────
+  Future<void> _notifyTrader(
+    UserModel trader,
+    TraderStatus newStatus,
+  ) async {
+    try {
+      final (title, message) = switch (newStatus) {
+        TraderStatus.approved => (
+            '✅ Account Approved!',
+            'Your account has been approved. You can now login and use the app.',
+          ),
+        TraderStatus.blocked => (
+            '❌ Account Blocked',
+            'Your account has been blocked. Contact admin for support.',
+          ),
+        TraderStatus.pending => (
+            '⏳ Account Pending',
+            'Your account has been set to pending review.',
+          ),
+      };
+
+      await FirebaseFirestore.instance
+          .collection('notifications')
+          .doc(trader.uid)
+          .collection('items')
+          .add({
+        'title': title,
+        'message': message,
+        'type': newStatus == TraderStatus.approved
+            ? 'accountApproved'
+            : 'accountStatusChanged',
+        'read': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      // Silently fail
+    }
   }
 
   @override
