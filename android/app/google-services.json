@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "10680253495",
+    "project_id": "pricecatelogapp",
+    "storage_bucket": "pricecatelogapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:10680253495:android:e0115e1281590993b013b2",
+        "android_client_info": {
+          "package_name": "com.example.price_catalog_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhEOoXuR6bKTppzru0MlZ-uILvAnk3ErU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
