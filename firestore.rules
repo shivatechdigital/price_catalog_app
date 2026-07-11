@@ -1,0 +1,188 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ═══════════════════════════════════════
+    // HELPER FUNCTIONS
+    // ═══════════════════════════════════════
+
+    // Check if user is logged in
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    // Get user data from firestore (safe, returns empty map if doc missing)
+    function getUserData() {
+      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(userDocPath) ? get(userDocPath).data : {};
+    }
+
+    // Check if user is admin (safe, handles missing doc)
+    function isAdmin() {
+      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return isLoggedIn() && exists(userDocPath) && get(userDocPath).data.get('role', null) == 'admin';
+    }
+
+    // Check if user is approved trader (safe, handles missing doc)
+    function isApprovedTrader() {
+      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return isLoggedIn() 
+        && exists(userDocPath)
+        && get(userDocPath).data.get('role', null) == 'trader'
+        && get(userDocPath).data.get('traderStatus', null) == 'approved';
+    }
+
+    // Check if user is admin OR approved trader
+    function isAdminOrTrader() {
+      return isAdmin() || isApprovedTrader();
+    }
+
+    // Check if document belongs to current user
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // ═══════════════════════════════════════
+    // USERS COLLECTION
+    // ═══════════════════════════════════════
+    match /users/{userId} {
+
+      // Read: Own profile or admin can read all
+      allow read: if isLoggedIn() && (isOwner(userId) || isAdmin());
+
+      // Create: Only during registration (new user, admin creates or trader self-registers)
+      allow create: if isLoggedIn() 
+        && isOwner(userId)
+        && request.resource.data.role in ['admin', 'trader']
+        && (request.resource.data.role == 'trader' 
+            ? request.resource.data.traderStatus == 'pending'
+            : true);
+
+      // Update: 
+      // - Own profile (limited fields)
+      // - Admin can update any user
+      allow update: if isLoggedIn() && (
+        (isOwner(userId) && onlyUpdatingAllowedFields()) 
+        || isAdmin()
+      );
+
+      // Delete: Only admin
+      allow delete: if isAdmin();
+
+      // Helper: Trader can only update these fields
+      function onlyUpdatingAllowedFields() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['name', 'phone', 'city', 'profileImage', 'fcmToken', 'lastLogin']);
+      }
+    }
+
+    // ═══════════════════════════════════════
+    // CATEGORIES COLLECTION
+    // ═══════════════════════════════════════
+    match /categories/{categoryId} {
+
+      // Read: Any logged in user
+      allow read: if isLoggedIn();
+
+      // Write: Only admin
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ═══════════════════════════════════════
+    // PRODUCTS COLLECTION
+    // ═══════════════════════════════════════
+    match /products/{productId} {
+
+      // Read: Any logged in user
+      allow read: if isLoggedIn();
+
+      // Write: Only admin
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ═══════════════════════════════════════
+    // PRICE HISTORY COLLECTION
+    // ═══════════════════════════════════════
+    match /price_history/{productId}/history/{historyId} {
+
+      // Read: Admin full, Trader limited
+      allow read: if isLoggedIn();
+
+      // Write: Only admin
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ═══════════════════════════════════════
+    // REQUIREMENTS COLLECTION
+    // ═══════════════════════════════════════
+    match /requirements/{requirementId} {
+
+      // Read:
+      // - Admin can read ALL requirements
+      // - Trader can only read THEIR OWN requirements
+      allow read: if isLoggedIn() && (
+        isAdmin() 
+        || (isApprovedTrader() && resource.data.traderId == request.auth.uid)
+      );
+
+      // Create: Only approved trader, for themselves
+      allow create: if isApprovedTrader()
+        && request.resource.data.traderId == request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      // Update:
+      // - Admin can update status, adminNote, counterPrice, etc.
+      // - Trader can only update if status is 'counterOffer' (accept/reject)
+      allow update: if isLoggedIn() && (
+        isAdmin()
+        || (isApprovedTrader() 
+            && resource.data.traderId == request.auth.uid
+            && resource.data.status == 'counterOffer'
+            && onlyUpdatingCounterResponse())
+      );
+
+      // Delete: Only admin
+      allow delete: if isAdmin();
+
+      // Helper: Trader can only respond to counter offer
+      function onlyUpdatingCounterResponse() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'actionTakenAt']);
+      }
+    }
+
+    // ═══════════════════════════════════════
+    // NOTIFICATIONS COLLECTION
+    // ═══════════════════════════════════════
+    match /notifications/{userId}/items/{notificationId} {
+
+      // Read: Only own notifications
+      allow read: if isLoggedIn() && isOwner(userId);
+
+      // Create: Any logged in user can create notification
+      // (for notifying admin when trader submits requirement)
+      allow create: if isLoggedIn();
+
+      // Update: Only own notifications (mark as read)
+      allow update: if isLoggedIn() 
+        && isOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['read']);
+
+      // Delete: Own notifications
+      allow delete: if isLoggedIn() && isOwner(userId);
+    }
+
+    // ═══════════════════════════════════════
+    // APP SETTINGS
+    // ═══════════════════════════════════════
+    match /app_settings/{document} {
+
+      // Read: Any logged in user
+      allow read: if isLoggedIn();
+
+      // Write: Only admin
+      allow write: if isAdmin();
+    }
+  }
+}
