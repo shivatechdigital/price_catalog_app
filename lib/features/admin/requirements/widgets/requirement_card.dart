@@ -122,34 +122,61 @@ class RequirementCard extends StatelessWidget {
                   // Product Row
                   Row(
                     children: [
-                      // Product Image
-                      Container(
-                        width: 44.w,
-                        height: 44.w,
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                        child: requirement.productImage != null
-                            ? ClipRRect(
-                                borderRadius:
-                                    BorderRadius.circular(10.r),
-                                child: Image.network(
-                                  requirement.productImage!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) =>
-                                      Icon(
+                      // Product Image (+ count badge when multi)
+                      Stack(
+                        children: [
+                          Container(
+                            width: 44.w,
+                            height: 44.w,
+                            decoration: BoxDecoration(
+                              color: AppColors.background,
+                              borderRadius: BorderRadius.circular(10.r),
+                            ),
+                            child: requirement.productImage != null
+                                ? ClipRRect(
+                                    borderRadius:
+                                        BorderRadius.circular(10.r),
+                                    child: Image.network(
+                                      requirement.productImage!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          Icon(
+                                        Iconsax.box,
+                                        size: 20.sp,
+                                        color: AppColors.textHint,
+                                      ),
+                                    ),
+                                  )
+                                : Icon(
                                     Iconsax.box,
                                     size: 20.sp,
                                     color: AppColors.textHint,
                                   ),
+                          ),
+                          if (requirement.items.length > 1)
+                            Positioned(
+                              right: -2,
+                              bottom: -2,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 5.w,
+                                  vertical: 1.h,
                                 ),
-                              )
-                            : Icon(
-                                Iconsax.box,
-                                size: 20.sp,
-                                color: AppColors.textHint,
+                                decoration: BoxDecoration(
+                                  color: AppColors.adminPrimary,
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                                child: Text(
+                                  '${requirement.items.length}',
+                                  style: TextStyle(
+                                    fontSize: 9.sp,
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                               ),
+                            ),
+                        ],
                       ),
 
                       Gap(12.w),
@@ -160,20 +187,30 @@ class RequirementCard extends StatelessWidget {
                               CrossAxisAlignment.start,
                           children: [
                             Text(
-                              requirement.productName,
+                              requirement.items.length > 1
+                                  ? '${requirement.items.length} Products'
+                                  : requirement.productName,
                               style: TextStyle(
                                 fontSize: 15.sp,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textPrimary,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             Gap(2.h),
                             Text(
-                              '${requirement.quantity} ${requirement.unit} • ${requirement.productCode}',
+                              requirement.items.length > 1
+                                  ? _productSummary(
+                                      requirement.items,
+                                    )
+                                  : '${requirement.quantity} ${requirement.unit} • ${requirement.productCode}',
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 color: AppColors.textHint,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -467,6 +504,13 @@ class RequirementCard extends StatelessWidget {
       PaymentType.partialPayment => '💳 Partial Payment',
       PaymentType.credit => '📋 Credit Payment',
     };
+  }
+
+  String _productSummary(List<RequirementItemModel> items) {
+    if (items.length <= 2) {
+      return items.map((i) => i.productName).join(' • ');
+    }
+    return '${items[0].productName} • +${items.length - 1} more';
   }
 
   ({Color color, IconData icon, String label}) _getStatusInfo(

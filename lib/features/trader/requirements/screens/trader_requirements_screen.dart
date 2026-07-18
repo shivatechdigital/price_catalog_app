@@ -25,38 +25,34 @@ class _TraderRequirementsScreenState
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  final List<({String label, RequirementStatus? status, Color color})>
-      _tabs = [
+  final List<({String label, RequirementStatus? status, Color color})> _tabs = [
     (label: 'All', status: null, color: AppColors.traderPrimary),
     (
       label: 'Pending',
       status: RequirementStatus.pending,
-      color: AppColors.pending
+      color: AppColors.pending,
     ),
     (
       label: 'Approved',
       status: RequirementStatus.approved,
-      color: AppColors.approved
+      color: AppColors.approved,
     ),
     (
       label: 'Rejected',
       status: RequirementStatus.rejected,
-      color: AppColors.rejected
+      color: AppColors.rejected,
     ),
     (
       label: 'Counter',
       status: RequirementStatus.counterOffer,
-      color: AppColors.counter
+      color: AppColors.counter,
     ),
   ];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(
-      length: _tabs.length,
-      vsync: this,
-    );
+    _tabController = TabController(length: _tabs.length, vsync: this);
   }
 
   @override
@@ -125,14 +121,10 @@ class _TraderRequirementsScreenState
             child: AnimatedBuilder(
               animation: _tabController,
               builder: (context, _) {
-                final isSelected =
-                    _tabController.index == entry.key;
+                final isSelected = _tabController.index == entry.key;
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
-                  margin: EdgeInsets.symmetric(
-                    horizontal: 4.w,
-                    vertical: 6.h,
-                  ),
+                  margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 6.h),
                   padding: EdgeInsets.symmetric(
                     horizontal: 14.w,
                     vertical: 8.h,
@@ -143,9 +135,7 @@ class _TraderRequirementsScreenState
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(20.r),
                     border: Border.all(
-                      color: isSelected
-                          ? tab.color
-                          : AppColors.border,
+                      color: isSelected ? tab.color : AppColors.border,
                       width: isSelected ? 1.5 : 1,
                     ),
                   ),
@@ -153,9 +143,7 @@ class _TraderRequirementsScreenState
                     tab.label,
                     style: TextStyle(
                       fontSize: 13.sp,
-                      color: isSelected
-                          ? tab.color
-                          : AppColors.textHint,
+                      color: isSelected ? tab.color : AppColors.textHint,
                       fontWeight: isSelected
                           ? FontWeight.w700
                           : FontWeight.w400,
@@ -187,17 +175,16 @@ class _TraderRequirementTabView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final requirementsAsync = status != null
         ? ref.watch(
-            traderRequirementsByStatusProvider(
-              (traderId: traderId, status: status!),
-            ),
+            traderRequirementsByStatusProvider((
+              traderId: traderId,
+              status: status!,
+            )),
           )
         : ref.watch(traderRequirementsProvider(traderId));
 
     return requirementsAsync.when(
       loading: () => _buildShimmer(),
-      error: (_, __) => const Center(
-        child: Text('Failed to load'),
-      ),
+      error: (_, __) => const Center(child: Text('Failed to load')),
       data: (requirements) {
         if (requirements.isEmpty) {
           return _buildEmpty(status);
@@ -209,16 +196,16 @@ class _TraderRequirementTabView extends ConsumerWidget {
           separatorBuilder: (_, __) => Gap(12.h),
           itemBuilder: (context, index) {
             return _TraderRequirementCard(
-              requirement: requirements[index],
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => TraderRequirementDetailScreen(
-                    requirement: requirements[index],
+                  requirement: requirements[index],
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TraderRequirementDetailScreen(
+                        requirement: requirements[index],
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            )
+                )
                 .animate()
                 .fadeIn(
                   delay: Duration(milliseconds: index * 60),
@@ -249,20 +236,13 @@ class _TraderRequirementTabView extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Iconsax.document,
-            size: 52,
-            color: AppColors.textHint,
-          ),
+          Icon(Iconsax.document, size: 52, color: AppColors.textHint),
           const Gap(16),
           Text(
             status == null
                 ? 'No requirements yet'
                 : 'No ${status.name} requirements',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -284,27 +264,28 @@ class _TraderRequirementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final counterPrice = requirement.counterPrice;
     final (color, icon, label) = switch (requirement.status) {
       RequirementStatus.pending => (
-          AppColors.pending,
-          Iconsax.clock,
-          'Pending'
-        ),
+        AppColors.pending,
+        Iconsax.clock,
+        'Pending',
+      ),
       RequirementStatus.approved => (
-          AppColors.approved,
-          Icons.check_circle_rounded,
-          'Approved ✅'
-        ),
+        AppColors.approved,
+        Icons.check_circle_rounded,
+        'Approved ✅',
+      ),
       RequirementStatus.rejected => (
-          AppColors.rejected,
-          Icons.cancel_rounded,
-          'Rejected ❌'
-        ),
+        AppColors.rejected,
+        Icons.cancel_rounded,
+        'Rejected ❌',
+      ),
       RequirementStatus.counterOffer => (
-          AppColors.counter,
-          Icons.compare_arrows_rounded,
-          'Counter Offer 🔄'
-        ),
+        AppColors.counter,
+        Icons.compare_arrows_rounded,
+        'Counter Offer 🔄',
+      ),
     };
 
     return GestureDetector(
@@ -313,9 +294,7 @@ class _TraderRequirementCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(
-            color: color.withOpacity(0.25),
-          ),
+          border: Border.all(color: color.withOpacity(0.25)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
@@ -328,15 +307,10 @@ class _TraderRequirementCard extends StatelessWidget {
           children: [
             // Status Bar
             Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: 16.w,
-                vertical: 10.h,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
               decoration: BoxDecoration(
                 color: color.withOpacity(0.08),
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(16.r),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
               ),
               child: Row(
                 children: [
@@ -370,56 +344,87 @@ class _TraderRequirementCard extends StatelessWidget {
                   // Product + Customer
                   Row(
                     children: [
-                      Container(
-                        width: 44.w,
-                        height: 44.w,
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius:
-                              BorderRadius.circular(10.r),
-                        ),
-                        child: requirement.productImage != null
-                            ? ClipRRect(
-                                borderRadius:
-                                    BorderRadius.circular(10.r),
-                                child: Image.network(
-                                  requirement.productImage!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (_, __, ___) => Icon(
+                      Stack(
+                        children: [
+                          Container(
+                            width: 44.w,
+                            height: 44.w,
+                            decoration: BoxDecoration(
+                              color: AppColors.background,
+                              borderRadius: BorderRadius.circular(10.r),
+                            ),
+                            child: requirement.productImage != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(10.r),
+                                    child: Image.network(
+                                      requirement.productImage!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Icon(
+                                        Iconsax.box,
+                                        size: 20.sp,
+                                        color: AppColors.textHint,
+                                      ),
+                                    ),
+                                  )
+                                : Icon(
                                     Iconsax.box,
                                     size: 20.sp,
                                     color: AppColors.textHint,
                                   ),
+                          ),
+                          if (requirement.items.length > 1)
+                            Positioned(
+                              right: -2,
+                              bottom: -2,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 5.w,
+                                  vertical: 1.h,
                                 ),
-                              )
-                            : Icon(
-                                Iconsax.box,
-                                size: 20.sp,
-                                color: AppColors.textHint,
+                                decoration: BoxDecoration(
+                                  color: AppColors.traderPrimary,
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                                child: Text(
+                                  '${requirement.items.length}',
+                                  style: TextStyle(
+                                    fontSize: 9.sp,
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                               ),
+                            ),
+                        ],
                       ),
                       Gap(12.w),
                       Expanded(
                         child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              requirement.productName,
+                              requirement.items.length > 1
+                                  ? '${requirement.items.length} Products'
+                                  : requirement.productName,
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textPrimary,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             Gap(3.h),
                             Text(
-                              '${requirement.customerName} • ${requirement.customerCity}',
+                              requirement.items.length > 1
+                                  ? _productSummary(requirement.items)
+                                  : '${requirement.customerName} • ${requirement.customerCity}',
                               style: TextStyle(
                                 fontSize: 11.sp,
                                 color: AppColors.textSecondary,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -438,7 +443,9 @@ class _TraderRequirementCard extends StatelessWidget {
                   Row(
                     children: [
                       _InfoChip(
-                        label: '${requirement.quantity} ${requirement.unit}',
+                        label: requirement.items.length > 1
+                            ? '${requirement.items.length} items'
+                            : '${requirement.quantity} ${requirement.unit}',
                         icon: Iconsax.weight,
                         color: AppColors.textSecondary,
                       ),
@@ -451,9 +458,7 @@ class _TraderRequirementCard extends StatelessWidget {
                       ),
                       Gap(8.w),
                       _InfoChip(
-                        label: _getPaymentShort(
-                          requirement.paymentType,
-                        ),
+                        label: _getPaymentShort(requirement.paymentType),
                         icon: Iconsax.money,
                         color: AppColors.adminPrimary,
                       ),
@@ -461,7 +466,7 @@ class _TraderRequirementCard extends StatelessWidget {
                   ),
 
                   // Counter offer action
-                  if (requirement.isCounterOffer) ...[
+                  if (requirement.isCounterOffer && counterPrice != null) ...[
                     Gap(10.h),
                     Container(
                       padding: EdgeInsets.all(10.w),
@@ -469,8 +474,7 @@ class _TraderRequirementCard extends StatelessWidget {
                         color: AppColors.counterLight,
                         borderRadius: BorderRadius.circular(8.r),
                         border: Border.all(
-                          color: AppColors.counter
-                              .withOpacity(0.3),
+                          color: AppColors.counter.withOpacity(0.3),
                         ),
                       ),
                       child: Row(
@@ -483,7 +487,7 @@ class _TraderRequirementCard extends StatelessWidget {
                           Gap(6.w),
                           Expanded(
                             child: Text(
-                              'Counter: ₹${requirement.counterPrice!.toStringAsFixed(0)} — Tap to respond',
+                              'Counter: ₹${counterPrice.toStringAsFixed(0)} — Tap to respond',
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 color: AppColors.counter,
@@ -545,6 +549,13 @@ class _TraderRequirementCard extends StatelessWidget {
       PaymentType.credit => 'Credit',
     };
   }
+
+  String _productSummary(List<RequirementItemModel> items) {
+    if (items.length <= 2) {
+      return items.map((i) => i.productName).join(' • ');
+    }
+    return '${items[0].productName} • +${items.length - 1} more';
+  }
 }
 
 class _InfoChip extends StatelessWidget {
@@ -561,10 +572,7 @@ class _InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 8.w,
-        vertical: 4.h,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(6.r),

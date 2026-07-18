@@ -16,10 +16,7 @@ import 'package:url_launcher/url_launcher.dart';
 class TraderRequirementDetailScreen extends ConsumerStatefulWidget {
   final RequirementModel requirement;
 
-  const TraderRequirementDetailScreen({
-    super.key,
-    required this.requirement,
-  });
+  const TraderRequirementDetailScreen({super.key, required this.requirement});
 
   @override
   ConsumerState<TraderRequirementDetailScreen> createState() =>
@@ -73,10 +70,7 @@ class _TraderRequirementDetailScreenState
       if (!mounted) return;
       if (success) {
         Navigator.pop(context);
-        CustomSnackbar.showSuccess(
-          context,
-          'Counter offer rejected.',
-        );
+        CustomSnackbar.showSuccess(context, 'Counter offer rejected.');
       } else {
         CustomSnackbar.showError(context, 'Failed to reject. Try again.');
       }
@@ -101,7 +95,9 @@ class _TraderRequirementDetailScreenState
 
   @override
   Widget build(BuildContext context) {
-    final req = widget.requirement;
+    final req =
+        ref.watch(requirementByIdProvider(widget.requirement.id)).value ??
+        widget.requirement;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -122,10 +118,9 @@ class _TraderRequirementDetailScreenState
                 Gap(16.h),
 
                 // 1. STATUS TIMELINE
-                _buildStatusTimeline(req)
-                    .animate()
-                    .fadeIn(delay: 100.ms)
-                    .slideY(begin: 0.1, end: 0),
+                _buildStatusTimeline(
+                  req,
+                ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1, end: 0),
 
                 Gap(12.h),
 
@@ -170,10 +165,8 @@ class _TraderRequirementDetailScreenState
                 Gap(12.h),
 
                 // 6. NOTES (if any)
-                if ((req.traderNote != null &&
-                        req.traderNote!.isNotEmpty) ||
-                    (req.adminNote != null &&
-                        req.adminNote!.isNotEmpty))
+                if ((req.traderNote != null && req.traderNote!.isNotEmpty) ||
+                    (req.adminNote != null && req.adminNote!.isNotEmpty))
                   _buildSection(
                     title: 'Notes',
                     icon: Iconsax.note_text,
@@ -183,23 +176,9 @@ class _TraderRequirementDetailScreenState
 
                 Gap(12.h),
 
-                // 7. COUNTER OFFER CARD (if applicable)
-                if (req.isCounterOffer)
-                  _buildCounterOfferCard(req)
-                      .animate()
-                      .fadeIn(delay: 400.ms)
-                      .scale(
-                        begin: const Offset(0.95, 0.95),
-                        end: const Offset(1.0, 1.0),
-                        curve: Curves.elasticOut,
-                      ),
-
-                // 8. REJECTION REASON (if rejected)
-                if (req.isRejected &&
-                    req.rejectionReason != null)
-                  _buildRejectionCard(req)
-                      .animate()
-                      .fadeIn(delay: 400.ms),
+                // 7. REJECTION REASON (legacy single-product requirement)
+                if (req.isRejected && req.rejectionReason != null)
+                  _buildRejectionCard(req).animate().fadeIn(delay: 400.ms),
 
                 Gap(100.h),
               ],
@@ -207,13 +186,6 @@ class _TraderRequirementDetailScreenState
           ),
         ],
       ),
-
-      // ═══════════════════════════════════════
-      // BOTTOM ACTION BAR
-      // ═══════════════════════════════════════
-      bottomNavigationBar: req.isCounterOffer
-          ? _buildCounterActionBar()
-          : null,
     );
   }
 
@@ -248,28 +220,18 @@ class _TraderRequirementDetailScreenState
         GestureDetector(
           onTap: () {
             Clipboard.setData(ClipboardData(text: req.id));
-            CustomSnackbar.showSuccess(
-              context,
-              'Requirement ID copied!',
-            );
+            CustomSnackbar.showSuccess(context, 'Requirement ID copied!');
           },
           child: Container(
             margin: EdgeInsets.only(right: 16.w),
-            padding: EdgeInsets.symmetric(
-              horizontal: 10.w,
-              vertical: 6.h,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
             decoration: BoxDecoration(
               color: AppColors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Row(
               children: [
-                Icon(
-                  Iconsax.copy,
-                  size: 14.sp,
-                  color: AppColors.white,
-                ),
+                Icon(Iconsax.copy, size: 14.sp, color: AppColors.white),
                 Gap(4.w),
                 Text(
                   'Copy ID',
@@ -290,10 +252,7 @@ class _TraderRequirementDetailScreenState
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                statusInfo.color,
-                statusInfo.color.withOpacity(0.8),
-              ],
+              colors: [statusInfo.color, statusInfo.color.withOpacity(0.8)],
             ),
           ),
           child: SafeArea(
@@ -413,26 +372,26 @@ class _TraderRequirementDetailScreenState
         label: req.isApproved
             ? 'Approved'
             : req.isRejected
-                ? 'Rejected'
-                : req.isCounterOffer
-                    ? 'Counter Offer'
-                    : 'Under Review',
+            ? 'Rejected'
+            : req.isCounterOffer
+            ? 'Counter Offer'
+            : 'Under Review',
         icon: req.isApproved
             ? Icons.check_circle_rounded
             : req.isRejected
-                ? Icons.cancel_rounded
-                : req.isCounterOffer
-                    ? Icons.compare_arrows_rounded
-                    : Iconsax.clock,
+            ? Icons.cancel_rounded
+            : req.isCounterOffer
+            ? Icons.compare_arrows_rounded
+            : Iconsax.clock,
         date: req.actionTakenAt,
         isDone: !req.isPending,
         color: req.isApproved
             ? AppColors.approved
             : req.isRejected
-                ? AppColors.rejected
-                : req.isCounterOffer
-                    ? AppColors.counter
-                    : AppColors.textHint,
+            ? AppColors.rejected
+            : req.isCounterOffer
+            ? AppColors.counter
+            : AppColors.textHint,
       ),
     ];
 
@@ -471,9 +430,7 @@ class _TraderRequirementDetailScreenState
                               : AppColors.background,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: step.isDone
-                                ? step.color
-                                : AppColors.border,
+                            color: step.isDone ? step.color : AppColors.border,
                             width: 2,
                           ),
                         ),
@@ -493,16 +450,13 @@ class _TraderRequirementDetailScreenState
                           fontWeight: step.isDone
                               ? FontWeight.w700
                               : FontWeight.w400,
-                          color: step.isDone
-                              ? step.color
-                              : AppColors.textHint,
+                          color: step.isDone ? step.color : AppColors.textHint,
                         ),
                         textAlign: TextAlign.center,
                       ),
                       if (step.date != null)
                         Text(
-                          DateFormat('dd MMM, hh:mm a')
-                              .format(step.date!),
+                          DateFormat('dd MMM, hh:mm a').format(step.date!),
                           style: TextStyle(
                             fontSize: 9.sp,
                             color: AppColors.textHint,
@@ -586,10 +540,7 @@ class _TraderRequirementDetailScreenState
 
           // Divider
           Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: 16.w,
-              vertical: 10.h,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
             child: const Divider(height: 1),
           ),
 
@@ -607,6 +558,81 @@ class _TraderRequirementDetailScreenState
   // 1. PRODUCT DETAILS
   // ═══════════════════════════════════════
   Widget _buildProductDetails(RequirementModel req) {
+    if (req.items.isNotEmpty) {
+      return Column(
+        children: req.items.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: index < req.items.length - 1 ? 12.h : 0,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 56.w,
+                  height: 56.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: item.productImage != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(10.r),
+                          child: Image.network(
+                            item.productImage!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Iconsax.box,
+                              size: 26.sp,
+                              color: AppColors.textHint,
+                            ),
+                          ),
+                        )
+                      : Icon(
+                          Iconsax.box,
+                          size: 26.sp,
+                          color: AppColors.textHint,
+                        ),
+                ),
+                Gap(12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.productName,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Gap(4.h),
+                      if (item.productCode.isNotEmpty)
+                        _iconTextRow(
+                          icon: Iconsax.barcode,
+                          text: item.productCode,
+                          color: AppColors.textSecondary,
+                        ),
+                      Gap(4.h),
+                      _iconTextRow(
+                        icon: Iconsax.weight,
+                        text:
+                            '${item.quantity.toStringAsFixed(item.quantity % 1 == 0 ? 0 : 1)} ${item.unit.toUpperCase()}',
+                        color: AppColors.traderPrimary,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      );
+    }
+
     return Column(
       children: [
         Row(
@@ -623,8 +649,7 @@ class _TraderRequirementDetailScreenState
                   color: AppColors.traderPrimary.withOpacity(0.15),
                 ),
               ),
-              child: req.productImage != null &&
-                      req.productImage!.isNotEmpty
+              child: req.productImage != null && req.productImage!.isNotEmpty
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(12.r),
                       child: Image.network(
@@ -701,11 +726,7 @@ class _TraderRequirementDetailScreenState
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Iconsax.weight,
-                size: 16.sp,
-                color: AppColors.traderPrimary,
-              ),
+              Icon(Iconsax.weight, size: 16.sp, color: AppColors.traderPrimary),
               Gap(8.w),
               Text(
                 'Quantity Required: ',
@@ -733,6 +754,121 @@ class _TraderRequirementDetailScreenState
   // 2. PRICE BREAKDOWN
   // ═══════════════════════════════════════
   Widget _buildPriceBreakdown(RequirementModel req) {
+    if (req.items.isNotEmpty) {
+      return Column(
+        children: [
+          ...req.items.asMap().entries.map((entry) {
+            final index = entry.key;
+            final item = entry.value;
+            final isLast = index == req.items.length - 1;
+            return Container(
+              margin: EdgeInsets.only(bottom: isLast ? 0 : 10.h),
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.productName,
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Gap(8.w),
+                      _buildItemStatusBadge(item),
+                    ],
+                  ),
+                  Gap(8.h),
+                  _priceRow(
+                    label: 'Admin Listed',
+                    value: '₹${item.productCurrentPrice.toStringAsFixed(0)}',
+                    color: AppColors.textSecondary,
+                    icon: Iconsax.tag,
+                  ),
+                  const Divider(height: 8),
+                  _priceRow(
+                    label: 'Customer Demanded',
+                    value: '₹${item.customerDemandedPrice.toStringAsFixed(0)}',
+                    color: AppColors.pending,
+                    icon: Iconsax.money_recive,
+                    isHighlighted: true,
+                  ),
+                  const Divider(height: 8),
+                  _priceRow(
+                    label: 'Your Offered',
+                    value: '₹${item.traderOfferedPrice.toStringAsFixed(0)}',
+                    color: AppColors.adminPrimary,
+                    icon: Iconsax.money_send,
+                  ),
+                  if (item.itemCounterPrice != null) ...[
+                    const Divider(height: 8),
+                    _priceRow(
+                      label: item.counterOfferBy == CounterOfferBy.trader
+                          ? 'Your Counter'
+                          : 'Admin Counter',
+                      value: '₹${item.itemCounterPrice!.toStringAsFixed(0)}',
+                      color: AppColors.counter,
+                      icon: Icons.compare_arrows_rounded,
+                      isHighlighted: true,
+                    ),
+                  ],
+                  if (item.itemRejectionReason != null) ...[
+                    Gap(6.h),
+                    Text(
+                      'Reason: ${item.itemRejectionReason}',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: AppColors.rejected,
+                      ),
+                    ),
+                  ],
+                  if (item.itemTraderResponseNote != null &&
+                      item.itemTraderResponseNote!.isNotEmpty) ...[
+                    Gap(4.h),
+                    Text(
+                      'Your note: ${item.itemTraderResponseNote}',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                  if (item.isAwaitingTraderResponse) ...[
+                    Gap(12.h),
+                    _buildItemCounterActions(req, index, item),
+                  ],
+                  Gap(8.h),
+                  Text(
+                    '${item.quantity.toStringAsFixed(item.quantity % 1 == 0 ? 0 : 1)} ${item.unit} × ₹${item.customerDemandedPrice.toStringAsFixed(0)} = ₹${(item.quantity * item.customerDemandedPrice).toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+
+          Gap(12.h),
+
+          // Total Value
+          _buildTotalValue(req),
+        ],
+      );
+    }
+
     return Column(
       children: [
         // Price Grid
@@ -745,10 +881,7 @@ class _TraderRequirementDetailScreenState
             children: [
               // Header
               Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 12.w,
-                  vertical: 10.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                 child: Row(
                   children: [
                     Expanded(
@@ -777,8 +910,7 @@ class _TraderRequirementDetailScreenState
 
               _priceRow(
                 label: 'Admin Listed Price',
-                value:
-                    '₹${req.productCurrentPrice.toStringAsFixed(0)}',
+                value: '₹${req.productCurrentPrice.toStringAsFixed(0)}',
                 color: AppColors.textSecondary,
                 icon: Iconsax.tag,
               ),
@@ -787,8 +919,7 @@ class _TraderRequirementDetailScreenState
 
               _priceRow(
                 label: 'Customer Demanded',
-                value:
-                    '₹${req.customerDemandedPrice.toStringAsFixed(0)}',
+                value: '₹${req.customerDemandedPrice.toStringAsFixed(0)}',
                 color: AppColors.pending,
                 icon: Iconsax.money_recive,
                 isHighlighted: true,
@@ -798,8 +929,7 @@ class _TraderRequirementDetailScreenState
 
               _priceRow(
                 label: 'Your Offered Price',
-                value:
-                    '₹${req.traderOfferedPrice.toStringAsFixed(0)}',
+                value: '₹${req.traderOfferedPrice.toStringAsFixed(0)}',
                 color: AppColors.adminPrimary,
                 icon: Iconsax.money_send,
               ),
@@ -808,8 +938,7 @@ class _TraderRequirementDetailScreenState
                 const Divider(height: 1),
                 _priceRow(
                   label: 'Admin Counter Price',
-                  value:
-                      '₹${req.counterPrice!.toStringAsFixed(0)}',
+                  value: '₹${req.counterPrice!.toStringAsFixed(0)}',
                   color: AppColors.counter,
                   icon: Icons.compare_arrows_rounded,
                   isHighlighted: true,
@@ -822,54 +951,324 @@ class _TraderRequirementDetailScreenState
         Gap(12.h),
 
         // Total Value
-        Container(
-          padding: EdgeInsets.all(14.w),
-          decoration: BoxDecoration(
-            gradient: AppColors.traderGradient,
-            borderRadius: BorderRadius.circular(12.r),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.traderPrimary.withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
+        _buildTotalValue(req),
+      ],
+    );
+  }
+
+  Widget _buildTotalValue(RequirementModel req) {
+    return Container(
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        gradient: AppColors.traderGradient,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.traderPrimary.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Total Deal Value',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.white.withOpacity(0.8),
-                    ),
-                  ),
-                  Text(
-                    '${req.quantity.toStringAsFixed(0)} ${req.unit} × ₹${req.agreedPrice.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      color: AppColors.white.withOpacity(0.6),
-                    ),
-                  ),
-                ],
+              Text(
+                'Total Deal Value',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: AppColors.white.withOpacity(0.8),
+                ),
               ),
               Text(
-                '₹${req.totalValue.toStringAsFixed(0)}',
+                '${req.quantity.toStringAsFixed(0)} ${req.unit} × ₹${req.agreedPrice.toStringAsFixed(0)}',
                 style: TextStyle(
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.white,
+                  fontSize: 11.sp,
+                  color: AppColors.white.withOpacity(0.6),
                 ),
               ),
             ],
           ),
+          Text(
+            '₹${req.totalValue.toStringAsFixed(0)}',
+            style: TextStyle(
+              fontSize: 22.sp,
+              fontWeight: FontWeight.w800,
+              color: AppColors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemStatusBadge(RequirementItemModel item) {
+    final (color, label) = switch (item.itemStatus) {
+      RequirementStatus.pending => (AppColors.pending, 'Pending'),
+      RequirementStatus.approved => (AppColors.approved, 'Approved'),
+      RequirementStatus.rejected => (
+        AppColors.rejected,
+        item.rejectionBy == RejectionBy.trader ? 'Rejected by you' : 'Rejected',
+      ),
+      RequirementStatus.counterOffer => (
+        AppColors.counter,
+        item.isAwaitingTraderResponse ? 'Respond' : 'Waiting for admin',
+      ),
+    };
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        border: Border.all(color: color.withOpacity(0.35)),
+        borderRadius: BorderRadius.circular(6.r),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10.sp,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildItemCounterActions(
+    RequirementModel requirement,
+    int index,
+    RequirementItemModel item,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () => _showRejectItemDialog(requirement, index, item),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.rejected,
+              side: const BorderSide(color: AppColors.rejected),
+            ),
+            child: const Text('Reject'),
+          ),
+        ),
+        Gap(8.w),
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () => _showTraderCounterDialog(requirement, index, item),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.counter,
+              side: const BorderSide(color: AppColors.counter),
+            ),
+            child: const Text('Counter'),
+          ),
+        ),
+        Gap(8.w),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: () => _acceptItemCounter(requirement, index, item),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.approved,
+            ),
+            child: const Text('Accept'),
+          ),
         ),
       ],
     );
+  }
+
+  Future<void> _acceptItemCounter(
+    RequirementModel requirement,
+    int index,
+    RequirementItemModel item,
+  ) async {
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Accept counter offer?'),
+        content: Text(
+          'Accept ₹${item.itemCounterPrice?.toStringAsFixed(0) ?? '0'} for ${item.productName}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Accept'),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true) return;
+    final success = await ref
+        .read(requirementNotifierProvider.notifier)
+        .acceptItemCounterOffer(requirement: requirement, itemIndex: index);
+    if (mounted) {
+      success
+          ? CustomSnackbar.showSuccess(context, '${item.productName} accepted.')
+          : CustomSnackbar.showError(
+              context,
+              'Could not accept the counter offer.',
+            );
+    }
+  }
+
+  Future<void> _showTraderCounterDialog(
+    RequirementModel requirement,
+    int index,
+    RequirementItemModel item,
+  ) async {
+    final priceController = TextEditingController(
+      text: item.itemCounterPrice?.toStringAsFixed(0),
+    );
+    final noteController = TextEditingController();
+    final result = await showDialog<({double price, String? note})>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Counter for ${item.productName}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: priceController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Your counter price',
+                prefixText: '₹ ',
+              ),
+            ),
+            TextField(
+              controller: noteController,
+              maxLines: 2,
+              decoration: const InputDecoration(labelText: 'Note (optional)'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final price = double.tryParse(priceController.text.trim());
+              if (price == null || price <= 0) return;
+              Navigator.pop(context, (
+                price: price,
+                note: noteController.text.trim().isEmpty
+                    ? null
+                    : noteController.text.trim(),
+              ));
+            },
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+    priceController.dispose();
+    noteController.dispose();
+    if (result == null) return;
+    final success = await ref
+        .read(requirementNotifierProvider.notifier)
+        .sendTraderItemCounterOffer(
+          requirement: requirement,
+          itemIndex: index,
+          counterPrice: result.price,
+          note: result.note,
+        );
+    if (mounted) {
+      success
+          ? CustomSnackbar.showSuccess(context, 'Counter offer sent to admin.')
+          : CustomSnackbar.showError(context, 'Could not send counter offer.');
+    }
+  }
+
+  Future<void> _showRejectItemDialog(
+    RequirementModel requirement,
+    int index,
+    RequirementItemModel item,
+  ) async {
+    final reasonController = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Reject ${item.productName}?'),
+        content: TextField(
+          controller: reasonController,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            labelText: 'Reason for rejection *',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final value = reasonController.text.trim();
+              if (value.isNotEmpty) Navigator.pop(context, value);
+            },
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+    reasonController.dispose();
+    if (reason == null) return;
+    if (!mounted) return;
+
+    final approvedOthers = requirement.items
+        .where((other) => other != item && other.isApproved)
+        .length;
+    final proceed = approvedOthers > 0
+        ? await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Proceed with remaining products?'),
+                  content: Text(
+                    '$approvedOthers approved product(s) will be sent to admin for final confirmation.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('No'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Proceed'),
+                    ),
+                  ],
+                ),
+              ) ??
+              false
+        : false;
+    final success = await ref
+        .read(requirementNotifierProvider.notifier)
+        .rejectItemCounterOffer(
+          requirement: requirement,
+          itemIndex: index,
+          reason: reason,
+          proceedWithRemaining: proceed,
+        );
+    if (mounted) {
+      success
+          ? CustomSnackbar.showSuccess(
+              context,
+              proceed
+                  ? 'Remaining products sent to admin.'
+                  : 'Counter offer rejected.',
+            )
+          : CustomSnackbar.showError(
+              context,
+              'Could not reject the counter offer.',
+            );
+    }
   }
 
   // ═══════════════════════════════════════
@@ -902,8 +1301,7 @@ class _TraderRequirementDetailScreenState
           value: req.customerCity,
         ),
 
-        if (req.customerAddress != null &&
-            req.customerAddress!.isNotEmpty) ...[
+        if (req.customerAddress != null && req.customerAddress!.isNotEmpty) ...[
           Gap(12.h),
           _detailRow(
             icon: Iconsax.map,
@@ -925,11 +1323,7 @@ class _TraderRequirementDetailScreenState
                 color: AppColors.approved.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8.r),
               ),
-              child: Icon(
-                Iconsax.call,
-                size: 15.sp,
-                color: AppColors.approved,
-              ),
+              child: Icon(Iconsax.call, size: 15.sp, color: AppColors.approved),
             ),
             Gap(10.w),
             Column(
@@ -937,10 +1331,7 @@ class _TraderRequirementDetailScreenState
               children: [
                 Text(
                   'Phone Number',
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: AppColors.textHint,
-                  ),
+                  style: TextStyle(fontSize: 11.sp, color: AppColors.textHint),
                 ),
                 Text(
                   req.customerPhone,
@@ -956,10 +1347,7 @@ class _TraderRequirementDetailScreenState
             GestureDetector(
               onTap: () => _callPhone(req.customerPhone),
               child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 16.w,
-                  vertical: 8.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 decoration: BoxDecoration(
                   color: AppColors.approved,
                   borderRadius: BorderRadius.circular(10.r),
@@ -973,11 +1361,7 @@ class _TraderRequirementDetailScreenState
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Iconsax.call,
-                      size: 14.sp,
-                      color: AppColors.white,
-                    ),
+                    Icon(Iconsax.call, size: 14.sp, color: AppColors.white),
                     Gap(4.w),
                     Text(
                       'Call',
@@ -1065,14 +1449,12 @@ class _TraderRequirementDetailScreenState
         ],
 
         // Advance Amount
-        if (req.advanceAmount != null &&
-            req.advanceAmount! > 0) ...[
+        if (req.advanceAmount != null && req.advanceAmount! > 0) ...[
           Gap(10.h),
           _detailRow(
             icon: Iconsax.wallet,
             label: 'Advance Amount',
-            value:
-                '₹${req.advanceAmount!.toStringAsFixed(0)}',
+            value: '₹${req.advanceAmount!.toStringAsFixed(0)}',
           ),
         ],
 
@@ -1082,8 +1464,7 @@ class _TraderRequirementDetailScreenState
           _detailRow(
             icon: Iconsax.truck,
             label: 'Expected Delivery',
-            value: DateFormat('dd MMMM yyyy')
-                .format(req.deliveryDate!),
+            value: DateFormat('dd MMMM yyyy').format(req.deliveryDate!),
             isBold: true,
           ),
         ],
@@ -1109,8 +1490,7 @@ class _TraderRequirementDetailScreenState
     return Column(
       children: [
         // Trader Note
-        if (req.traderNote != null &&
-            req.traderNote!.isNotEmpty)
+        if (req.traderNote != null && req.traderNote!.isNotEmpty)
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(14.w),
@@ -1156,8 +1536,7 @@ class _TraderRequirementDetailScreenState
           ),
 
         // Admin Note
-        if (req.adminNote != null &&
-            req.adminNote!.isNotEmpty) ...[
+        if (req.adminNote != null && req.adminNote!.isNotEmpty) ...[
           if (req.traderNote != null) Gap(10.h),
           Container(
             width: double.infinity,
@@ -1286,13 +1665,11 @@ class _TraderRequirementDetailScreenState
             child: Column(
               children: [
                 Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _counterPriceItem(
                       label: 'You Demanded',
-                      value:
-                          '₹${req.customerDemandedPrice.toStringAsFixed(0)}',
+                      value: '₹${req.customerDemandedPrice.toStringAsFixed(0)}',
                       color: AppColors.textSecondary,
                     ),
                     Container(
@@ -1310,8 +1687,7 @@ class _TraderRequirementDetailScreenState
                     ),
                     _counterPriceItem(
                       label: 'Admin Counter',
-                      value:
-                          '₹${req.counterPrice!.toStringAsFixed(0)}',
+                      value: '₹${req.counterPrice!.toStringAsFixed(0)}',
                       color: AppColors.counter,
                       isBig: true,
                     ),
@@ -1334,8 +1710,7 @@ class _TraderRequirementDetailScreenState
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        req.counterPrice! >
-                                req.customerDemandedPrice
+                        req.counterPrice! > req.customerDemandedPrice
                             ? Icons.trending_up_rounded
                             : Icons.trending_down_rounded,
                         size: 14.sp,
@@ -1382,9 +1757,7 @@ class _TraderRequirementDetailScreenState
       decoration: BoxDecoration(
         color: AppColors.rejectedLight,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: AppColors.rejected.withOpacity(0.3),
-        ),
+        border: Border.all(color: AppColors.rejected.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1459,18 +1832,16 @@ class _TraderRequirementDetailScreenState
                 child: SizedBox(
                   height: 50.h,
                   child: OutlinedButton.icon(
-                    onPressed:
-                        _isRejecting || _isAccepting
-                            ? null
-                            : () => _showRejectConfirmDialog(),
+                    onPressed: _isRejecting || _isAccepting
+                        ? null
+                        : () => _showRejectConfirmDialog(),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(
                         color: AppColors.rejected,
                         width: 1.5,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(12.r),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                     ),
                     icon: _isRejecting
@@ -1507,15 +1878,13 @@ class _TraderRequirementDetailScreenState
                 child: SizedBox(
                   height: 50.h,
                   child: ElevatedButton.icon(
-                    onPressed:
-                        _isAccepting || _isRejecting
-                            ? null
-                            : () => _showAcceptConfirmDialog(),
+                    onPressed: _isAccepting || _isRejecting
+                        ? null
+                        : () => _showAcceptConfirmDialog(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.approved,
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(12.r),
+                        borderRadius: BorderRadius.circular(12.r),
                       ),
                       elevation: 0,
                     ),
@@ -1571,10 +1940,7 @@ class _TraderRequirementDetailScreenState
             Gap(8.w),
             Text(
               'Accept Counter Offer?',
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w700,
-              ),
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -1628,18 +1994,11 @@ class _TraderRequirementDetailScreenState
         ),
         title: Row(
           children: [
-            Icon(
-              Icons.cancel_rounded,
-              color: AppColors.rejected,
-              size: 24.sp,
-            ),
+            Icon(Icons.cancel_rounded, color: AppColors.rejected, size: 24.sp),
             Gap(8.w),
             Text(
               'Reject Counter Offer?',
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w700,
-              ),
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -1712,18 +2071,14 @@ class _TraderRequirementDetailScreenState
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  color: AppColors.textHint,
-                ),
+                style: TextStyle(fontSize: 11.sp, color: AppColors.textHint),
               ),
               Gap(2.h),
               Text(
                 value,
                 style: TextStyle(
                   fontSize: 14.sp,
-                  fontWeight:
-                      isBold ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
                   color: AppColors.textPrimary,
                 ),
               ),
@@ -1742,13 +2097,8 @@ class _TraderRequirementDetailScreenState
     bool isHighlighted = false,
   }) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 12.w,
-        vertical: 10.h,
-      ),
-      color: isHighlighted
-          ? color.withOpacity(0.04)
-          : Colors.transparent,
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+      color: isHighlighted ? color.withOpacity(0.04) : Colors.transparent,
       child: Row(
         children: [
           Icon(icon, size: 14.sp, color: color),
@@ -1759,9 +2109,7 @@ class _TraderRequirementDetailScreenState
               style: TextStyle(
                 fontSize: 12.sp,
                 color: AppColors.textSecondary,
-                fontWeight: isHighlighted
-                    ? FontWeight.w600
-                    : FontWeight.w400,
+                fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
           ),
@@ -1811,10 +2159,7 @@ class _TraderRequirementDetailScreenState
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 10.sp,
-            color: AppColors.textHint,
-          ),
+          style: TextStyle(fontSize: 10.sp, color: AppColors.textHint),
         ),
         Gap(4.h),
         Text(
@@ -1837,25 +2182,25 @@ class _TraderRequirementDetailScreenState
   ) {
     return switch (status) {
       RequirementStatus.pending => (
-          color: AppColors.pending,
-          icon: Iconsax.clock,
-          label: 'PENDING REVIEW',
-        ),
+        color: AppColors.pending,
+        icon: Iconsax.clock,
+        label: 'PENDING REVIEW',
+      ),
       RequirementStatus.approved => (
-          color: AppColors.approved,
-          icon: Icons.check_circle_rounded,
-          label: 'APPROVED ✅',
-        ),
+        color: AppColors.approved,
+        icon: Icons.check_circle_rounded,
+        label: 'APPROVED ✅',
+      ),
       RequirementStatus.rejected => (
-          color: AppColors.rejected,
-          icon: Icons.cancel_rounded,
-          label: 'REJECTED ❌',
-        ),
+        color: AppColors.rejected,
+        icon: Icons.cancel_rounded,
+        label: 'REJECTED ❌',
+      ),
       RequirementStatus.counterOffer => (
-          color: AppColors.counter,
-          icon: Icons.compare_arrows_rounded,
-          label: 'COUNTER OFFER 🔄',
-        ),
+        color: AppColors.counter,
+        icon: Icons.compare_arrows_rounded,
+        label: 'COUNTER OFFER 🔄',
+      ),
     };
   }
 

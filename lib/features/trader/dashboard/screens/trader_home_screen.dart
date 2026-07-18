@@ -41,7 +41,7 @@ class TraderHomeScreen extends ConsumerWidget {
             // APP BAR
             // ═══════════════════════════════════════
             SliverAppBar(
-              expandedHeight: 190.h,
+              expandedHeight: 140.h,
               pinned: true,
               backgroundColor: AppColors.traderPrimary,
               surfaceTintColor: Colors.transparent,
@@ -236,21 +236,6 @@ class TraderHomeScreen extends ConsumerWidget {
                           ),
                         ),
                       ],
-                    ),
-                  ),
-
-                  // Notification icon
-                  Container(
-                    width: 40.w,
-                    height: 40.w,
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Icon(
-                      Iconsax.notification,
-                      size: 20.sp,
-                      color: AppColors.white,
                     ),
                   ),
                 ],

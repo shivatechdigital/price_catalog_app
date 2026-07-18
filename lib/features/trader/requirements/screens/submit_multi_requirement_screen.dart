@@ -6,23 +6,22 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
-import 'package:price_catalog_app/data/models/order_model.dart';
 import 'package:price_catalog_app/data/models/requirement_model.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
-import 'package:price_catalog_app/providers/order_provider.dart';
+import 'package:price_catalog_app/providers/requirement_provider.dart';
 import 'package:price_catalog_app/shared/widgets/custom_button.dart';
 import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
 
-class TraderSubmitOrderScreen extends ConsumerStatefulWidget {
-  const TraderSubmitOrderScreen({super.key});
+class SubmitMultiRequirementScreen extends ConsumerStatefulWidget {
+  const SubmitMultiRequirementScreen({super.key});
 
   @override
-  ConsumerState<TraderSubmitOrderScreen> createState() =>
-      _TraderSubmitOrderScreenState();
+  ConsumerState<SubmitMultiRequirementScreen> createState() =>
+      _SubmitMultiRequirementScreenState();
 }
 
-class _TraderSubmitOrderScreenState
-    extends ConsumerState<TraderSubmitOrderScreen> {
+class _SubmitMultiRequirementScreenState
+    extends ConsumerState<SubmitMultiRequirementScreen> {
   final _formKey = GlobalKey<FormState>();
   final _pageController = PageController();
   int _currentStep = 0;
@@ -51,17 +50,15 @@ class _TraderSubmitOrderScreenState
   @override
   void initState() {
     super.initState();
-    final items = ref.read(selectedOrderItemsProvider);
+    final items = ref.read(selectedRequirementItemsProvider);
     for (final item in items) {
-      _qtyControllers[item.itemId] = TextEditingController(
+      _qtyControllers[item.productId] = TextEditingController(
         text: item.quantity.toStringAsFixed(0),
       );
-      _demandPriceControllers[item.itemId] =
-          TextEditingController(
+      _demandPriceControllers[item.productId] = TextEditingController(
         text: item.customerDemandedPrice.toStringAsFixed(0),
       );
-      _offerPriceControllers[item.itemId] =
-          TextEditingController(
+      _offerPriceControllers[item.productId] = TextEditingController(
         text: item.traderOfferedPrice.toStringAsFixed(0),
       );
     }
@@ -84,7 +81,7 @@ class _TraderSubmitOrderScreenState
   }
 
   // ═══════════════════════════════════════
-  // SUBMIT ORDER
+  // SUBMIT REQUIREMENT
   // ═══════════════════════════════════════
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -93,25 +90,24 @@ class _TraderSubmitOrderScreenState
     FocusScope.of(context).unfocus();
 
     final currentUser = ref.read(currentUserProvider);
-    final originalItems = ref.read(selectedOrderItemsProvider);
+    final originalItems = ref.read(selectedRequirementItemsProvider);
 
     // Build updated items with qty/price from controllers
     final updatedItems = originalItems.map((item) {
       final qty = double.tryParse(
-            _qtyControllers[item.itemId]?.text ?? '1',
+            _qtyControllers[item.productId]?.text ?? '1',
           ) ??
           item.quantity;
       final demandPrice = double.tryParse(
-            _demandPriceControllers[item.itemId]?.text ?? '0',
+            _demandPriceControllers[item.productId]?.text ?? '0',
           ) ??
           item.customerDemandedPrice;
       final offerPrice = double.tryParse(
-            _offerPriceControllers[item.itemId]?.text ?? '0',
+            _offerPriceControllers[item.productId]?.text ?? '0',
           ) ??
           item.traderOfferedPrice;
 
-      return OrderItemModel(
-        itemId: item.itemId,
+      return RequirementItemModel(
         productId: item.productId,
         productName: item.productName,
         productCode: item.productCode,
@@ -122,44 +118,41 @@ class _TraderSubmitOrderScreenState
         productCurrentPrice: item.productCurrentPrice,
         customerDemandedPrice: demandPrice,
         traderOfferedPrice: offerPrice,
-        status: OrderItemStatus.pending,
       );
     }).toList();
 
-    try {
-      await ref.read(orderRepositoryProvider).submitOrder(
-            traderId: currentUser?.uid ?? '',
-            traderName: currentUser?.name ?? '',
-            traderBusinessName:
-                currentUser?.businessName ?? '',
-            traderPhone: currentUser?.phone ?? '',
-            customerName: _customerNameCtrl.text.trim(),
-            customerPhone: _customerPhoneCtrl.text.trim(),
-            customerBusinessName:
-                _customerBusinessCtrl.text.trim(),
-            customerCity: _customerCityCtrl.text.trim(),
-            customerAddress:
-                _customerAddressCtrl.text.trim().isEmpty
-                    ? null
-                    : _customerAddressCtrl.text.trim(),
-            paymentType: _paymentType,
-            creditDays: _creditDays,
-            deliveryDate: _deliveryDate,
-            deliveryLocation:
-                _deliveryLocationCtrl.text.trim().isEmpty
-                    ? null
-                    : _deliveryLocationCtrl.text.trim(),
-            traderNote: _noteCtrl.text.trim().isEmpty
-                ? null
-                : _noteCtrl.text.trim(),
-            items: updatedItems,
-          );
+    final success = await ref
+        .read(requirementNotifierProvider.notifier)
+        .submitBulkRequirement(
+          traderId: currentUser?.uid ?? '',
+          traderName: currentUser?.name ?? '',
+          traderBusinessName: currentUser?.businessName ?? '',
+          traderPhone: currentUser?.phone ?? '',
+          items: updatedItems,
+          customerName: _customerNameCtrl.text.trim(),
+          customerPhone: _customerPhoneCtrl.text.trim(),
+          customerBusinessName: _customerBusinessCtrl.text.trim(),
+          customerCity: _customerCityCtrl.text.trim(),
+          customerAddress: _customerAddressCtrl.text.trim().isEmpty
+              ? null
+              : _customerAddressCtrl.text.trim(),
+          paymentType: _paymentType,
+          creditDays: _creditDays,
+          deliveryDate: _deliveryDate,
+          deliveryLocation: _deliveryLocationCtrl.text.trim().isEmpty
+              ? null
+              : _deliveryLocationCtrl.text.trim(),
+          traderNote: _noteCtrl.text.trim().isEmpty
+              ? null
+              : _noteCtrl.text.trim(),
+        );
 
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
 
+    if (success) {
       // Clear selection
-      ref.read(selectedOrderItemsProvider.notifier).state = [];
+      ref.read(selectedRequirementItemsProvider.notifier).state = [];
 
       // Pop all screens back to catalog
       Navigator.popUntil(
@@ -169,22 +162,19 @@ class _TraderSubmitOrderScreenState
 
       CustomSnackbar.showSuccess(
         context,
-        '✅ Order submitted! ${updatedItems.length} products sent for approval.',
+        '✅ Requirement submitted! ${updatedItems.length} products sent for approval.',
       );
-    } catch (e) {
-      debugPrint('Failed to submit order: $e');
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+    } else {
       CustomSnackbar.showError(
         context,
-        'Failed to submit order. Please try again.',
+        'Failed to submit requirement. Please try again.',
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final items = ref.watch(selectedOrderItemsProvider);
+    final items = ref.watch(selectedRequirementItemsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -218,7 +208,7 @@ class _TraderSubmitOrderScreenState
           ),
         ),
         title: Text(
-          'Submit Order',
+          'Submit Requirement',
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
@@ -238,8 +228,7 @@ class _TraderSubmitOrderScreenState
               child: PageView(
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (i) =>
-                    setState(() => _currentStep = i),
+                onPageChanged: (i) => setState(() => _currentStep = i),
                 children: [
                   _buildStep1ProductPrices(items),
                   _buildStep2CustomerDetails(),
@@ -319,7 +308,7 @@ class _TraderSubmitOrderScreenState
   // ═══════════════════════════════════════
   // STEP 1: PRODUCT PRICES & QTY
   // ═══════════════════════════════════════
-  Widget _buildStep1ProductPrices(List<OrderItemModel> items) {
+  Widget _buildStep1ProductPrices(List<RequirementItemModel> items) {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       padding: EdgeInsets.all(16.w),
@@ -342,26 +331,21 @@ class _TraderSubmitOrderScreenState
             return _ProductPriceCard(
               item: item,
               index: index,
-              qtyController: _qtyControllers[item.itemId]!,
-              demandController:
-                  _demandPriceControllers[item.itemId]!,
-              offerController:
-                  _offerPriceControllers[item.itemId]!,
+              qtyController: _qtyControllers[item.productId]!,
+              demandController: _demandPriceControllers[item.productId]!,
+              offerController: _offerPriceControllers[item.productId]!,
               onRemove: () {
-                final current =
-                    ref.read(selectedOrderItemsProvider);
-                ref
-                    .read(selectedOrderItemsProvider.notifier)
-                    .state = current
-                    .where((i) => i.itemId != item.itemId)
-                    .toList();
-                _qtyControllers[item.itemId]?.dispose();
-                _demandPriceControllers[item.itemId]
-                    ?.dispose();
-                _offerPriceControllers[item.itemId]?.dispose();
-                _qtyControllers.remove(item.itemId);
-                _demandPriceControllers.remove(item.itemId);
-                _offerPriceControllers.remove(item.itemId);
+                final current = ref.read(selectedRequirementItemsProvider);
+                ref.read(selectedRequirementItemsProvider.notifier).state =
+                    current
+                        .where((i) => i.productId != item.productId)
+                        .toList();
+                _qtyControllers[item.productId]?.dispose();
+                _demandPriceControllers[item.productId]?.dispose();
+                _offerPriceControllers[item.productId]?.dispose();
+                _qtyControllers.remove(item.productId);
+                _demandPriceControllers.remove(item.productId);
+                _offerPriceControllers.remove(item.productId);
               },
             )
                 .animate()
@@ -406,9 +390,8 @@ class _TraderSubmitOrderScreenState
                 color: AppColors.textHint,
               ),
             ),
-            validator: (v) => v == null || v.trim().isEmpty
-                ? 'Required'
-                : null,
+            validator: (v) =>
+                v == null || v.trim().isEmpty ? 'Required' : null,
           ),
 
           Gap(14.h),
@@ -458,9 +441,8 @@ class _TraderSubmitOrderScreenState
                 color: AppColors.textHint,
               ),
             ),
-            validator: (v) => v == null || v.trim().isEmpty
-                ? 'Required'
-                : null,
+            validator: (v) =>
+                v == null || v.trim().isEmpty ? 'Required' : null,
           ),
 
           Gap(14.h),
@@ -478,9 +460,8 @@ class _TraderSubmitOrderScreenState
                 color: AppColors.textHint,
               ),
             ),
-            validator: (v) => v == null || v.trim().isEmpty
-                ? 'Required'
-                : null,
+            validator: (v) =>
+                v == null || v.trim().isEmpty ? 'Required' : null,
           ),
 
           Gap(14.h),
@@ -532,16 +513,14 @@ class _TraderSubmitOrderScreenState
 
           ...PaymentType.values.map(
             (type) => GestureDetector(
-              onTap: () =>
-                  setState(() => _paymentType = type),
+              onTap: () => setState(() => _paymentType = type),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 margin: EdgeInsets.only(bottom: 10.h),
                 padding: EdgeInsets.all(14.w),
                 decoration: BoxDecoration(
                   color: _paymentType == type
-                      ? AppColors.traderPrimary
-                          .withOpacity(0.08)
+                      ? AppColors.traderPrimary.withOpacity(0.08)
                       : AppColors.background,
                   borderRadius: BorderRadius.circular(12.r),
                   border: Border.all(
@@ -603,8 +582,7 @@ class _TraderSubmitOrderScreenState
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
               ],
-              onChanged: (v) =>
-                  setState(() => _creditDays = int.tryParse(v)),
+              onChanged: (v) => setState(() => _creditDays = int.tryParse(v)),
               decoration: InputDecoration(
                 hintText: 'e.g. 30',
                 prefixIcon: Icon(
@@ -625,11 +603,9 @@ class _TraderSubmitOrderScreenState
             onTap: () async {
               final date = await showDatePicker(
                 context: context,
-                initialDate: DateTime.now()
-                    .add(const Duration(days: 7)),
+                initialDate: DateTime.now().add(const Duration(days: 7)),
                 firstDate: DateTime.now(),
-                lastDate: DateTime.now()
-                    .add(const Duration(days: 365)),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
                 builder: (context, child) => Theme(
                   data: Theme.of(context).copyWith(
                     colorScheme: ColorScheme.light(
@@ -698,8 +674,7 @@ class _TraderSubmitOrderScreenState
             controller: _noteCtrl,
             maxLines: 3,
             decoration: InputDecoration(
-              hintText:
-                  'Special instructions for admin...',
+              hintText: 'Special instructions for admin...',
               prefixIcon: Padding(
                 padding: EdgeInsets.only(bottom: 44.h),
                 child: Icon(
@@ -718,18 +693,18 @@ class _TraderSubmitOrderScreenState
   }
 
   // ═══════════════════════════════════════
-  // STEP 4: ORDER REVIEW
+  // STEP 4: REVIEW
   // ═══════════════════════════════════════
-  Widget _buildStep4Review(List<OrderItemModel> items) {
+  Widget _buildStep4Review(List<RequirementItemModel> items) {
     // Calculate total from controllers
     double totalValue = 0;
     for (final item in items) {
       final qty = double.tryParse(
-            _qtyControllers[item.itemId]?.text ?? '0',
+            _qtyControllers[item.productId]?.text ?? '0',
           ) ??
           0;
       final price = double.tryParse(
-            _demandPriceControllers[item.itemId]?.text ?? '0',
+            _demandPriceControllers[item.productId]?.text ?? '0',
           ) ??
           0;
       totalValue += qty * price;
@@ -742,7 +717,7 @@ class _TraderSubmitOrderScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _stepHeader(
-            'Review Order',
+            'Review Requirement',
             'Verify before submitting',
             Iconsax.document_text,
           ),
@@ -779,16 +754,12 @@ class _TraderSubmitOrderScreenState
                 ),
                 Gap(12.h),
                 ...items.map((item) {
-                  final qty = _qtyControllers[item.itemId]
-                          ?.text ??
-                      '1';
-                  final price = _demandPriceControllers[
-                              item.itemId]
-                          ?.text ??
-                      '0';
-                  final itemTotal =
-                      (double.tryParse(qty) ?? 0) *
-                          (double.tryParse(price) ?? 0);
+                  final qty =
+                      _qtyControllers[item.productId]?.text ?? '1';
+                  final price =
+                      _demandPriceControllers[item.productId]?.text ?? '0';
+                  final itemTotal = (double.tryParse(qty) ?? 0) *
+                      (double.tryParse(price) ?? 0);
 
                   return Padding(
                     padding: EdgeInsets.only(bottom: 10.h),
@@ -798,24 +769,19 @@ class _TraderSubmitOrderScreenState
                           width: 36.w,
                           height: 36.w,
                           decoration: BoxDecoration(
-                            color: AppColors.traderPrimary
-                                .withOpacity(0.08),
-                            borderRadius:
-                                BorderRadius.circular(8.r),
+                            color: AppColors.traderPrimary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(8.r),
                           ),
                           child: item.productImage != null
                               ? ClipRRect(
-                                  borderRadius:
-                                      BorderRadius.circular(8.r),
+                                  borderRadius: BorderRadius.circular(8.r),
                                   child: Image.network(
                                     item.productImage!,
                                     fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (_, __, ___) => Icon(
+                                    errorBuilder: (_, __, ___) => Icon(
                                       Iconsax.box,
                                       size: 16.sp,
-                                      color:
-                                          AppColors.traderPrimary,
+                                      color: AppColors.traderPrimary,
                                     ),
                                   ),
                                 )
@@ -828,8 +794,7 @@ class _TraderSubmitOrderScreenState
                         Gap(10.w),
                         Expanded(
                           child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 item.productName,
@@ -865,8 +830,7 @@ class _TraderSubmitOrderScreenState
                 }),
                 const Divider(),
                 Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Total Value',
@@ -982,7 +946,7 @@ class _TraderSubmitOrderScreenState
   // ═══════════════════════════════════════
   // BOTTOM BUTTONS
   // ═══════════════════════════════════════
-  Widget _buildBottomButtons(List<OrderItemModel> items) {
+  Widget _buildBottomButtons(List<RequirementItemModel> items) {
     final isLastStep = _currentStep == 3;
 
     return Container(
@@ -1032,9 +996,7 @@ class _TraderSubmitOrderScreenState
           Expanded(
             flex: 2,
             child: CustomButton(
-              label: isLastStep
-                  ? 'Submit Order'
-                  : 'Continue',
+              label: isLastStep ? 'Submit Requirement' : 'Continue',
               isLoading: _isLoading,
               gradient: AppColors.traderGradient,
               prefixIcon: isLastStep
@@ -1050,9 +1012,7 @@ class _TraderSubmitOrderScreenState
                           bool valid = true;
                           for (final item in items) {
                             final qty = double.tryParse(
-                              _qtyControllers[item.itemId]
-                                      ?.text ??
-                                  '0',
+                              _qtyControllers[item.productId]?.text ?? '0',
                             );
                             if (qty == null || qty <= 0) {
                               valid = false;
@@ -1068,8 +1028,7 @@ class _TraderSubmitOrderScreenState
                           }
                         }
                         _pageController.nextPage(
-                          duration:
-                              const Duration(milliseconds: 300),
+                          duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
                         );
                       } else {
@@ -1178,7 +1137,7 @@ class _TraderSubmitOrderScreenState
 // PRODUCT PRICE CARD (Per Item in Step 1)
 // ═══════════════════════════════════════
 class _ProductPriceCard extends StatelessWidget {
-  final OrderItemModel item;
+  final RequirementItemModel item;
   final int index;
   final TextEditingController qtyController;
   final TextEditingController demandController;
@@ -1367,8 +1326,7 @@ class _ProductPriceCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Quantity *',
@@ -1381,20 +1339,17 @@ class _ProductPriceCard extends StatelessWidget {
                           Gap(6.h),
                           TextFormField(
                             controller: qtyController,
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
+                            keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
                             decoration: InputDecoration(
                               hintText: '0',
-                              suffixText:
-                                  item.unit.toUpperCase(),
+                              suffixText: item.unit.toUpperCase(),
                               suffixStyle: TextStyle(
                                 fontSize: 11.sp,
                                 color: AppColors.textSecondary,
                               ),
-                              contentPadding:
-                                  EdgeInsets.symmetric(
+                              contentPadding: EdgeInsets.symmetric(
                                 horizontal: 12.w,
                                 vertical: 10.h,
                               ),
@@ -1424,8 +1379,7 @@ class _ProductPriceCard extends StatelessWidget {
                     // Customer Demanded
                     Expanded(
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Customer Demands (₹) *',
@@ -1440,8 +1394,7 @@ class _ProductPriceCard extends StatelessWidget {
                             controller: demandController,
                             keyboardType: TextInputType.number,
                             inputFormatters: [
-                              FilteringTextInputFormatter
-                                  .digitsOnly,
+                              FilteringTextInputFormatter.digitsOnly,
                             ],
                             style: TextStyle(
                               fontSize: 14.sp,
@@ -1456,16 +1409,13 @@ class _ProductPriceCard extends StatelessWidget {
                                 color: AppColors.pending,
                                 fontWeight: FontWeight.w600,
                               ),
-                              contentPadding:
-                                  EdgeInsets.symmetric(
+                              contentPadding: EdgeInsets.symmetric(
                                 horizontal: 12.w,
                                 vertical: 10.h,
                               ),
                             ),
                             validator: (v) =>
-                                v == null || v.isEmpty
-                                    ? 'Required'
-                                    : null,
+                                v == null || v.isEmpty ? 'Required' : null,
                           ),
                         ],
                       ),
@@ -1476,8 +1426,7 @@ class _ProductPriceCard extends StatelessWidget {
                     // Trader Offered
                     Expanded(
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'You Offer (₹) *',
@@ -1492,8 +1441,7 @@ class _ProductPriceCard extends StatelessWidget {
                             controller: offerController,
                             keyboardType: TextInputType.number,
                             inputFormatters: [
-                              FilteringTextInputFormatter
-                                  .digitsOnly,
+                              FilteringTextInputFormatter.digitsOnly,
                             ],
                             style: TextStyle(
                               fontSize: 14.sp,
@@ -1508,16 +1456,13 @@ class _ProductPriceCard extends StatelessWidget {
                                 color: AppColors.adminPrimary,
                                 fontWeight: FontWeight.w600,
                               ),
-                              contentPadding:
-                                  EdgeInsets.symmetric(
+                              contentPadding: EdgeInsets.symmetric(
                                 horizontal: 12.w,
                                 vertical: 10.h,
                               ),
                             ),
                             validator: (v) =>
-                                v == null || v.isEmpty
-                                    ? 'Required'
-                                    : null,
+                                v == null || v.isEmpty ? 'Required' : null,
                           ),
                         ],
                       ),

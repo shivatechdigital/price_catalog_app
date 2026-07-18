@@ -48,12 +48,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
               Color(0xFF1A237E),
               Color(0xFF283593),
               Color(0xFF3949AB),
+              Color(0xFF5C6BC0),
             ],
           ),
         ),
@@ -64,11 +65,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               const Spacer(flex: 2),
 
               // ═══════════════════════════════════════
-              // LOGO
+              // APP ICON
               // ═══════════════════════════════════════
               Container(
-                width: 110.w,
-                height: 110.w,
+                width: 120.w,
+                height: 120.w,
                 decoration: BoxDecoration(
                   color: AppColors.white.withAlpha(38),
                   borderRadius: BorderRadius.circular(28.r),
@@ -77,10 +78,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                     width: 1.5,
                   ),
                 ),
-                child: Icon(
-                  Icons.inventory_2_rounded,
-                  size: 56.sp,
-                  color: AppColors.white,
+                child: Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: Image.asset(
+                    'assets/icons/app_icon.png',
+                    fit: BoxFit.contain,
+                  ),
                 ),
               )
                   .animate()
@@ -93,14 +96,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               SizedBox(height: 28.h),
 
               // ═══════════════════════════════════════
-              // APP NAME
+              // APP NAME (download/install name)
               // ═══════════════════════════════════════
               Text(
-                'PriceCatalog',
+                'Anandeshwar Traders',
                 style: TextStyle(
-                  fontSize: 32.sp,
+                  fontSize: 30.sp,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.white,
+                  color: AppColors.white.withAlpha(230),
                   letterSpacing: -0.5,
                 ),
               )

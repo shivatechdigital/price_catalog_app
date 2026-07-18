@@ -133,30 +133,22 @@ service cloud.firestore {
 
       // Update:
       // - Admin can update status, adminNote, counterPrice, etc.
-      // - Trader can respond while an item is awaiting a counter response.
-      //   The aggregate requirement can still be pending when other items
-      //   are being reviewed by the admin.
+      // - Trader can only update if status is 'counterOffer' (accept/reject)
       allow update: if isLoggedIn() && (
         isAdmin()
         || (isApprovedTrader()
             && resource.data.traderId == request.auth.uid
-            && resource.data.status in ['pending', 'counterOffer']
+            && resource.data.status == 'counterOffer'
             && onlyUpdatingCounterResponse())
       );
 
       // Delete: Only admin
       allow delete: if isAdmin();
 
-      // Helper: Trader can only respond to a counter offer. Per-product
-      // negotiation updates the item array plus the aggregate status.
+      // Helper: Trader can only respond to counter offer
       function onlyUpdatingCounterResponse() {
         return request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly([
-            'items',
-            'status',
-            'requiresAdminConfirmation',
-            'actionTakenAt'
-          ]);
+          .hasOnly(['status', 'actionTakenAt']);
       }
     }
 

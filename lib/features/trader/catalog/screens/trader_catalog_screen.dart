@@ -8,10 +8,10 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
 import 'package:price_catalog_app/features/trader/catalog/screens/trader_product_detail_screen.dart';
-import 'package:price_catalog_app/features/trader/orders/screens/trader_select_products_screen.dart';
+import 'package:price_catalog_app/features/trader/requirements/screens/select_products_screen.dart';
 import 'package:price_catalog_app/providers/category_provider.dart';
-import 'package:price_catalog_app/providers/order_provider.dart';
 import 'package:price_catalog_app/providers/product_provider.dart';
+import 'package:price_catalog_app/providers/requirement_provider.dart';
 import 'package:price_catalog_app/shared/widgets/shimmer_loading.dart';
 
 class TraderCatalogScreen extends ConsumerStatefulWidget {
@@ -40,7 +40,7 @@ class _TraderCatalogScreenState
     final selectedCategory = ref.watch(selectedCategoryFilterProvider);
 
     // ✅ FIX: selectedItems ko provider se lelo, not from undefined variable
-    final selectedItems = ref.watch(selectedOrderItemsProvider);
+    final selectedItems = ref.watch(selectedRequirementItemsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -80,7 +80,7 @@ class _TraderCatalogScreenState
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        const TraderSelectProductsScreen(),
+                        const SelectProductsScreen(),
                   ),
                 ),
                 icon: Badge(

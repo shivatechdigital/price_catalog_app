@@ -185,7 +185,7 @@ class _SubmitRequirementScreenState
           ),
         ),
         title: Text(
-          'Submit Requirement',
+          'Submit',
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
@@ -968,7 +968,7 @@ class _SubmitRequirementScreenState
             flex: 2,
             child: CustomButton(
               label: _currentStep == 2
-                  ? 'Submit Requirement'
+                  ? 'Submit'
                   : 'Continue',
               isLoading: _isLoading,
               gradient: AppColors.traderGradient,

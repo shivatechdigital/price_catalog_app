@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:price_catalog_app/data/models/category_model.dart';
 import 'package:price_catalog_app/data/repositories/category_repository.dart';
+import 'package:price_catalog_app/providers/auth_provider.dart';
 
 // ═══════════════════════════════════════
 // REPOSITORY PROVIDER
@@ -15,6 +16,13 @@ final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
 // ═══════════════════════════════════════
 final categoriesStreamProvider =
     StreamProvider<List<CategoryModel>>((ref) {
+  // Tear down the Firestore listener when the user is not fully logged in to
+  // avoid [cloud_firestore/permission-denied] stream errors (e.g. on logout
+  // or while the trader is still pending approval).
+  final auth = ref.watch(authStateProvider);
+  if (auth is! AuthAuthenticatedAdmin && auth is! AuthAuthenticatedTrader) {
+    return Stream.value(const []);
+  }
   return ref.watch(categoryRepositoryProvider).watchCategories();
 });
 

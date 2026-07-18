@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
 import 'package:price_catalog_app/data/repositories/product_repository.dart';
+import 'package:price_catalog_app/providers/auth_provider.dart';
 
 // ═══════════════════════════════════════
 // SORT OPTIONS
@@ -26,6 +27,11 @@ final productRepositoryProvider = Provider<ProductRepository>((ref) {
 // ═══════════════════════════════════════
 final productsStreamProvider =
     StreamProvider<List<ProductModel>>((ref) {
+  // Avoid permission-denied stream errors when not fully logged in.
+  final auth = ref.watch(authStateProvider);
+  if (auth is! AuthAuthenticatedAdmin && auth is! AuthAuthenticatedTrader) {
+    return Stream.value(const []);
+  }
   return ref.watch(productRepositoryProvider).watchAllProducts();
 });
 
@@ -34,6 +40,10 @@ final productsStreamProvider =
 // ═══════════════════════════════════════
 final productsByCategoryProvider =
     StreamProvider.family<List<ProductModel>, String>((ref, categoryId) {
+  final auth = ref.watch(authStateProvider);
+  if (auth is! AuthAuthenticatedAdmin && auth is! AuthAuthenticatedTrader) {
+    return Stream.value(const []);
+  }
   return ref
       .watch(productRepositoryProvider)
       .watchProductsByCategory(categoryId);

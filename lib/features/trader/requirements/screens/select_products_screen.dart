@@ -7,25 +7,23 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
-import 'package:price_catalog_app/data/models/order_model.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
-import 'package:price_catalog_app/features/trader/orders/screens/trader_submit_order_screen.dart';
+import 'package:price_catalog_app/data/models/requirement_model.dart';
+import 'package:price_catalog_app/features/trader/requirements/screens/submit_multi_requirement_screen.dart';
 import 'package:price_catalog_app/providers/category_provider.dart';
-import 'package:price_catalog_app/providers/order_provider.dart';
 import 'package:price_catalog_app/providers/product_provider.dart';
+import 'package:price_catalog_app/providers/requirement_provider.dart';
 import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
-import 'package:uuid/uuid.dart';
 
-class TraderSelectProductsScreen extends ConsumerStatefulWidget {
-  const TraderSelectProductsScreen({super.key});
+class SelectProductsScreen extends ConsumerStatefulWidget {
+  const SelectProductsScreen({super.key});
 
   @override
-  ConsumerState<TraderSelectProductsScreen> createState() =>
-      _TraderSelectProductsScreenState();
+  ConsumerState<SelectProductsScreen> createState() =>
+      _SelectProductsScreenState();
 }
 
-class _TraderSelectProductsScreenState
-    extends ConsumerState<TraderSelectProductsScreen> {
+class _SelectProductsScreenState extends ConsumerState<SelectProductsScreen> {
   final _searchController = TextEditingController();
 
   @override
@@ -33,7 +31,7 @@ class _TraderSelectProductsScreenState
     super.initState();
     // Clear previous selection
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(selectedOrderItemsProvider.notifier).state = [];
+      ref.read(selectedRequirementItemsProvider.notifier).state = [];
     });
   }
 
@@ -47,21 +45,16 @@ class _TraderSelectProductsScreenState
   // TOGGLE PRODUCT SELECTION
   // ═══════════════════════════════════════
   void _toggleProduct(ProductModel product) {
-    final currentItems =
-        ref.read(selectedOrderItemsProvider);
-    final exists =
-        currentItems.any((i) => i.productId == product.id);
+    final currentItems = ref.read(selectedRequirementItemsProvider);
+    final exists = currentItems.any((i) => i.productId == product.id);
 
     if (exists) {
       // Remove
-      ref.read(selectedOrderItemsProvider.notifier).state =
-          currentItems
-              .where((i) => i.productId != product.id)
-              .toList();
+      ref.read(selectedRequirementItemsProvider.notifier).state =
+          currentItems.where((i) => i.productId != product.id).toList();
     } else {
       // Add with default values
-      final newItem = OrderItemModel(
-        itemId: const Uuid().v4(),
+      final newItem = RequirementItemModel(
         productId: product.id,
         productName: product.name,
         productCode: product.productCode,
@@ -71,17 +64,15 @@ class _TraderSelectProductsScreenState
         categoryName: product.categoryName,
         quantity: 1,
         unit: product.unit,
-        productCurrentPrice:
-            product.currentPrice.sellingPrice,
-        customerDemandedPrice:
-            product.currentPrice.sellingPrice,
-        traderOfferedPrice:
-            product.currentPrice.sellingPrice,
-        status: OrderItemStatus.pending,
+        productCurrentPrice: product.currentPrice.sellingPrice,
+        customerDemandedPrice: product.currentPrice.sellingPrice,
+        traderOfferedPrice: product.currentPrice.sellingPrice,
       );
 
-      ref.read(selectedOrderItemsProvider.notifier).state =
-          [...currentItems, newItem];
+      ref.read(selectedRequirementItemsProvider.notifier).state = [
+        ...currentItems,
+        newItem
+      ];
     }
   }
 
@@ -89,7 +80,7 @@ class _TraderSelectProductsScreenState
   // PROCEED TO NEXT STEP
   // ═══════════════════════════════════════
   void _proceed() {
-    final selectedItems = ref.read(selectedOrderItemsProvider);
+    final selectedItems = ref.read(selectedRequirementItemsProvider);
     if (selectedItems.isEmpty) {
       CustomSnackbar.showWarning(
         context,
@@ -101,19 +92,17 @@ class _TraderSelectProductsScreenState
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => const TraderSubmitOrderScreen(),
+        builder: (_) => const SubmitMultiRequirementScreen(),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final selectedItems = ref.watch(selectedOrderItemsProvider);
-    final filteredProductsAsync =
-        ref.watch(filteredProductsProvider);
+    final selectedItems = ref.watch(selectedRequirementItemsProvider);
+    final filteredProductsAsync = ref.watch(filteredProductsProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
-    final selectedCategory =
-        ref.watch(selectedCategoryFilterProvider);
+    final selectedCategory = ref.watch(selectedCategoryFilterProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -170,13 +159,11 @@ class _TraderSelectProductsScreenState
                   // Search
                   Container(
                     color: AppColors.white,
-                    padding: EdgeInsets.fromLTRB(
-                        16.w, 0, 16.w, 10.h),
+                    padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 10.h),
                     child: TextField(
                       controller: _searchController,
-                      onChanged: (v) => ref
-                          .read(searchQueryProvider.notifier)
-                          .state = v,
+                      onChanged: (v) =>
+                          ref.read(searchQueryProvider.notifier).state = v,
                       decoration: InputDecoration(
                         hintText: 'Search products...',
                         prefixIcon: Icon(
@@ -187,8 +174,7 @@ class _TraderSelectProductsScreenState
                         filled: true,
                         fillColor: AppColors.background,
                         border: OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius.circular(12.r),
+                          borderRadius: BorderRadius.circular(12.r),
                           borderSide: BorderSide.none,
                         ),
                         contentPadding: EdgeInsets.symmetric(
@@ -207,8 +193,7 @@ class _TraderSelectProductsScreenState
                       error: (_, __) => const SizedBox(),
                       data: (categories) => ListView.separated(
                         scrollDirection: Axis.horizontal,
-                        padding: EdgeInsets.fromLTRB(
-                            16.w, 0, 16.w, 10.h),
+                        padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 10.h),
                         itemCount: categories.length + 1,
                         separatorBuilder: (_, __) => Gap(8.w),
                         itemBuilder: (context, index) {
@@ -219,8 +204,7 @@ class _TraderSelectProductsScreenState
                               selectedCategory == null,
                               () => ref
                                   .read(
-                                    selectedCategoryFilterProvider
-                                        .notifier,
+                                    selectedCategoryFilterProvider.notifier,
                                   )
                                   .state = null,
                             );
@@ -232,8 +216,7 @@ class _TraderSelectProductsScreenState
                             selectedCategory == cat.id,
                             () => ref
                                 .read(
-                                  selectedCategoryFilterProvider
-                                      .notifier,
+                                  selectedCategoryFilterProvider.notifier,
                                 )
                                 .state = cat.id,
                           );
@@ -267,16 +250,15 @@ class _TraderSelectProductsScreenState
             }
 
             return ListView.separated(
-              padding: EdgeInsets.fromLTRB(
-                  16.w, 16.h, 16.w, 120.h),
+              padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 120.h),
               itemCount: products.length,
               separatorBuilder: (_, __) => Gap(10.h),
               itemBuilder: (context, index) {
                 final product = products[index];
-                final isSelected = selectedItems
-                    .any((i) => i.productId == product.id);
-                final isOutOfStock = product.availability ==
-                    ProductAvailability.outOfStock;
+                final isSelected =
+                    selectedItems.any((i) => i.productId == product.id);
+                final isOutOfStock =
+                    product.availability == ProductAvailability.outOfStock;
 
                 return _ProductSelectTile(
                   product: product,
@@ -288,8 +270,7 @@ class _TraderSelectProductsScreenState
                 )
                     .animate()
                     .fadeIn(
-                      delay:
-                          Duration(milliseconds: index * 40),
+                      delay: Duration(milliseconds: index * 40),
                       duration: 250.ms,
                     );
               },
@@ -310,7 +291,7 @@ class _TraderSelectProductsScreenState
   // ═══════════════════════════════════════
   // SELECTED ITEMS BOTTOM BAR
   // ═══════════════════════════════════════
-  Widget _buildBottomBar(List<OrderItemModel> selectedItems) {
+  Widget _buildBottomBar(List<RequirementItemModel> selectedItems) {
     if (selectedItems.isEmpty) return const SizedBox();
 
     return Container(
@@ -341,21 +322,16 @@ class _TraderSelectProductsScreenState
                   onTap: () {
                     // Remove on tap
                     ref
-                        .read(
-                          selectedOrderItemsProvider.notifier,
-                        )
+                        .read(selectedRequirementItemsProvider.notifier)
                         .state = selectedItems
-                        .where(
-                          (i) => i.itemId != item.itemId,
-                        )
+                        .where((i) => i.productId != item.productId)
                         .toList();
                   },
                   child: Container(
                     width: 48.w,
                     height: 48.w,
                     decoration: BoxDecoration(
-                      borderRadius:
-                          BorderRadius.circular(10.r),
+                      borderRadius: BorderRadius.circular(10.r),
                       border: Border.all(
                         color: AppColors.traderPrimary,
                         width: 2,
@@ -364,8 +340,7 @@ class _TraderSelectProductsScreenState
                     child: Stack(
                       children: [
                         ClipRRect(
-                          borderRadius:
-                              BorderRadius.circular(8.r),
+                          borderRadius: BorderRadius.circular(8.r),
                           child: item.productImage != null
                               ? CachedNetworkImage(
                                   imageUrl: item.productImage!,
@@ -374,13 +349,11 @@ class _TraderSelectProductsScreenState
                                   height: double.infinity,
                                 )
                               : Container(
-                                  color: AppColors.traderPrimary
-                                      .withOpacity(0.1),
+                                  color: AppColors.traderPrimary.withOpacity(0.1),
                                   child: Icon(
                                     Iconsax.box,
                                     size: 20.sp,
-                                    color:
-                                        AppColors.traderPrimary,
+                                    color: AppColors.traderPrimary,
                                   ),
                                 ),
                         ),
@@ -479,12 +452,8 @@ class _TraderSelectProductsScreenState
               label,
               style: TextStyle(
                 fontSize: 12.sp,
-                fontWeight: isSelected
-                    ? FontWeight.w600
-                    : FontWeight.w400,
-                color: isSelected
-                    ? AppColors.white
-                    : AppColors.textSecondary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? AppColors.white : AppColors.textSecondary,
               ),
             ),
           ],
@@ -590,13 +559,11 @@ class _ProductSelectTile extends StatelessWidget {
                           fit: BoxFit.cover,
                         )
                       : Container(
-                          color: AppColors.traderPrimary
-                              .withOpacity(0.08),
+                          color: AppColors.traderPrimary.withOpacity(0.08),
                           child: Icon(
                             Iconsax.box,
                             size: 26.sp,
-                            color: AppColors.traderPrimary
-                                .withOpacity(0.4),
+                            color: AppColors.traderPrimary.withOpacity(0.4),
                           ),
                         ),
                 ),
