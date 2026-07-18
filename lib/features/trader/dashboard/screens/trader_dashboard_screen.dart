@@ -33,7 +33,6 @@ class TraderDashboardScreen extends ConsumerWidget {
       TraderHomeScreen(),
       TraderCatalogScreen(),
       TraderRequirementsScreen(),
-      TraderNotificationsScreen(),
       TraderProfileScreen(),
     ];
 
@@ -50,7 +49,7 @@ class TraderDashboardScreen extends ConsumerWidget {
           data: (count) => count,
           loading: () => 0,
           error: (_, __) => 0,
-        )
+        ),
       ),
     );
   }
@@ -109,22 +108,12 @@ class TraderDashboardScreen extends ConsumerWidget {
                 primaryColor: AppColors.traderPrimary,
               ),
               _TraderNavItem(
-                icon: Iconsax.notification,
-                label: 'Alerts',
+                icon: Iconsax.user,
+                label: 'Profile',
                 isActive: currentIndex == 3,
-                badgeCount: unreadCount,
                 onTap: () => ref
                     .read(traderNavIndexProvider.notifier)
                     .state = 3,
-                primaryColor: AppColors.traderPrimary,
-              ),
-              _TraderNavItem(
-                icon: Iconsax.user,
-                label: 'Profile',
-                isActive: currentIndex == 4,
-                onTap: () => ref
-                    .read(traderNavIndexProvider.notifier)
-                    .state = 4,
                 primaryColor: AppColors.traderPrimary,
               ),
             ],
@@ -163,12 +152,12 @@ class _TraderNavItem extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         padding: EdgeInsets.symmetric(
-          horizontal: isActive ? 16.w : 12.w,
-          vertical: 8.h,
+          horizontal: isActive ? 12.w : 10.w,
+          vertical: 6.h,
         ),
         decoration: BoxDecoration(
           color: isActive
-              ? primaryColor.withOpacity(0.1)
+              ? primaryColor.withOpacity(0.12)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12.r),
         ),
@@ -180,7 +169,7 @@ class _TraderNavItem extends StatelessWidget {
               children: [
                 Icon(
                   icon,
-                  size: 24.sp,
+                  size: 20.sp,
                   color: isActive
                       ? primaryColor
                       : AppColors.textHint,

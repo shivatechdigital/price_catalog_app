@@ -5,7 +5,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
+import 'package:price_catalog_app/features/admin/categories/screens/admin_categories_screen.dart';
 import 'package:price_catalog_app/features/admin/traders/screens/admin_traders_screen.dart';
+import 'package:price_catalog_app/features/auth/screens/profile_edit_screen.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
 
@@ -27,7 +29,7 @@ class AdminSettingsScreen extends ConsumerWidget {
             backgroundColor: AppColors.white,
             surfaceTintColor: Colors.transparent,
             title: Text(
-              'Settings',
+              'Profile',
               style: TextStyle(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.w700,
@@ -42,7 +44,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                 Gap(16.h),
 
                 // Profile Card
-                _buildProfileCard(currentUser),
+                _buildProfileCard(context, currentUser),
 
                 Gap(20.h),
 
@@ -68,14 +70,26 @@ class AdminSettingsScreen extends ConsumerWidget {
                       label: 'Company Profile',
                       subtitle: 'Update company information',
                       color: AppColors.traderPrimary,
-                      onTap: () {},
+                      onTap: () {
+                        CustomSnackbar.showInfo(
+                          context,
+                          'Company profile settings will be available soon.',
+                        );
+                      },
                     ),
                     _SettingsItem(
-                      icon: Iconsax.percentage_square,
-                      label: 'Pricing Rules',
-                      subtitle: 'Set pricing policies',
-                      color: AppColors.approved,
-                      onTap: () {},
+                      icon: Iconsax.category,
+                      label: 'Categories',
+                      subtitle: 'Manage product categories',
+                      color: AppColors.adminPrimary,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminCategoriesScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -88,30 +102,50 @@ class AdminSettingsScreen extends ConsumerWidget {
                     _SettingsItem(
                       icon: Iconsax.notification,
                       label: 'Notifications',
-                      subtitle: 'Manage push notifications',
+                      subtitle: 'Review recent app alerts',
                       color: AppColors.counter,
-                      onTap: () {},
+                      onTap: () {
+                        CustomSnackbar.showInfo(
+                          context,
+                          'Notification settings will be added soon.',
+                        );
+                      },
                     ),
                     _SettingsItem(
                       icon: Iconsax.security,
                       label: 'Security',
                       subtitle: 'Password & data security',
                       color: AppColors.adminPrimary,
-                      onTap: () {},
+                      onTap: () {
+                        CustomSnackbar.showInfo(
+                          context,
+                          'Security settings are coming soon.',
+                        );
+                      },
                     ),
                     _SettingsItem(
                       icon: Iconsax.export,
                       label: 'Export Data',
                       subtitle: 'Download all data as Excel/PDF',
                       color: AppColors.approved,
-                      onTap: () {},
+                      onTap: () {
+                        CustomSnackbar.showInfo(
+                          context,
+                          'Data export will be available soon.',
+                        );
+                      },
                     ),
                     _SettingsItem(
                       icon: Iconsax.refresh,
                       label: 'Backup & Restore',
                       subtitle: 'Cloud backup settings',
                       color: AppColors.adminPrimary,
-                      onTap: () {},
+                      onTap: () {
+                        CustomSnackbar.showInfo(
+                          context,
+                          'Backup support is planned for the next update.',
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -126,14 +160,24 @@ class AdminSettingsScreen extends ConsumerWidget {
                       label: 'About App',
                       subtitle: 'Version 1.0.0',
                       color: AppColors.textSecondary,
-                      onTap: () {},
+                      onTap: () {
+                        CustomSnackbar.showInfo(
+                          context,
+                          'PriceCatalog App v1.0.0',
+                        );
+                      },
                     ),
                     _SettingsItem(
                       icon: Iconsax.message_question,
                       label: 'Help & Support',
                       subtitle: 'Contact support team',
                       color: AppColors.adminPrimary,
-                      onTap: () {},
+                      onTap: () {
+                        CustomSnackbar.showInfo(
+                          context,
+                          'For support, please contact the app owner.',
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -190,7 +234,7 @@ class AdminSettingsScreen extends ConsumerWidget {
   // ═══════════════════════════════════════
   // PROFILE CARD
   // ═══════════════════════════════════════
-  Widget _buildProfileCard(currentUser) {
+  Widget _buildProfileCard(BuildContext context, currentUser) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w),
       padding: EdgeInsets.all(20.w),
@@ -269,17 +313,27 @@ class AdminSettingsScreen extends ConsumerWidget {
           ),
 
           // Edit
-          Container(
-            width: 36.w,
-            height: 36.w,
-            decoration: BoxDecoration(
-              color: AppColors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-            child: Icon(
-              Iconsax.edit,
-              size: 18.sp,
-              color: AppColors.white,
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ProfileEditScreen(),
+                ),
+              );
+            },
+            child: Container(
+              width: 36.w,
+              height: 36.w,
+              decoration: BoxDecoration(
+                color: AppColors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Icon(
+                Iconsax.edit,
+                size: 18.sp,
+                color: AppColors.white,
+              ),
             ),
           ),
         ],

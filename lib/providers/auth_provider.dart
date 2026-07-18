@@ -336,6 +336,55 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<AuthResult> updateProfile({
+    required String name,
+    required String phone,
+    String? businessName,
+    String? city,
+    String? gstNumber,
+  }) async {
+    final currentUser = _ref.read(currentUserProvider);
+    if (currentUser == null) {
+      return AuthResult.error('Please login again.');
+    }
+
+    try {
+      _updateState(const AuthLoading());
+
+      final updatedUser = currentUser.copyWith(
+        name: name.trim(),
+        phone: phone.trim(),
+        businessName: businessName?.trim(),
+        city: city?.trim(),
+        gstNumber: gstNumber?.trim(),
+      );
+
+      await _firestore.collection('users').doc(currentUser.uid).update({
+        'name': updatedUser.name,
+        'phone': updatedUser.phone,
+        'businessName': updatedUser.businessName,
+        'city': updatedUser.city,
+        'gstNumber': updatedUser.gstNumber,
+      });
+
+      _ref.read(currentUserProvider.notifier).state = updatedUser;
+
+      final currentState = state;
+      if (currentState is AuthAuthenticatedAdmin) {
+        _updateState(AuthAuthenticatedAdmin(updatedUser));
+      } else if (currentState is AuthAuthenticatedTrader) {
+        _updateState(AuthAuthenticatedTrader(updatedUser));
+      } else {
+        _updateState(currentState);
+      }
+
+      return const AuthResult.success();
+    } catch (e) {
+      _updateState(const AuthUnauthenticated());
+      return AuthResult.error('Unable to update profile. Please try again.');
+    }
+  }
+
   // ═══════════════════════════════════════
   // LOGOUT
   // ═══════════════════════════════════════

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/features/admin/categories/screens/admin_categories_screen.dart';
 import 'package:price_catalog_app/features/admin/dashboard/screens/admin_home_screen.dart';
@@ -32,7 +33,6 @@ class AdminDashboardScreen extends ConsumerWidget {
     final screens = const [
       AdminHomeScreen(),
       AdminProductsScreen(),
-      AdminCategoriesScreen(),
       AdminRequirementsScreen(),
       AdminSettingsScreen(),
     ];
@@ -101,9 +101,10 @@ class AdminDashboardScreen extends ConsumerWidget {
               ),
               Expanded(
                 child: _NavItem(
-                  icon: Icons.category_rounded,
-                  label: 'Categories',
+                  icon: Icons.assignment_rounded,
+                  label: 'Requirements',
                   isActive: currentIndex == 2,
+                  badgeCount: unreadCount,
                   onTap: () => ref
                       .read(adminNavIndexProvider.notifier)
                       .state = 2,
@@ -111,23 +112,12 @@ class AdminDashboardScreen extends ConsumerWidget {
               ),
               Expanded(
                 child: _NavItem(
-                  icon: Icons.assignment_rounded,
-                  label: 'Requirements',
+                  icon: Iconsax.user,
+                  label: 'Profile',
                   isActive: currentIndex == 3,
-                  badgeCount: unreadCount,
                   onTap: () => ref
                       .read(adminNavIndexProvider.notifier)
                       .state = 3,
-                ),
-              ),
-              Expanded(
-                child: _NavItem(
-                  icon: Icons.settings_rounded,
-                  label: 'Settings',
-                  isActive: currentIndex == 4,
-                  onTap: () => ref
-                      .read(adminNavIndexProvider.notifier)
-                      .state = 4,
                 ),
               ),
             ],
@@ -164,8 +154,8 @@ class _NavItem extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         padding: EdgeInsets.symmetric(
-          horizontal: isActive ? 16.w : 12.w,
-          vertical: 8.h,
+          horizontal: isActive ? 12.w : 10.w,
+          vertical: 6.h,
         ),
         decoration: BoxDecoration(
           color: isActive
@@ -181,7 +171,7 @@ class _NavItem extends StatelessWidget {
               children: [
                 Icon(
                   icon,
-                  size: 24.sp,
+                  size: 20.sp,
                   color: isActive
                       ? AppColors.adminPrimary
                       : AppColors.textHint,
