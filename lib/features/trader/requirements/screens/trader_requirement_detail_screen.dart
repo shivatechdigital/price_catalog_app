@@ -7,6 +7,7 @@ import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
+import 'package:price_catalog_app/core/services/requirement_export_service.dart';
 import 'package:price_catalog_app/data/models/requirement_model.dart';
 import 'package:price_catalog_app/providers/requirement_provider.dart';
 import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
@@ -216,6 +217,43 @@ class _TraderRequirementDetailScreenState
         ),
       ),
       actions: [
+        GestureDetector(
+          onTap: () async {
+            final success =
+                await RequirementExportService.shareRequirementsExport(
+                  [req],
+                  range: ExportRange.all,
+                  fileNamePrefix: 'trader_requirement',
+                );
+            if (!context.mounted) return;
+            CustomSnackbar.showSuccess(
+              context,
+              success ? 'Requirement exported.' : 'Unable to export right now.',
+            );
+          },
+          child: Container(
+            margin: EdgeInsets.only(right: 8.w),
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+            decoration: BoxDecoration(
+              color: AppColors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: Row(
+              children: [
+                Icon(Iconsax.export, size: 14.sp, color: AppColors.white),
+                Gap(4.w),
+                Text(
+                  'Export',
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         // Copy Req ID
         GestureDetector(
           onTap: () {

@@ -5,10 +5,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
+import 'package:price_catalog_app/core/services/requirement_export_service.dart';
 import 'package:price_catalog_app/data/models/requirement_model.dart';
 import 'package:price_catalog_app/features/admin/requirements/screens/admin_requirement_detail_screen.dart';
 import 'package:price_catalog_app/features/admin/requirements/widgets/requirement_card.dart';
 import 'package:price_catalog_app/providers/requirement_provider.dart';
+import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
 import 'package:price_catalog_app/shared/widgets/shimmer_loading.dart';
 
 class AdminRequirementsScreen extends ConsumerStatefulWidget {
@@ -26,17 +28,8 @@ class _AdminRequirementsScreenState
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
-  final List<
-      ({
-        String label,
-        RequirementStatus? status,
-        Color color,
-      })> _tabs = [
-    (
-      label: 'All',
-      status: null,
-      color: AppColors.adminPrimary,
-    ),
+  final List<({String label, RequirementStatus? status, Color color})> _tabs = [
+    (label: 'All', status: null, color: AppColors.adminPrimary),
     (
       label: 'Pending',
       status: RequirementStatus.pending,
@@ -62,10 +55,7 @@ class _AdminRequirementsScreenState
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(
-      length: _tabs.length,
-      vsync: this,
-    );
+    _tabController = TabController(length: _tabs.length, vsync: this);
   }
 
   @override
@@ -77,13 +67,13 @@ class _AdminRequirementsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final pendingReqCount = ref.watch(
-      requirementsByStatusProvider(RequirementStatus.pending),
-    ).when(
-      data: (requirements) => requirements.length,
-      loading: () => 0,
-      error: (_, __) => 0,
-    );
+    final pendingReqCount = ref
+        .watch(requirementsByStatusProvider(RequirementStatus.pending))
+        .when(
+          data: (requirements) => requirements.length,
+          loading: () => 0,
+          error: (_, __) => 0,
+        );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -105,23 +95,20 @@ class _AdminRequirementsScreenState
             ),
             actions: [
               IconButton(
-                onPressed: () {
-                  // Future: filter by trader
+                onPressed: () async {
+                  await _exportCurrentView();
                 },
                 icon: Icon(
-                  Iconsax.filter,
+                  Iconsax.export,
                   size: 22.sp,
-                  color: AppColors.textSecondary,
+                  color: AppColors.adminPrimary,
                 ),
               ),
             ],
             bottom: PreferredSize(
               preferredSize: Size.fromHeight(112.h),
               child: Column(
-                children: [
-                  _buildSearchBar(),
-                  _buildTabBar(pendingReqCount),
-                ],
+                children: [_buildSearchBar(), _buildTabBar(pendingReqCount)],
               ),
             ),
           ),
@@ -136,6 +123,112 @@ class _AdminRequirementsScreenState
           }).toList(),
         ),
       ),
+    );
+  }
+
+  Future<void> _exportCurrentView() async {
+    final selectedStatus = _tabs[_tabController.index].status;
+    final requirements = selectedStatus == null
+        ? await ref.read(allRequirementsProvider.future)
+        : await ref.read(requirementsByStatusProvider(selectedStatus).future);
+
+    final filtered = requirements.where((requirement) {
+      if (_searchQuery.isEmpty) return true;
+      final search = _searchQuery.toLowerCase();
+      return requirement.productName.toLowerCase().contains(search) ||
+          requirement.traderName.toLowerCase().contains(search) ||
+          requirement.customerName.toLowerCase().contains(search) ||
+          requirement.customerBusinessName.toLowerCase().contains(search);
+    }).toList();
+
+    if (!mounted) return;
+    if (filtered.isEmpty) {
+      CustomSnackbar.showInfo(context, 'No matching requirements to export.');
+      return;
+    }
+
+    final range = await showModalBottomSheet<ExportRange>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Export current view',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Gap(12.h),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('Today', style: TextStyle(fontSize: 15.sp)),
+                onTap: () => Navigator.pop(context, ExportRange.today),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('This Week', style: TextStyle(fontSize: 15.sp)),
+                onTap: () => Navigator.pop(context, ExportRange.thisWeek),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('This Year', style: TextStyle(fontSize: 15.sp)),
+                onTap: () => Navigator.pop(context, ExportRange.thisYear),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('Custom Range', style: TextStyle(fontSize: 15.sp)),
+                onTap: () => Navigator.pop(context, ExportRange.custom),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('All Records', style: TextStyle(fontSize: 15.sp)),
+                onTap: () => Navigator.pop(context, ExportRange.all),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (range == null) return;
+
+    DateTimeRange? dateRange;
+    if (range == ExportRange.custom) {
+      dateRange = await showDateRangePicker(
+        context: context,
+        firstDate: DateTime(2024),
+        lastDate: DateTime.now(),
+        initialDateRange: DateTimeRange(
+          start: DateTime.now().subtract(const Duration(days: 30)),
+          end: DateTime.now(),
+        ),
+      );
+      if (dateRange == null) return;
+    }
+
+    final success = await RequirementExportService.shareRequirementsExport(
+      filtered,
+      range: range,
+      customStart: dateRange?.start,
+      customEnd: dateRange?.end,
+      fileNamePrefix: 'admin_requirements_view',
+    );
+
+    if (!mounted) return;
+    CustomSnackbar.showSuccess(
+      context,
+      success ? 'Export ready to share.' : 'Unable to export right now.',
     );
   }
 
@@ -220,24 +313,15 @@ class _AdminRequirementsScreenState
       child: AnimatedBuilder(
         animation: _tabController,
         builder: (context, _) {
-          final index =
-              _tabs.indexWhere((t) => t.label == label);
+          final index = _tabs.indexWhere((t) => t.label == label);
           final isSelected = _tabController.index == index;
 
           return AnimatedContainer(
             duration: const Duration(milliseconds: 250),
-            margin: EdgeInsets.symmetric(
-              horizontal: 4.w,
-              vertical: 6.h,
-            ),
-            padding: EdgeInsets.symmetric(
-              horizontal: 14.w,
-              vertical: 8.h,
-            ),
+            margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 6.h),
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? color.withOpacity(0.12)
-                  : Colors.transparent,
+              color: isSelected ? color.withOpacity(0.12) : Colors.transparent,
               borderRadius: BorderRadius.circular(20.r),
               border: Border.all(
                 color: isSelected ? color : AppColors.border,
@@ -251,11 +335,8 @@ class _AdminRequirementsScreenState
                   label,
                   style: TextStyle(
                     fontSize: 13.sp,
-                    color:
-                        isSelected ? color : AppColors.textHint,
-                    fontWeight: isSelected
-                        ? FontWeight.w700
-                        : FontWeight.w400,
+                    color: isSelected ? color : AppColors.textHint,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                   ),
                 ),
                 if (badgeCount > 0)
@@ -297,10 +378,7 @@ class _RequirementTabView extends ConsumerWidget {
   final RequirementStatus? status;
   final String searchQuery;
 
-  const _RequirementTabView({
-    required this.status,
-    required this.searchQuery,
-  });
+  const _RequirementTabView({required this.status, required this.searchQuery});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -320,9 +398,7 @@ class _RequirementTabView extends ConsumerWidget {
                 return r.traderName.toLowerCase().contains(q) ||
                     r.customerName.toLowerCase().contains(q) ||
                     r.customerBusinessName.toLowerCase().contains(q) ||
-                    r.items.any(
-                      (i) => i.productName.toLowerCase().contains(q),
-                    );
+                    r.items.any((i) => i.productName.toLowerCase().contains(q));
               }).toList();
 
         if (filtered.isEmpty) {
@@ -335,31 +411,24 @@ class _RequirementTabView extends ConsumerWidget {
           },
           color: AppColors.adminPrimary,
           child: ListView.separated(
-            padding: EdgeInsets.fromLTRB(
-              16.w,
-              16.h,
-              16.w,
-              80.h,
-            ),
+            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 80.h),
             itemCount: filtered.length,
             separatorBuilder: (_, __) => Gap(12.h),
             itemBuilder: (context, index) {
               return RequirementCard(
-                requirement: filtered[index],
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AdminRequirementDetailScreen(
-                      requirement: filtered[index],
+                    requirement: filtered[index],
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AdminRequirementDetailScreen(
+                          requirement: filtered[index],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              )
+                  )
                   .animate()
                   .fadeIn(
-                    delay: Duration(
-                      milliseconds: index * 60,
-                    ),
+                    delay: Duration(milliseconds: index * 60),
                     duration: 300.ms,
                   )
                   .slideX(begin: 0.05, end: 0);
@@ -396,15 +465,11 @@ class _RequirementTabView extends ConsumerWidget {
           Gap(16.h),
           Text(
             'Failed to load requirements',
-            style: TextStyle(
-              fontSize: 15.sp,
-              color: AppColors.textPrimary,
-            ),
+            style: TextStyle(fontSize: 15.sp, color: AppColors.textPrimary),
           ),
           Gap(12.h),
           ElevatedButton(
-            onPressed: () =>
-                ref.invalidate(allRequirementsProvider),
+            onPressed: () => ref.invalidate(allRequirementsProvider),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.adminPrimary,
               shape: RoundedRectangleBorder(
@@ -424,30 +489,30 @@ class _RequirementTabView extends ConsumerWidget {
   Widget _buildEmpty(RequirementStatus? status) {
     final (icon, title, subtitle) = switch (status) {
       RequirementStatus.pending => (
-          Iconsax.clock,
-          'No Pending Requirements',
-          'All requirements have been reviewed',
-        ),
+        Iconsax.clock,
+        'No Pending Requirements',
+        'All requirements have been reviewed',
+      ),
       RequirementStatus.approved => (
-          Icons.check_circle_rounded,
-          'No Approved Deals',
-          'Approved requirements will appear here',
-        ),
+        Icons.check_circle_rounded,
+        'No Approved Deals',
+        'Approved requirements will appear here',
+      ),
       RequirementStatus.rejected => (
-          Icons.cancel_rounded,
-          'No Rejected Requirements',
-          'Rejected requirements will appear here',
-        ),
+        Icons.cancel_rounded,
+        'No Rejected Requirements',
+        'Rejected requirements will appear here',
+      ),
       RequirementStatus.counterOffer => (
-          Icons.compare_arrows_rounded,
-          'No Counter Offers',
-          'Counter offers will appear here',
-        ),
+        Icons.compare_arrows_rounded,
+        'No Counter Offers',
+        'Counter offers will appear here',
+      ),
       _ => (
-          Iconsax.document,
-          'No Requirements Yet',
-          'Trader requirements will appear here',
-        ),
+        Iconsax.document,
+        'No Requirements Yet',
+        'Trader requirements will appear here',
+      ),
     };
 
     return Center(
@@ -461,11 +526,7 @@ class _RequirementTabView extends ConsumerWidget {
               color: AppColors.adminPrimary.withOpacity(0.08),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              size: 40.sp,
-              color: AppColors.adminPrimary,
-            ),
+            child: Icon(icon, size: 40.sp, color: AppColors.adminPrimary),
           ),
           Gap(16.h),
           Text(
@@ -479,10 +540,7 @@ class _RequirementTabView extends ConsumerWidget {
           Gap(6.h),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],

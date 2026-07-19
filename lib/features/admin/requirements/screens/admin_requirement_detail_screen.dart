@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
+import 'package:price_catalog_app/core/services/requirement_export_service.dart';
 import 'package:price_catalog_app/data/models/requirement_model.dart';
 import 'package:price_catalog_app/features/admin/requirements/widgets/approve_dialog.dart';
 import 'package:price_catalog_app/features/admin/requirements/widgets/counter_offer_dialog.dart';
@@ -32,7 +33,7 @@ class AdminRequirementDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _buildAppBar(context),
+      appBar: _buildAppBar(context, req),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.all(16.w),
@@ -118,7 +119,7 @@ class AdminRequirementDetailScreen extends ConsumerWidget {
   // ═══════════════════════════════════════
   // APP BAR
   // ═══════════════════════════════════════
-  AppBar _buildAppBar(BuildContext context) {
+  AppBar _buildAppBar(BuildContext context, RequirementModel req) {
     return AppBar(
       backgroundColor: AppColors.white,
       surfaceTintColor: Colors.transparent,
@@ -139,6 +140,28 @@ class AdminRequirementDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
+      actions: [
+        IconButton(
+          onPressed: () async {
+            final success =
+                await RequirementExportService.shareRequirementsExport(
+                  [req],
+                  range: ExportRange.all,
+                  fileNamePrefix: 'admin_requirement',
+                );
+            if (!context.mounted) return;
+            CustomSnackbar.showSuccess(
+              context,
+              success ? 'Requirement exported.' : 'Unable to export right now.',
+            );
+          },
+          icon: Icon(
+            Iconsax.export,
+            size: 20.sp,
+            color: AppColors.adminPrimary,
+          ),
+        ),
+      ],
       title: Column(
         children: [
           Text(

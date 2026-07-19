@@ -1564,7 +1564,7 @@ SPEC CHECKSUMS:
   FirebaseStorage: 949f0a5a8d8a77fff68ec8733057dc76a0e08179
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_image_compress_common: 1697a328fd72bfb335507c6bca1a65fa5ad87df1
-  flutter_local_notifications: ef18f0537538fcd18e9106b3ddc91cc10b4e579a
+  flutter_local_notifications: ad39620c743ea4c15127860f4b5641649a988100
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
   GoogleUtilities: 766ace00c6b10d8148408f329d10c4f051931850
   "gRPC-C++": cc207623316fb041a7a3e774c252cf68a058b9e8

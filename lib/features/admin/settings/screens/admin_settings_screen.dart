@@ -5,10 +5,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
+import 'package:price_catalog_app/core/services/requirement_export_service.dart';
 import 'package:price_catalog_app/features/admin/categories/screens/admin_categories_screen.dart';
 import 'package:price_catalog_app/features/admin/traders/screens/admin_traders_screen.dart';
 import 'package:price_catalog_app/features/auth/screens/profile_edit_screen.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
+import 'package:price_catalog_app/providers/requirement_provider.dart';
 import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
 
 class AdminSettingsScreen extends ConsumerWidget {
@@ -60,8 +62,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              const AdminTradersScreen(),
+                          builder: (_) => const AdminTradersScreen(),
                         ),
                       ),
                     ),
@@ -126,12 +127,56 @@ class AdminSettingsScreen extends ConsumerWidget {
                     _SettingsItem(
                       icon: Iconsax.export,
                       label: 'Export Data',
-                      subtitle: 'Download all data as Excel/PDF',
+                      subtitle:
+                          'Export requirements by day, week, year or custom range',
                       color: AppColors.approved,
-                      onTap: () {
-                        CustomSnackbar.showInfo(
+                      onTap: () async {
+                        final requirements = await ref.read(
+                          allRequirementsProvider.future,
+                        );
+                        if (!context.mounted) return;
+                        if (requirements.isEmpty) {
+                          CustomSnackbar.showInfo(
+                            context,
+                            'No requirement data found to export.',
+                          );
+                          return;
+                        }
+
+                        final range = await _pickExportRange(context);
+                        if (range == null) return;
+
+                        DateTimeRange? dateRange;
+                        if (range == ExportRange.custom) {
+                          dateRange = await showDateRangePicker(
+                            context: context,
+                            firstDate: DateTime(2024),
+                            lastDate: DateTime.now(),
+                            initialDateRange: DateTimeRange(
+                              start: DateTime.now().subtract(
+                                const Duration(days: 30),
+                              ),
+                              end: DateTime.now(),
+                            ),
+                          );
+                          if (dateRange == null) return;
+                        }
+
+                        final success =
+                            await RequirementExportService.shareRequirementsExport(
+                              requirements,
+                              range: range,
+                              customStart: dateRange?.start,
+                              customEnd: dateRange?.end,
+                              fileNamePrefix: 'admin_requirements',
+                            );
+
+                        if (!context.mounted) return;
+                        CustomSnackbar.showSuccess(
                           context,
-                          'Data export will be available soon.',
+                          success
+                              ? 'Export ready to share.'
+                              : 'Unable to export right now.',
                         );
                       },
                     ),
@@ -199,8 +244,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                         ),
                       ),
                       child: Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             Iconsax.logout,
@@ -228,6 +272,51 @@ class AdminSettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<ExportRange?> _pickExportRange(BuildContext context) async {
+    return await showModalBottomSheet<ExportRange>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Export requirements',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Gap(12.h),
+              _ExportOptionTile(label: 'Today', range: ExportRange.today),
+              _ExportOptionTile(
+                label: 'This Week',
+                range: ExportRange.thisWeek,
+              ),
+              _ExportOptionTile(
+                label: 'This Year',
+                range: ExportRange.thisYear,
+              ),
+              _ExportOptionTile(
+                label: 'Custom Range',
+                range: ExportRange.custom,
+              ),
+              _ExportOptionTile(label: 'All Records', range: ExportRange.all),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -317,9 +406,7 @@ class AdminSettingsScreen extends ConsumerWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const ProfileEditScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const ProfileEditScreen()),
               );
             },
             child: Container(
@@ -329,19 +416,15 @@ class AdminSettingsScreen extends ConsumerWidget {
                 color: AppColors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10.r),
               ),
-              child: Icon(
-                Iconsax.edit,
-                size: 18.sp,
-                color: AppColors.white,
-              ),
+              child: Icon(Iconsax.edit, size: 18.sp, color: AppColors.white),
             ),
           ),
         ],
       ),
     ).animate().fadeIn().scale(
-          begin: const Offset(0.95, 0.95),
-          curve: Curves.elasticOut,
-        );
+      begin: const Offset(0.95, 0.95),
+      curve: Curves.elasticOut,
+    );
   }
 
   // ═══════════════════════════════════════
@@ -399,10 +482,8 @@ class AdminSettingsScreen extends ConsumerWidget {
                             width: 38.w,
                             height: 38.w,
                             decoration: BoxDecoration(
-                              color:
-                                  item.color.withOpacity(0.1),
-                              borderRadius:
-                                  BorderRadius.circular(10.r),
+                              color: item.color.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10.r),
                             ),
                             child: Icon(
                               item.icon,
@@ -413,8 +494,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                           Gap(12.w),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   item.label,
@@ -445,11 +525,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                     ),
                   ),
                   if (index < items.length - 1)
-                    Divider(
-                      height: 1,
-                      indent: 66.w,
-                      color: AppColors.divider,
-                    ),
+                    Divider(height: 1, indent: 66.w, color: AppColors.divider),
                 ],
               );
             }).toList(),
@@ -471,17 +547,11 @@ class AdminSettingsScreen extends ConsumerWidget {
         ),
         title: Text(
           'Logout?',
-          style: TextStyle(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w700),
         ),
         content: Text(
           'Are you sure you want to logout from your admin account?',
-          style: TextStyle(
-            fontSize: 14.sp,
-            color: AppColors.textSecondary,
-          ),
+          style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -506,6 +576,34 @@ class AdminSettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ExportOptionTile extends StatelessWidget {
+  final String label;
+  final ExportRange range;
+
+  const _ExportOptionTile({required this.label, required this.range});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 15.sp,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      trailing: Icon(
+        Icons.arrow_forward_ios_rounded,
+        size: 16.sp,
+        color: AppColors.textHint,
+      ),
+      onTap: () => Navigator.pop(context, range),
     );
   }
 }

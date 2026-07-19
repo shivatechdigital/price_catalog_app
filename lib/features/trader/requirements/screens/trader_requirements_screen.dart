@@ -5,10 +5,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
+import 'package:price_catalog_app/core/services/requirement_export_service.dart';
 import 'package:price_catalog_app/data/models/requirement_model.dart';
 import 'package:price_catalog_app/features/trader/requirements/screens/trader_requirement_detail_screen.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/providers/requirement_provider.dart';
+import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
 import 'package:price_catalog_app/shared/widgets/shimmer_loading.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -82,6 +84,19 @@ class _TraderRequirementsScreenState
                 color: AppColors.textPrimary,
               ),
             ),
+            actions: [
+              IconButton(
+                onPressed: () async {
+                  if (currentUser == null) return;
+                  await _exportCurrentView(currentUser.uid);
+                },
+                icon: Icon(
+                  Iconsax.export,
+                  size: 22.sp,
+                  color: AppColors.traderPrimary,
+                ),
+              ),
+            ],
             bottom: PreferredSize(
               preferredSize: Size.fromHeight(48.h),
               child: _buildTabBar(),
@@ -100,6 +115,108 @@ class _TraderRequirementsScreenState
                 }).toList(),
               ),
       ),
+    );
+  }
+
+  Future<void> _exportCurrentView(String traderId) async {
+    final selectedStatus = _tabs[_tabController.index].status;
+    final requirements = selectedStatus == null
+        ? await ref.read(traderRequirementsProvider(traderId).future)
+        : await ref.read(
+            traderRequirementsByStatusProvider((
+              traderId: traderId,
+              status: selectedStatus,
+            )).future,
+          );
+
+    if (!mounted) return;
+    if (requirements.isEmpty) {
+      CustomSnackbar.showInfo(context, 'No deals found to export.');
+      return;
+    }
+
+    final range = await showModalBottomSheet<ExportRange>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 24.h),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Export my deals',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Gap(12.h),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('Today', style: TextStyle(fontSize: 15.sp)),
+                onTap: () => Navigator.pop(context, ExportRange.today),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('This Week', style: TextStyle(fontSize: 15.sp)),
+                onTap: () => Navigator.pop(context, ExportRange.thisWeek),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('This Year', style: TextStyle(fontSize: 15.sp)),
+                onTap: () => Navigator.pop(context, ExportRange.thisYear),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('Custom Range', style: TextStyle(fontSize: 15.sp)),
+                onTap: () => Navigator.pop(context, ExportRange.custom),
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('All Records', style: TextStyle(fontSize: 15.sp)),
+                onTap: () => Navigator.pop(context, ExportRange.all),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (range == null) return;
+
+    DateTimeRange? dateRange;
+    if (range == ExportRange.custom) {
+      dateRange = await showDateRangePicker(
+        context: context,
+        firstDate: DateTime(2024),
+        lastDate: DateTime.now(),
+        initialDateRange: DateTimeRange(
+          start: DateTime.now().subtract(const Duration(days: 30)),
+          end: DateTime.now(),
+        ),
+      );
+      if (dateRange == null) return;
+    }
+
+    final success = await RequirementExportService.shareRequirementsExport(
+      requirements,
+      range: range,
+      customStart: dateRange?.start,
+      customEnd: dateRange?.end,
+      fileNamePrefix: 'trader_requirements',
+    );
+
+    if (!mounted) return;
+    CustomSnackbar.showSuccess(
+      context,
+      success ? 'Export ready to share.' : 'Unable to export right now.',
     );
   }
 
