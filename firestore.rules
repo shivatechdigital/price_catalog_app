@@ -81,7 +81,7 @@ service cloud.firestore {
       // Helper: Trader can only update these fields
       function onlyUpdatingAllowedFields() {
         return request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['name', 'phone', 'city', 'profileImage', 'fcmToken', 'lastLogin']);
+          .hasOnly(['name', 'phone', 'businessName', 'city', 'gstNumber', 'profileImage', 'fcmToken', 'lastLogin']);
       }
     }
 
