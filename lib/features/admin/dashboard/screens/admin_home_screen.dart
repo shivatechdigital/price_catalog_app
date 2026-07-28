@@ -9,6 +9,7 @@ import 'package:price_catalog_app/data/models/requirement_model.dart';
 import 'package:price_catalog_app/features/admin/dashboard/widgets/admin_stat_card.dart';
 import 'package:price_catalog_app/features/admin/dashboard/widgets/pending_requirement_card.dart';
 import 'package:price_catalog_app/features/admin/dashboard/widgets/recent_price_update_card.dart';
+import 'package:price_catalog_app/features/admin/notifications/screens/admin_notifications_screen.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/providers/notification_provider.dart';
 import 'package:price_catalog_app/providers/product_provider.dart';
@@ -72,7 +73,12 @@ class AdminHomeScreen extends ConsumerWidget {
                   children: [
                     IconButton(
                       onPressed: () {
-                        // Navigate to notifications
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminNotificationsScreen(),
+                          ),
+                        );
                       },
                       icon: Icon(
                         Iconsax.notification,
@@ -113,6 +119,7 @@ class AdminHomeScreen extends ConsumerWidget {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20.w),
                     child: _buildStatsSection(
+                      ref,
                       productsAsync,
                       pendingCountAsync,
                     ),
@@ -297,6 +304,7 @@ class AdminHomeScreen extends ConsumerWidget {
   // STATS SECTION
   // ═══════════════════════════════════════
   Widget _buildStatsSection(
+    WidgetRef ref,
     AsyncValue productsAsync,
     AsyncValue<int> pendingCountAsync,
   ) {
@@ -317,6 +325,9 @@ class AdminHomeScreen extends ConsumerWidget {
                   colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
                 ),
                 delay: 0,
+                onTap: () {
+                  ref.read(adminNavIndexProvider.notifier).state = 1;
+                },
               ),
             ),
             Gap(12.w),
@@ -333,6 +344,9 @@ class AdminHomeScreen extends ConsumerWidget {
                   colors: [Color(0xFFFF6B35), Color(0xFFFF8C42)],
                 ),
                 delay: 100,
+                onTap: () {
+                  ref.read(adminNavIndexProvider.notifier).state = 2;
+                },
               ),
             ),
           ],
