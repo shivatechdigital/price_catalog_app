@@ -12,8 +12,8 @@ import 'package:price_catalog_app/providers/notification_provider.dart';
 import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-class TraderNotificationsScreen extends ConsumerWidget {
-  const TraderNotificationsScreen({super.key});
+class AdminNotificationsScreen extends ConsumerWidget {
+  const AdminNotificationsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -50,13 +50,13 @@ class TraderNotificationsScreen extends ConsumerWidget {
             icon: Icon(
               Iconsax.tick_circle,
               size: 18.sp,
-              color: AppColors.traderPrimary,
+              color: AppColors.adminPrimary,
             ),
             label: Text(
               'Mark all',
               style: TextStyle(
                 fontSize: 13.sp,
-                color: AppColors.traderPrimary,
+                color: AppColors.adminPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -67,7 +67,7 @@ class TraderNotificationsScreen extends ConsumerWidget {
       body: notificationsAsync.when(
         loading: () => Center(
           child: CircularProgressIndicator(
-            color: AppColors.traderPrimary,
+            color: AppColors.adminPrimary,
           ),
         ),
         error: (_, __) => Center(
@@ -100,13 +100,13 @@ class TraderNotificationsScreen extends ConsumerWidget {
                     width: 80.w,
                     height: 80.w,
                     decoration: BoxDecoration(
-                      color: AppColors.traderPrimary.withOpacity(0.1),
+                      color: AppColors.adminPrimary.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Iconsax.notification,
                       size: 40.sp,
-                      color: AppColors.traderPrimary,
+                      color: AppColors.adminPrimary,
                     ),
                   ),
                   Gap(20.h),
@@ -136,7 +136,7 @@ class TraderNotificationsScreen extends ConsumerWidget {
             itemCount: notifications.length,
             itemBuilder: (context, index) {
               final notif = notifications[index];
-              return _NotificationCard(
+              return _AdminNotificationCard(
                 notification: notif,
                 index: index,
                 onTap: () => _handleNotificationTap(
@@ -181,8 +181,16 @@ class TraderNotificationsScreen extends ConsumerWidget {
         case NotificationType.requirementApproved:
         case NotificationType.requirementRejected:
         case NotificationType.counterOffer:
-          // Navigate to requirement detail
-          context.push('/trader/requirements/${notif.referenceId}');
+          // Navigate to requirement detail - admin view
+          context.push('/admin/requirements/${notif.referenceId}');
+          break;
+        case NotificationType.newTrader:
+          // Navigate to traders screen
+          context.push('/admin/traders');
+          break;
+        case NotificationType.newProduct:
+          // Navigate to products screen
+          context.push('/admin/products');
           break;
         default:
           break;
@@ -192,38 +200,39 @@ class TraderNotificationsScreen extends ConsumerWidget {
 
   Color _getNotifColor(NotificationType type) {
     return switch (type) {
+      NotificationType.newRequirement => AppColors.pending,
       NotificationType.requirementApproved => AppColors.approved,
       NotificationType.requirementRejected => AppColors.rejected,
       NotificationType.counterOffer => AppColors.counter,
-      NotificationType.priceUpdated => AppColors.adminPrimary,
-      _ => AppColors.traderPrimary,
+      NotificationType.newTrader => AppColors.adminPrimary,
+      NotificationType.newProduct => AppColors.approved,
+      NotificationType.priceUpdated => AppColors.counter,
     };
   }
 
   IconData _getNotifIcon(NotificationType type) {
     return switch (type) {
-      NotificationType.requirementApproved =>
-        Icons.check_circle_rounded,
-      NotificationType.requirementRejected =>
-        Icons.cancel_rounded,
-      NotificationType.counterOffer =>
-        Icons.compare_arrows_rounded,
+      NotificationType.newRequirement => Iconsax.notification_bing,
+      NotificationType.requirementApproved => Icons.check_circle_rounded,
+      NotificationType.requirementRejected => Icons.cancel_rounded,
+      NotificationType.counterOffer => Icons.compare_arrows_rounded,
+      NotificationType.newTrader => Iconsax.user_add,
+      NotificationType.newProduct => Iconsax.box_add,
       NotificationType.priceUpdated => Icons.trending_up_rounded,
-      _ => Icons.notifications_rounded,
     };
   }
 }
 
 // ═══════════════════════════════════════
-// NOTIFICATION CARD WIDGET
+// ADMIN NOTIFICATION CARD WIDGET
 // ═══════════════════════════════════════
-class _NotificationCard extends ConsumerWidget {
+class _AdminNotificationCard extends ConsumerWidget {
   final NotificationModel notification;
   final int index;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
-  const _NotificationCard({
+  const _AdminNotificationCard({
     required this.notification,
     required this.index,
     required this.onTap,
@@ -280,7 +289,7 @@ class _NotificationCard extends ConsumerWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Icon Container
+              // Icon Container with Gradient
               Container(
                 width: 48.w,
                 height: 48.w,
@@ -387,24 +396,25 @@ class _NotificationCard extends ConsumerWidget {
 
   Color _getNotifColor(NotificationType type) {
     return switch (type) {
+      NotificationType.newRequirement => AppColors.pending,
       NotificationType.requirementApproved => AppColors.approved,
       NotificationType.requirementRejected => AppColors.rejected,
       NotificationType.counterOffer => AppColors.counter,
-      NotificationType.priceUpdated => AppColors.adminPrimary,
-      _ => AppColors.traderPrimary,
+      NotificationType.newTrader => AppColors.adminPrimary,
+      NotificationType.newProduct => AppColors.approved,
+      NotificationType.priceUpdated => AppColors.counter,
     };
   }
 
   IconData _getNotifIcon(NotificationType type) {
     return switch (type) {
-      NotificationType.requirementApproved =>
-        Icons.check_circle_rounded,
-      NotificationType.requirementRejected =>
-        Icons.cancel_rounded,
-      NotificationType.counterOffer =>
-        Icons.compare_arrows_rounded,
+      NotificationType.newRequirement => Iconsax.notification_bing,
+      NotificationType.requirementApproved => Icons.check_circle_rounded,
+      NotificationType.requirementRejected => Icons.cancel_rounded,
+      NotificationType.counterOffer => Icons.compare_arrows_rounded,
+      NotificationType.newTrader => Iconsax.user_add,
+      NotificationType.newProduct => Iconsax.box_add,
       NotificationType.priceUpdated => Icons.trending_up_rounded,
-      _ => Icons.notifications_rounded,
     };
   }
 }
