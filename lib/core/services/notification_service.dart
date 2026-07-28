@@ -42,7 +42,9 @@ class NotificationService {
   }
 
   static Future<void> _initializeLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     final iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -50,7 +52,7 @@ class NotificationService {
     );
 
     await _localNotifications.initialize(
-      InitializationSettings(
+      settings: InitializationSettings(
         android: androidSettings,
         iOS: iosSettings,
       ),
@@ -61,7 +63,8 @@ class NotificationService {
     if (Platform.isAndroid) {
       await _localNotifications
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.createNotificationChannel(_channel);
     }
   }
@@ -107,10 +110,10 @@ class NotificationService {
     );
 
     await _localNotifications.show(
-      id,
-      title,
-      body,
-      notificationDetails,
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: notificationDetails,
       payload: payload,
     );
   }
@@ -121,12 +124,7 @@ class NotificationService {
     required String? body,
     String? payload,
   }) async {
-    await _showNotification(
-      id: id,
-      title: title,
-      body: body,
-      payload: payload,
-    );
+    await _showNotification(id: id, title: title, body: body, payload: payload);
   }
 
   // ═══════════════════════════════════════
