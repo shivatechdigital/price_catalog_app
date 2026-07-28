@@ -7,14 +7,13 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/core/services/requirement_export_service.dart';
 import 'package:price_catalog_app/features/auth/screens/profile_edit_screen.dart';
-import 'package:price_catalog_app/features/trader/notifications/screens/trader_notifications_screen.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/providers/notification_provider.dart';
 import 'package:price_catalog_app/providers/requirement_provider.dart';
 import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
 
-class TraderProfileScreen extends ConsumerWidget {
-  const TraderProfileScreen({super.key});
+class AdminProfileScreen extends ConsumerWidget {
+  const AdminProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,6 +33,8 @@ class TraderProfileScreen extends ConsumerWidget {
           SliverAppBar(
             pinned: true,
             backgroundColor: AppColors.white,
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
             title: Text(
               'My Profile',
               style: TextStyle(
@@ -48,13 +49,31 @@ class TraderProfileScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Gap(20.h),
+
+                // ═══════════════════════════════════════
+                // PROFILE HEADER WITH GRADIENT
+                // ═══════════════════════════════════════
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Container(
                     padding: EdgeInsets.all(20.w),
                     decoration: BoxDecoration(
-                      gradient: AppColors.traderGradient,
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.adminPrimary,
+                          AppColors.adminPrimary.withOpacity(0.8),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                       borderRadius: BorderRadius.circular(20.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.adminPrimary.withOpacity(0.2),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
@@ -64,12 +83,16 @@ class TraderProfileScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: AppColors.white.withOpacity(0.2),
                             shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.white.withOpacity(0.3),
+                              width: 2,
+                            ),
                           ),
                           child: Center(
                             child: Text(
                               currentUser?.name.isNotEmpty == true
                                   ? currentUser!.name[0].toUpperCase()
-                                  : 'T',
+                                  : 'A',
                               style: TextStyle(
                                 fontSize: 26.sp,
                                 fontWeight: FontWeight.w700,
@@ -83,23 +106,38 @@ class TraderProfileScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                currentUser?.name ?? 'Trader',
-                                style: TextStyle(
-                                  fontSize: 18.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                              Gap(6.h),
-                              Text(
-                                currentUser?.businessName.isNotEmpty == true
-                                    ? currentUser!.businessName
-                                    : 'Trader account',
-                                style: TextStyle(
-                                  fontSize: 13.sp,
-                                  color: AppColors.white.withOpacity(0.85),
-                                ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      currentUser?.name ?? 'Admin',
+                                      style: TextStyle(
+                                        fontSize: 18.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w,
+                                      vertical: 4.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.white.withOpacity(0.2),
+                                      borderRadius:
+                                          BorderRadius.circular(8.r),
+                                    ),
+                                    child: Text(
+                                      'Admin',
+                                      style: TextStyle(
+                                        fontSize: 10.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                               Gap(6.h),
                               Text(
@@ -127,6 +165,9 @@ class TraderProfileScreen extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: AppColors.white.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(
+                                color: AppColors.white.withOpacity(0.2),
+                              ),
                             ),
                             child: Icon(
                               Iconsax.edit,
@@ -139,7 +180,12 @@ class TraderProfileScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
+
                 Gap(24.h),
+
+                // ═══════════════════════════════════════
+                // ACTION TILES
+                // ═══════════════════════════════════════
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Column(
@@ -147,55 +193,50 @@ class TraderProfileScreen extends ConsumerWidget {
                       _ProfileActionTile(
                         icon: Iconsax.notification,
                         label: 'Notifications',
-                        subtitle: 'View unread alerts and updates',
+                        subtitle: 'View system alerts and updates',
                         badgeCount: unreadCount,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const TraderNotificationsScreen(),
-                          ),
-                        ),
-                        color: AppColors.traderPrimary,
+                        onTap: () {
+                          // Navigate to notifications
+                        },
+                        color: AppColors.adminPrimary,
                       ),
                       Gap(12.h),
                       _ProfileActionTile(
                         icon: Iconsax.pen_tool,
                         label: 'Edit Profile',
-                        subtitle: 'Update your contact and business info',
+                        subtitle: 'Update your contact information',
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => const ProfileEditScreen(),
                           ),
                         ),
-                        color: AppColors.adminPrimary,
+                        color: AppColors.traderPrimary,
                       ),
+                      Gap(12.h),
+                      _AdminExportRequirementsActionTile(),
                       Gap(12.h),
                       _ProfileActionTile(
                         icon: Iconsax.info_circle,
                         label: 'About App',
-                        subtitle: 'Version 1.0.0',
+                        subtitle: 'Version 1.0.0 - Admin Panel',
                         onTap: () {
                           CustomSnackbar.showInfo(
                             context,
-                            'PriceCatalog App v1.0.0',
+                            'PriceCatalog Admin Panel v1.0.0',
                           );
                         },
                         color: AppColors.textSecondary,
                       ),
                       Gap(12.h),
-                      _ExportRequirementsActionTile(
-                        currentUserId: currentUser?.uid ?? '',
-                      ),
-                      Gap(12.h),
                       _ProfileActionTile(
                         icon: Iconsax.message_question,
                         label: 'Help & Support',
-                        subtitle: 'Contact support if you need help',
+                        subtitle: 'Get help with admin features',
                         onTap: () {
                           CustomSnackbar.showInfo(
                             context,
-                            'For support, reach out to the app owner.',
+                            'For support, contact the development team.',
                           );
                         },
                         color: AppColors.adminPrimary,
@@ -203,11 +244,16 @@ class TraderProfileScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+
                 Gap(24.h),
+
+                // ═══════════════════════════════════════
+                // ADMIN DETAILS
+                // ═══════════════════════════════════════
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Text(
-                    'Profile Details',
+                    'Admin Details',
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
@@ -241,24 +287,24 @@ class TraderProfileScreen extends ConsumerWidget {
                           value: currentUser?.phone ?? '-',
                         ),
                         _DetailRow(
-                          label: 'Business',
-                          value: currentUser?.businessName.isNotEmpty == true
-                              ? currentUser!.businessName
-                              : '-',
+                          label: 'Role',
+                          value: 'Administrator',
                         ),
                         _DetailRow(
-                          label: 'City',
-                          value: currentUser?.city ?? '-',
-                        ),
-                        _DetailRow(
-                          label: 'GST Number',
-                          value: currentUser?.gstNumber ?? '-',
+                          label: 'Status',
+                          value: 'Active',
+                          isLast: true,
                         ),
                       ],
                     ),
                   ),
                 ),
+
                 Gap(28.h),
+
+                // ═══════════════════════════════════════
+                // LOGOUT BUTTON
+                // ═══════════════════════════════════════
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: GestureDetector(
@@ -268,6 +314,9 @@ class TraderProfileScreen extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: AppColors.rejectedLight,
                         borderRadius: BorderRadius.circular(14.r),
+                        border: Border.all(
+                          color: AppColors.rejected.withOpacity(0.2),
+                        ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -291,6 +340,7 @@ class TraderProfileScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
+
                 Gap(40.h),
               ],
             ),
@@ -301,6 +351,9 @@ class TraderProfileScreen extends ConsumerWidget {
   }
 }
 
+// ═══════════════════════════════════════
+// ACTION TILE WIDGET
+// ═══════════════════════════════════════
 class _ProfileActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -371,8 +424,8 @@ class _ProfileActionTile extends StatelessWidget {
             ),
             if (badgeCount > 0)
               Container(
-                width: 20.w,
-                height: 20.w,
+                width: 24.w,
+                height: 24.w,
                 decoration: const BoxDecoration(
                   color: AppColors.rejected,
                   shape: BoxShape.circle,
@@ -381,12 +434,18 @@ class _ProfileActionTile extends StatelessWidget {
                   child: Text(
                     badgeCount > 9 ? '9+' : '$badgeCount',
                     style: TextStyle(
-                      fontSize: 10.sp,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.w700,
                       color: AppColors.white,
                     ),
                   ),
                 ),
+              )
+            else
+              Icon(
+                Iconsax.arrow_right_3,
+                size: 16.sp,
+                color: AppColors.textHint,
               ),
           ],
         ),
@@ -395,13 +454,18 @@ class _ProfileActionTile extends StatelessWidget {
   }
 }
 
+// ═══════════════════════════════════════
+// DETAIL ROW
+// ═══════════════════════════════════════
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
+  final bool isLast;
 
   const _DetailRow({
     required this.label,
     required this.value,
+    this.isLast = false,
   });
 
   @override
@@ -435,26 +499,21 @@ class _DetailRow extends StatelessWidget {
             ],
           ),
         ),
-        Divider(color: AppColors.border, height: 1),
+        if (!isLast) Divider(color: AppColors.border, height: 1),
       ],
     );
   }
 }
 
 // ═══════════════════════════════════════
-// EXPORT REQUIREMENTS TILE
+// ADMIN EXPORT REQUIREMENTS TILE
 // ═══════════════════════════════════════
-class _ExportRequirementsActionTile extends ConsumerWidget {
-  final String currentUserId;
-
-  const _ExportRequirementsActionTile({
-    required this.currentUserId,
-  });
+class _AdminExportRequirementsActionTile extends ConsumerWidget {
+  const _AdminExportRequirementsActionTile();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final requirementsAsync =
-        ref.watch(traderRequirementsProvider(currentUserId));
+    final requirementsAsync = ref.watch(allRequirementsProvider);
 
     return requirementsAsync.when(
       loading: () => Container(
@@ -470,7 +529,7 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
               width: 44.w,
               height: 44.w,
               decoration: BoxDecoration(
-                color: AppColors.traderPrimary.withOpacity(0.12),
+                color: AppColors.adminPrimary.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(14.r),
               ),
               child: Center(
@@ -479,7 +538,7 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
                   height: 20.w,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppColors.traderPrimary,
+                    color: AppColors.adminPrimary,
                   ),
                 ),
               ),
@@ -499,7 +558,7 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
                   ),
                   Gap(4.h),
                   Text(
-                    'Loading your requirements...',
+                    'Loading data...',
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: AppColors.textSecondary,
@@ -521,14 +580,14 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
                     context: context,
                     builder: (ctx) => AlertDialog(
                       title: Text(
-                        'Export Requirements',
+                        'Export All Requirements',
                         style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       content: Text(
-                        'Export ${requirements.length} requirement(s) as PDF?',
+                        'Export all ${requirements.length} requirement(s) as PDF?\n\nThis includes all statuses (pending, approved, rejected, counter-offer).',
                         style: TextStyle(fontSize: 14.sp),
                       ),
                       actions: [
@@ -549,7 +608,7 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
                                 .shareRequirementsExport(
                               requirements,
                               range: ExportRange.all,
-                              fileNamePrefix: 'My_Requirements',
+                              fileNamePrefix: 'All_Requirements_Export',
                               format: ExportFormat.pdf,
                             );
 
@@ -557,7 +616,7 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
                               CustomSnackbar.showSuccess(
                                 context,
                                 success
-                                    ? '✅ Requirements exported successfully!'
+                                    ? '✅ ${requirements.length} requirement(s) exported successfully!'
                                     : '❌ Failed to export. Try again.',
                               );
                             }
@@ -567,7 +626,7 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 13.sp,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.traderPrimary,
+                              color: AppColors.adminPrimary,
                             ),
                           ),
                         ),
@@ -582,8 +641,8 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
                   ? null
                   : LinearGradient(
                       colors: [
-                        AppColors.traderPrimary.withOpacity(0.1),
-                        AppColors.traderPrimary.withOpacity(0.05),
+                        AppColors.adminPrimary.withOpacity(0.1),
+                        AppColors.adminPrimary.withOpacity(0.05),
                       ],
                     ),
               color: requirements.isEmpty
@@ -593,7 +652,7 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
               border: Border.all(
                 color: requirements.isEmpty
                     ? AppColors.border
-                    : AppColors.traderPrimary.withOpacity(0.3),
+                    : AppColors.adminPrimary.withOpacity(0.3),
               ),
             ),
             child: Row(
@@ -602,7 +661,7 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
                   width: 44.w,
                   height: 44.w,
                   decoration: BoxDecoration(
-                    color: AppColors.traderPrimary.withOpacity(0.15),
+                    color: AppColors.adminPrimary.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(14.r),
                   ),
                   child: Icon(
@@ -610,7 +669,7 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
                     size: 22.sp,
                     color: requirements.isEmpty
                         ? AppColors.textHint
-                        : AppColors.traderPrimary,
+                        : AppColors.adminPrimary,
                   ),
                 ),
                 Gap(12.w),
@@ -631,8 +690,8 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
                       Gap(4.h),
                       Text(
                         requirements.isEmpty
-                            ? 'No requirements to export'
-                            : 'Download ${requirements.length} requirement(s) as PDF',
+                            ? 'No data to export'
+                            : 'Download ${requirements.length} requirement(s) with all statuses',
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: AppColors.textSecondary,
@@ -645,7 +704,7 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
                   Icon(
                     Iconsax.arrow_right_3,
                     size: 16.sp,
-                    color: AppColors.traderPrimary,
+                    color: AppColors.adminPrimary,
                   ),
               ],
             ),
