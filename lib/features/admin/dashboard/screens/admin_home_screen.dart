@@ -10,6 +10,7 @@ import 'package:price_catalog_app/features/admin/dashboard/widgets/admin_stat_ca
 import 'package:price_catalog_app/features/admin/dashboard/widgets/pending_requirement_card.dart';
 import 'package:price_catalog_app/features/admin/dashboard/widgets/recent_price_update_card.dart';
 import 'package:price_catalog_app/features/admin/notifications/screens/admin_notifications_screen.dart';
+import 'package:price_catalog_app/features/admin/dashboard/screens/admin_dashboard_screen.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/providers/notification_provider.dart';
 import 'package:price_catalog_app/providers/product_provider.dart';
