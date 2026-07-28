@@ -141,6 +141,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       hint: 'Enter business name',
                       icon: Iconsax.export,
                       keyboardType: TextInputType.text,
+                      isRequired: false,
                     ),
                     Gap(16.h),
                     _buildTextField(
@@ -157,6 +158,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       hint: 'Enter GST number',
                       icon: Iconsax.document,
                       keyboardType: TextInputType.text,
+                      isRequired: false,
                     ),
                   ],
                   Gap(32.h),
@@ -186,17 +188,33 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     TextInputType keyboardType = TextInputType.text,
     List<TextInputFormatter>? inputFormatters,
     int? maxLength,
+    bool isRequired = true,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+        Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            if (!isRequired)
+              Padding(
+                padding: EdgeInsets.only(left: 4.w),
+                child: Text(
+                  '(Optional)',
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+          ],
         ),
         Gap(8.h),
         TextFormField(
@@ -210,10 +228,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             prefixIcon: Icon(icon, size: 20.sp, color: AppColors.textHint),
           ),
           validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter $label'.toLowerCase();
+            if (isRequired) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter $label'.toLowerCase();
+              }
             }
-            if (keyboardType == TextInputType.phone && value.length < 8) {
+            if (value != null && value.isNotEmpty && keyboardType == TextInputType.phone && value.length < 8) {
               return 'Please enter a valid phone number';
             }
             return null;
