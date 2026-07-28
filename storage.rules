@@ -30,14 +30,42 @@ service firebase.storage {
       return request.resource.contentType.matches('image/.*');
     }
 
+    function isPDF() {
+      return request.resource.contentType == 'application/pdf';
+    }
+
+    function isFileSizeValid(maxMB) {
+      return request.resource.size <= maxMB * 1024 * 1024;
+    }
+
     // ═══════════════════════════════════════
-    // PRODUCT IMAGES — products/{productId}/{fileName}
+    // PRODUCT IMAGES — products/{productId}/images/{fileName}
     // Read: any logged in user. Write: admin only (matches products
     // collection rule in firestore.rules).
     // ═══════════════════════════════════════
-    match /products/{productId}/{fileName} {
+    match /products/{productId}/images/{fileName} {
       allow read: if isLoggedIn();
       allow write: if isAdmin() && isImage();
+    }
+
+    // ═══════════════════════════════════════
+    // PRODUCT CATALOGS (PDFs) — products/{productId}/catalogs/{fileName}
+    // Read: any logged in user. Write: admin only.
+    // Max file size: 50MB
+    // ═══════════════════════════════════════
+    match /products/{productId}/catalogs/{fileName} {
+      allow read: if isLoggedIn();
+      allow write: if isAdmin() && isPDF() && isFileSizeValid(50);
+    }
+
+    // ═══════════════════════════════════════
+    // PRODUCT DRAWINGS (PDFs) — products/{productId}/drawings/{fileName}
+    // Read: any logged in user. Write: admin only.
+    // Max file size: 50MB
+    // ═══════════════════════════════════════
+    match /products/{productId}/drawings/{fileName} {
+      allow read: if isLoggedIn();
+      allow write: if isAdmin() && isPDF() && isFileSizeValid(50);
     }
 
     // ═══════════════════════════════════════
@@ -59,12 +87,33 @@ service firebase.storage {
     }
 
     // ═══════════════════════════════════════
-    // TRADER CATALOGS — catalogs/{userId}/{fileName}
+    // TRADER PROFILE CATALOGS — traders/{userId}/catalog/{fileName}
     // Read: any logged in user. Write: the owning trader or admin.
+    // Supports both images and PDFs for catalog uploads
     // ═══════════════════════════════════════
-    match /catalogs/{userId}/{fileName} {
+    match /traders/{userId}/catalog/{fileName} {
       allow read: if isLoggedIn();
-      allow write: if (isOwner(userId) || isAdmin()) && isImage();
+      allow write: if (isOwner(userId) || isAdmin()) && (isImage() || isPDF());
+    }
+
+    // ═══════════════════════════════════════
+    // REQUIREMENT ATTACHMENTS — requirements/{requirementId}/{fileName}
+    // Read: admin and the requirement creator. Write: same.
+    // Supports images and PDFs for requirement attachments
+    // ═══════════════════════════════════════
+    match /requirements/{requirementId}/{fileName} {
+      allow read: if isLoggedIn() && (isAdmin() || isOwner(firestore.get(/databases/(default)/documents/requirements/$(requirementId)).data.traderId));
+      allow write: if isLoggedIn() && (isAdmin() || isOwner(firestore.get(/databases/(default)/documents/requirements/$(requirementId)).data.traderId)) && (isImage() || isPDF());
+    }
+
+    // ═══════════════════════════════════════
+    // ORDER ATTACHMENTS — orders/{orderId}/{fileName}
+    // Read: admin and the order creator. Write: same.
+    // Supports images and PDFs for order attachments
+    // ═══════════════════════════════════════
+    match /orders/{orderId}/{fileName} {
+      allow read: if isLoggedIn() && (isAdmin() || isOwner(firestore.get(/databases/(default)/documents/orders/$(orderId)).data.traderId));
+      allow write: if isLoggedIn() && (isAdmin() || isOwner(firestore.get(/databases/(default)/documents/orders/$(orderId)).data.traderId)) && (isImage() || isPDF());
     }
   }
 }

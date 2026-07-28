@@ -32,6 +32,15 @@ service cloud.firestore {
         && get(userDocPath).data.get('traderStatus', null) == 'approved';
     }
 
+    // Check if user is pending trader (for trader registration requests)
+    function isPendingTrader() {
+      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return isLoggedIn() 
+        && exists(userDocPath)
+        && get(userDocPath).data.get('role', null) == 'trader'
+        && get(userDocPath).data.get('traderStatus', null) == 'pending';
+    }
+
     // Check if user is admin OR approved trader
     function isAdminOrTrader() {
       return isAdmin() || isApprovedTrader();
@@ -97,7 +106,27 @@ service cloud.firestore {
       allow read: if isLoggedIn();
 
       // Write: Only admin
-      allow create, update, delete: if isAdmin();
+      // Supports product data, images, catalogs, and drawings
+      allow create, update, delete: if isAdmin() 
+        && validateProductData();
+
+      // Helper: Validate product data structure
+      function validateProductData() {
+        let data = request.resource.data;
+        return (
+          // Required fields for create
+          (request.method == 'create' 
+            ? (data.keys().hasAll(['name', 'category', 'brand', 'code', 'prices']) 
+              && data.name is string && data.name.size() > 0
+              && data.category is string && data.category.size() > 0
+              && data.code is string && data.code.size() > 0
+              && data.prices is map)
+            : true)
+          // Optional arrays for catalogs and drawings
+          && (!data.keys().has('catalogUrls') || data.catalogUrls is list)
+          && (!data.keys().has('drawingUrls') || data.drawingUrls is list)
+        );
+      }
     }
 
     // ═══════════════════════════════════════
