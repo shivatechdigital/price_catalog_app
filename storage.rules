@@ -31,7 +31,10 @@ service firebase.storage {
     }
 
     function isPDF() {
-      return request.resource.contentType == 'application/pdf';
+      return request.resource.contentType == 'application/pdf'
+        || request.resource.contentType == 'application/x-pdf'
+        || request.resource.contentType == 'application/octet-stream'
+        || request.resource.name.matches('.*\\.pdf');
     }
 
     function isFileSizeValid(maxMB) {

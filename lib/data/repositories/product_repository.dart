@@ -16,10 +16,9 @@ class ProductRepository {
   Stream<List<ProductModel>> watchAllProducts() {
     // NOTE: `where(isActive) + orderBy(updatedAt)` needs a Firestore composite
     // index. We filter server-side and sort in Dart to avoid that requirement.
-    return _productsRef
-        .where('isActive', isEqualTo: true)
-        .snapshots()
-        .map((snapshot) {
+    return _productsRef.where('isActive', isEqualTo: true).snapshots().map((
+      snapshot,
+    ) {
       final products = snapshot.docs
           .map((doc) {
             try {
@@ -43,20 +42,20 @@ class ProductRepository {
         .where('categoryId', isEqualTo: categoryId)
         .snapshots()
         .map((snapshot) {
-      final products = snapshot.docs
-          .map((doc) {
-            try {
-              return ProductModel.fromFirestore(doc);
-            } catch (e) {
-              debugPrint('Product parse error for ${doc.id}: $e');
-              return null;
-            }
-          })
-          .whereType<ProductModel>()
-          .toList();
-      products.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      return products;
-    });
+          final products = snapshot.docs
+              .map((doc) {
+                try {
+                  return ProductModel.fromFirestore(doc);
+                } catch (e) {
+                  debugPrint('Product parse error for ${doc.id}: $e');
+                  return null;
+                }
+              })
+              .whereType<ProductModel>()
+              .toList();
+          products.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+          return products;
+        });
   }
 
   // ═══════════════════════════════════════
@@ -202,6 +201,31 @@ class ProductRepository {
     await batch.commit();
   }
 
+  static String resolveContentType(File file) {
+    final lowerPath = file.path.toLowerCase();
+
+    if (lowerPath.endsWith('.pdf')) {
+      return 'application/pdf';
+    }
+    if (lowerPath.endsWith('.jpg') || lowerPath.endsWith('.jpeg')) {
+      return 'image/jpeg';
+    }
+    if (lowerPath.endsWith('.png')) {
+      return 'image/png';
+    }
+    if (lowerPath.endsWith('.gif')) {
+      return 'image/gif';
+    }
+    if (lowerPath.endsWith('.webp')) {
+      return 'image/webp';
+    }
+    if (lowerPath.endsWith('.txt')) {
+      return 'text/plain';
+    }
+
+    return 'application/octet-stream';
+  }
+
   // ═══════════════════════════════════════
   // UPLOAD PRODUCT IMAGE
   // ═══════════════════════════════════════
@@ -227,10 +251,11 @@ class ProductRepository {
         '${productId}_${index}_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
     final storageRef = FirebaseService.productImagesRef(productId, fileName);
+    final contentType = resolveContentType(fileToUpload);
 
     final uploadTask = await storageRef.putFile(
       fileToUpload,
-      SettableMetadata(contentType: 'image/jpeg'),
+      SettableMetadata(contentType: contentType),
     );
 
     final downloadUrl = await uploadTask.ref.getDownloadURL();
@@ -254,8 +279,7 @@ class ProductRepository {
   }) async {
     // Delete from storage
     try {
-      final storageRef =
-          FirebaseService.storage.refFromURL(imageUrl);
+      final storageRef = FirebaseService.storage.refFromURL(imageUrl);
       await storageRef.delete();
     } catch (_) {}
 
@@ -298,9 +322,12 @@ class ProductRepository {
 
     return snapshot.docs
         .where((doc) {
-          final data = (doc.data() as Map<String, dynamic>?) ?? <String, dynamic>{};
+          final data =
+              (doc.data() as Map<String, dynamic>?) ?? <String, dynamic>{};
           final name = (data['name'] ?? '').toString().toLowerCase();
-          final productCode = (data['productCode'] ?? '').toString().toLowerCase();
+          final productCode = (data['productCode'] ?? '')
+              .toString()
+              .toLowerCase();
           final brand = (data['brand'] ?? '').toString().toLowerCase();
           final tags = List<String>.from(data['tags'] ?? []);
 
@@ -324,13 +351,14 @@ class ProductRepository {
     final fileName =
         'catalog_${productId}_${index}_${DateTime.now().millisecondsSinceEpoch}.pdf';
 
-    final storageRef = FirebaseService.storage
-        .ref()
-        .child('products/$productId/catalogs/$fileName');
+    final storageRef = FirebaseService.storage.ref().child(
+      'products/$productId/catalogs/$fileName',
+    );
 
+    final contentType = resolveContentType(file);
     final uploadTask = await storageRef.putFile(
       file,
-      SettableMetadata(contentType: 'application/pdf'),
+      SettableMetadata(contentType: contentType),
     );
 
     final downloadUrl = await uploadTask.ref.getDownloadURL();
@@ -354,13 +382,14 @@ class ProductRepository {
     final fileName =
         'drawing_${productId}_${index}_${DateTime.now().millisecondsSinceEpoch}.pdf';
 
-    final storageRef = FirebaseService.storage
-        .ref()
-        .child('products/$productId/drawings/$fileName');
+    final storageRef = FirebaseService.storage.ref().child(
+      'products/$productId/drawings/$fileName',
+    );
 
+    final contentType = resolveContentType(file);
     final uploadTask = await storageRef.putFile(
       file,
-      SettableMetadata(contentType: 'application/pdf'),
+      SettableMetadata(contentType: contentType),
     );
 
     final downloadUrl = await uploadTask.ref.getDownloadURL();
@@ -400,8 +429,10 @@ class ProductRepository {
         .orderBy('changedAt', descending: true)
         .limit(20)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => PriceHistoryModel.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => PriceHistoryModel.fromFirestore(doc))
+              .toList(),
+        );
   }
 }
