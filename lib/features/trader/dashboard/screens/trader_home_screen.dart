@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/data/models/requirement_model.dart';
 import 'package:price_catalog_app/features/trader/catalog/screens/trader_catalog_screen.dart';
@@ -497,17 +498,45 @@ class TraderHomeScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.vertical(
                       top: Radius.circular(14.r),
                     ),
-                    child: Container(
+                    child: SizedBox(
                       height: 100.h,
                       width: double.infinity,
-                      color: AppColors.traderPrimary
-                          .withOpacity(0.08),
-                      child: Icon(
-                        Iconsax.box,
-                        size: 36.sp,
-                        color: AppColors.traderPrimary
-                            .withOpacity(0.3),
-                      ),
+                      child: product.primaryImage.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: product.primaryImage,
+                              fit: BoxFit.cover,
+                              placeholder: (_, __) => Container(
+                                color: AppColors.traderPrimary
+                                    .withOpacity(0.08),
+                                child: Icon(
+                                  Iconsax.box,
+                                  size: 36.sp,
+                                  color: AppColors.traderPrimary
+                                      .withOpacity(0.3),
+                                ),
+                              ),
+                              errorWidget: (_, __, ___) =>
+                                  Container(
+                                    color: AppColors.traderPrimary
+                                        .withOpacity(0.08),
+                                    child: Icon(
+                                      Iconsax.box,
+                                      size: 36.sp,
+                                      color: AppColors.traderPrimary
+                                          .withOpacity(0.3),
+                                    ),
+                                  ),
+                            )
+                          : Container(
+                              color: AppColors.traderPrimary
+                                  .withOpacity(0.08),
+                              child: Icon(
+                                Iconsax.box,
+                                size: 36.sp,
+                                color: AppColors.traderPrimary
+                                    .withOpacity(0.3),
+                              ),
+                            ),
                     ),
                   ),
                   Padding(

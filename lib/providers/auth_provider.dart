@@ -380,7 +380,15 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
 
       return const AuthResult.success();
     } catch (e) {
-      _updateState(const AuthUnauthenticated());
+      // Don't log out the user on update failure - restore the previous state
+      final currentState = state;
+      if (currentState is AuthAuthenticatedAdmin) {
+        _updateState(AuthAuthenticatedAdmin(currentUser));
+      } else if (currentState is AuthAuthenticatedTrader) {
+        _updateState(AuthAuthenticatedTrader(currentUser));
+      } else {
+        _updateState(currentState);
+      }
       return AuthResult.error('Unable to update profile. Please try again.');
     }
   }
@@ -407,6 +415,55 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
       return const AuthResult.success();
     } on FirebaseAuthException catch (e) {
       return AuthResult.error(_getAuthErrorMessage(e.code));
+    }
+  }
+
+  // ═══════════════════════════════════════
+  // CHANGE PASSWORD
+  // ═══════════════════════════════════════
+  Future<AuthResult> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        return const AuthResult.error('No user logged in.');
+      }
+
+      final email = user.email;
+      if (email == null) {
+        return const AuthResult.error('User email not found.');
+      }
+
+      // Re-authenticate with current password
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: currentPassword,
+      );
+
+      try {
+        await user.reauthenticateWithCredential(credential);
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'wrong-password') {
+          return const AuthResult.error('Current password is incorrect.');
+        }
+        return AuthResult.error(_getAuthErrorMessage(e.code));
+      }
+
+      // Update password
+      try {
+        await user.updatePassword(newPassword);
+        
+        // Sign out the user after password change
+        await logout();
+        
+        return const AuthResult.success();
+      } on FirebaseAuthException catch (e) {
+        return AuthResult.error(_getAuthErrorMessage(e.code));
+      }
+    } catch (e) {
+      return const AuthResult.error('Failed to change password. Please try again.');
     }
   }
 

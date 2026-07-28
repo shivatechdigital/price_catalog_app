@@ -458,44 +458,6 @@ class _TraderProductCard extends ConsumerWidget {
     required this.onTap,
   });
 
-  void _addToCart(BuildContext context, WidgetRef ref) {
-    final currentItems = ref.read(selectedRequirementItemsProvider);
-    final exists = currentItems.any((i) => i.productId == product.id);
-    if (exists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${product.name} already in cart'),
-          duration: const Duration(seconds: 1),
-        ),
-      );
-      return;
-    }
-    final newItem = RequirementItemModel(
-      productId: product.id,
-      productName: product.name,
-      productCode: product.productCode,
-      productImage:
-          product.primaryImage.isNotEmpty ? product.primaryImage : null,
-      categoryName: product.categoryName,
-      quantity: 1,
-      unit: product.unit,
-      productCurrentPrice: product.currentPrice.sellingPrice,
-      customerDemandedPrice: product.currentPrice.sellingPrice,
-      traderOfferedPrice: product.currentPrice.sellingPrice,
-    );
-    ref.read(selectedRequirementItemsProvider.notifier).state = [
-      ...currentItems,
-      newItem,
-    ];
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${product.name} added to cart'),
-        backgroundColor: AppColors.approved,
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
@@ -581,60 +543,21 @@ class _TraderProductCard extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const Spacer(),
-                    Row(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '₹${product.currentPrice.sellingPrice.toStringAsFixed(0)}',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              Text(
-                                'per ${product.unit}',
-                                style: TextStyle(
-                                  fontSize: 9.sp,
-                                  color: AppColors.textHint,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Add to cart button
-                        GestureDetector(
-                          onTap: () => _addToCart(context, ref),
-                          child: Container(
-                            width: 28.w,
-                            height: 28.w,
-                            decoration: BoxDecoration(
-                              gradient: AppColors.traderGradient,
-                              borderRadius:
-                                  BorderRadius.circular(8.r),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.traderPrimary
-                                      .withOpacity(0.3),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.add_rounded,
-                              size: 16.sp,
-                              color: AppColors.white,
-                            ),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      '₹${product.currentPrice.sellingPrice.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Gap(2.h),
+                    Text(
+                      'per ${product.unit}',
+                      style: TextStyle(
+                        fontSize: 9.sp,
+                        color: AppColors.textHint,
+                      ),
                     ),
                   ],
                 ),
@@ -707,44 +630,6 @@ class _TraderProductListTile extends ConsumerWidget {
     required this.product,
     required this.onTap,
   });
-
-  void _addToCart(BuildContext context, WidgetRef ref) {
-    final currentItems = ref.read(selectedRequirementItemsProvider);
-    final exists = currentItems.any((i) => i.productId == product.id);
-    if (exists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${product.name} already in cart'),
-          duration: const Duration(seconds: 1),
-        ),
-      );
-      return;
-    }
-    final newItem = RequirementItemModel(
-      productId: product.id,
-      productName: product.name,
-      productCode: product.productCode,
-      productImage:
-          product.primaryImage.isNotEmpty ? product.primaryImage : null,
-      categoryName: product.categoryName,
-      quantity: 1,
-      unit: product.unit,
-      productCurrentPrice: product.currentPrice.sellingPrice,
-      customerDemandedPrice: product.currentPrice.sellingPrice,
-      traderOfferedPrice: product.currentPrice.sellingPrice,
-    );
-    ref.read(selectedRequirementItemsProvider.notifier).state = [
-      ...currentItems,
-      newItem,
-    ];
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${product.name} added to cart'),
-        backgroundColor: AppColors.approved,
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -856,38 +741,8 @@ class _TraderProductListTile extends ConsumerWidget {
 
             Gap(8.w),
 
-            // ─── Add to Cart + Availability ────────────
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _availabilityDot(product.availability),
-                Gap(12.h),
-                GestureDetector(
-                  onTap: () => _addToCart(context, ref),
-                  child: Container(
-                    width: 30.w,
-                    height: 30.w,
-                    decoration: BoxDecoration(
-                      gradient: AppColors.traderGradient,
-                      borderRadius: BorderRadius.circular(8.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.traderPrimary
-                              .withOpacity(0.3),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.add_rounded,
-                      size: 18.sp,
-                      color: AppColors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            // ─── Availability Badge ────────────
+            _availabilityDot(product.availability),
           ],
         ),
       ),

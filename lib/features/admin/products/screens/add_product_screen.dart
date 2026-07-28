@@ -319,6 +319,42 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             changeReason: 'Product edit update',
           );
         }
+
+        // Upload new images if any
+        try {
+          for (int i = 0; i < _newImages.length; i++) {
+            await repo.uploadProductImage(
+              productId: widget.product!.id,
+              imageFile: _newImages[i],
+              index: _existingImages.length + i,
+            );
+          }
+          // Upload new catalogs
+          for (int i = 0; i < _newCatalogFiles.length; i++) {
+            await repo.uploadProductCatalog(
+              productId: widget.product!.id,
+              file: _newCatalogFiles[i],
+              index: _existingCatalogUrls.length + i,
+            );
+          }
+          // Upload new drawings
+          for (int i = 0; i < _newDrawingFiles.length; i++) {
+            await repo.uploadProductDrawing(
+              productId: widget.product!.id,
+              file: _newDrawingFiles[i],
+              index: _existingDrawingUrls.length + i,
+            );
+          }
+        } catch (uploadError) {
+          debugPrint('Product file upload failed: $uploadError');
+          if (!mounted) return;
+          setState(() => _isLoading = false);
+          CustomSnackbar.showError(
+            context,
+            'Failed to upload file(s). Product details were updated, but files may not be available.',
+          );
+          return;
+        }
       } else {
         // Add new product
         final newProduct = await repo.addProduct(

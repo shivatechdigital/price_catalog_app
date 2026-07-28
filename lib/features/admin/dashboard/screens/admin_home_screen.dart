@@ -15,8 +15,27 @@ import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/providers/notification_provider.dart';
 import 'package:price_catalog_app/providers/product_provider.dart';
 import 'package:price_catalog_app/providers/requirement_provider.dart';
+import 'package:price_catalog_app/providers/category_provider.dart';
+import 'package:price_catalog_app/core/services/firebase_service.dart';
+import 'package:price_catalog_app/data/models/user_model.dart';
 import 'package:price_catalog_app/shared/widgets/shimmer_loading.dart';
 import 'package:price_catalog_app/features/admin/dashboard/widgets/trader_request_notification.dart';
+
+// ═══════════════════════════════════════
+// TRADERS STREAM PROVIDER (for admin home stats)
+// ═══════════════════════════════════════
+final _adminTradersStreamProvider =
+    StreamProvider<List<UserModel>>((ref) {
+  return FirebaseService.usersRef
+      .where('role', isEqualTo: 'trader')
+      .snapshots()
+      .map((snap) {
+    final traders =
+        snap.docs.map((d) => UserModel.fromFirestore(d)).toList();
+    traders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return traders;
+  });
+});
 
 class AdminHomeScreen extends ConsumerWidget {
   const AdminHomeScreen({super.key});
@@ -25,6 +44,8 @@ class AdminHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
     final productsAsync = ref.watch(productsStreamProvider);
+    final categoriesAsync = ref.watch(categoriesStreamProvider);
+    final tradersAsync = ref.watch(_adminTradersStreamProvider);
     final pendingCountAsync = ref.watch(pendingRequirementsCountProvider);
     final pendingReqAsync = ref.watch(
       requirementsByStatusProvider(RequirementStatus.pending),
@@ -122,6 +143,8 @@ class AdminHomeScreen extends ConsumerWidget {
                     child: _buildStatsSection(
                       ref,
                       productsAsync,
+                      categoriesAsync,
+                      tradersAsync,
                       pendingCountAsync,
                     ),
                   ),
@@ -307,6 +330,8 @@ class AdminHomeScreen extends ConsumerWidget {
   Widget _buildStatsSection(
     WidgetRef ref,
     AsyncValue productsAsync,
+    AsyncValue categoriesAsync,
+    AsyncValue tradersAsync,
     AsyncValue<int> pendingCountAsync,
   ) {
     return Column(
@@ -360,7 +385,11 @@ class AdminHomeScreen extends ConsumerWidget {
             Expanded(
               child: AdminStatCard(
                 title: 'Categories',
-                value: '8',
+                value: categoriesAsync.when(
+                  data: (c) => '${c.length}',
+                  loading: () => '...',
+                  error: (_, __) => '0',
+                ),
                 icon: Iconsax.category,
                 gradient: const LinearGradient(
                   colors: [Color(0xFF11998E), Color(0xFF38EF7D)],
@@ -372,7 +401,11 @@ class AdminHomeScreen extends ConsumerWidget {
             Expanded(
               child: AdminStatCard(
                 title: 'Traders',
-                value: '24',
+                value: tradersAsync.when(
+                  data: (t) => '${t.length}',
+                  loading: () => '...',
+                  error: (_, __) => '0',
+                ),
                 icon: Iconsax.people,
                 gradient: const LinearGradient(
                   colors: [Color(0xFFFC5C7D), Color(0xFF6A3093)],

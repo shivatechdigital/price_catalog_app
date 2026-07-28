@@ -15,17 +15,21 @@ A comprehensive **Flutter e-commerce platform** for B2B price catalog management
 - ✅ Trader approval & status management
 - ✅ Purchase order review & counter-offer workflow
 - ✅ Real-time notifications for trader activities
+- ✅ Security settings - Change password securely
+- ✅ Export data functionality with date range filtering
 
 ### **Trader Features**
 - ✅ Browse product catalog with search & filtering
 - ✅ View product details, specifications, and price history
 - ✅ Download catalogs & technical drawings
-- ✅ Add products to cart & create purchase orders (PO)
+- ✅ Create purchase orders (PO) with multiple products
 - ✅ Submit multi-product requirements with quantity & custom prices
 - ✅ Respond to counter-offers from admin
 - ✅ Track order status (pending, approved, rejected, counter-offer)
 - ✅ Share products & catalogs via WhatsApp, email, etc.
 - ✅ Profile management with company details
+- ✅ Form validation before submission (mandatory fields check)
+- ✅ Export requirements with custom date ranges
 
 ### **Core Features**
 - 🔐 Role-based authentication (Admin/Trader)
@@ -261,17 +265,63 @@ lib/
 - ✅ Admin approval workflow for orders with counter-offer support
 - ✅ Notifications are user-specific and secure
 
-#### Storage Rules (`storage.rules`)
-- ✅ Product Images: `products/{id}/images/` - Admin upload, all users read
-- ✅ **Product Catalogs (PDF)**: `products/{id}/catalogs/` - Admin upload, max 50MB, all users read
-- ✅ **Product Drawings (PDF)**: `products/{id}/drawings/` - Admin upload, max 50MB, all users read
-- ✅ User Profiles: `users/{id}/` - User + admin upload, all users read
-- ✅ Trader Catalogs: `traders/{id}/catalog/` - Trader + admin upload
-- ✅ Order/Requirement Attachments: Support for images & PDFs
+#### Storage Rules (`storage.rules`) - Enhanced Security
+- ✅ **Product Images**: `products/{id}/images/` - Admin upload only, max 50MB, logged-in users read
+- ✅ **Product Catalogs (PDF)**: `products/{id}/catalogs/` - Admin upload only, max 50MB, logged-in users read
+- ✅ **Product Drawings (PDF)**: `products/{id}/drawings/` - Admin upload only, max 50MB, logged-in users read
+- ✅ **User Profile Images**: `users/{id}/` - Self + admin upload, max 10MB, logged-in users read
+- ✅ **Trader Catalogs**: `traders/{id}/catalog/` - Self + admin upload, images & PDFs, max 50MB
+- ✅ **Requirement Attachments**: `requirements/{id}/` - Self + admin access only, images & PDFs, max 50MB
+- ✅ **Order Attachments**: `orders/{id}/` - Self + admin access only, images & PDFs, max 50MB
+- ✅ **Exports**: `exports/{id}/` - User-specific data exports, max 100MB
+- ✅ **File Type Validation**: Strict MIME type checking with regex for PDFs
+- ✅ **Default Deny**: All unlisted paths blocked (security best practice)
 
 ---
 
-## 🚀 Getting Started
+## ✅ Recent Improvements & Bug Fixes (v1.0.0)
+
+### **Authentication & Profile**
+- ✅ Fixed login flow race condition - splash screen now reactively watches auth state
+- ✅ Fixed profile edit logout issue - users stay logged in when editing profile
+- ✅ Added password change functionality with re-authentication
+
+### **Product Management**
+- ✅ Fixed PDF upload errors in product edit mode - catalogs & drawings now upload properly
+- ✅ Added proper file size validation (max 50MB for PDFs, 10MB for images)
+- ✅ Improved image display with CachedNetworkImage in trader home
+
+### **Admin Features**
+- ✅ Made category & trader stats dynamic on admin home (no more hardcoded values)
+- ✅ Removed unimplemented "coming soon" menu items
+- ✅ Added functional Security option for password management
+
+### **Trader Features**
+- ✅ Removed duplicate "+" cart button from product catalog (use top app bar only)
+- ✅ Added mandatory field validation before requirement submission
+- ✅ Product images now display properly in latest products section
+
+### **Security & Storage**
+- ✅ Enhanced Firestore rules with better permission checks
+- ✅ Improved Storage rules with strict MIME type validation
+- ✅ Added file size limits for all upload paths
+- ✅ Added default deny rule for unlisted paths
+- ✅ Better error handling for missing user documents
+
+---
+
+## 🔐 Security Best Practices Implemented
+
+- ✅ Role-based access control (RBAC) on Firestore & Storage
+- ✅ Only authenticated users can access resources
+- ✅ File type validation (images: .jpg, .png; PDFs: strict checking)
+- ✅ File size limits to prevent storage abuse
+- ✅ User ownership verification for personal data
+- ✅ Admin-only operations for product management
+- ✅ Secure password re-authentication for profile changes
+- ✅ Default deny for unspecified paths
+
+---
 
 ### **Prerequisites**
 - Flutter SDK (latest version)
@@ -344,9 +394,19 @@ flutter build ios --release
 ### **Admin: Upload Product with Catalogs**
 1. Admin goes to Product Management → Add Product
 2. Fill product details (name, category, pricing)
-3. Step 4: Upload catalogs (PDF) and drawings (PDF)
-4. Save → Files auto-upload to Firebase Storage
-5. Product appears in trader catalog with download links
+3. Step 4: Upload catalogs (PDF) and drawings (PDF) - supports multiple files
+4. Edit mode also supports adding new catalogs & drawings to existing products
+5. Save → Files auto-upload to Firebase Storage
+6. Product appears in trader catalog with download links
+7. Images display properly with CachedNetworkImage for performance
+
+### **Admin: Change Password**
+1. Admin goes to Profile → Account Settings → Account → Change Password
+2. Enter current password (must verify to proceed for security)
+3. Enter new password (6+ characters, cannot match current)
+4. Confirm password (must match exactly)
+5. Submit → Auto-logout and prompt to re-login with new password
+6. Enhanced security: Re-authentication required, no session continuation
 
 ### **Trader: Create Purchase Order**
 1. Trader browses catalog → Search/filter products
@@ -385,25 +445,44 @@ Admin Reviews Items
 
 ## 🐛 Troubleshooting
 
+### **Authentication & Login Issues**
+- **Issue**: Login flow shows splash screen, then login page reappears
+  - **Solution**: Cleared race condition in splash_screen.dart - now uses `ref.watch()` for reactive state management
+- **Issue**: User logged out after profile edit
+  - **Solution**: updateProfile() now restores previous auth state instead of logging out on error
+- **Issue**: Password change doesn't work
+  - **Solution**: Ensure current password is correct (re-authentication required)
+
 ### **Firebase Connection Issues**
 - Verify `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) are in correct directories
 - Check Firebase project settings match your app package name
 - Ensure Firebase Firestore and Storage are enabled in Firebase Console
+- Verify security rules are properly deployed (use Firebase Console → Rules tab)
 
 ### **File Upload Fails**
-- Check PDF file size (max 50MB per storage rules)
-- Verify admin is logged in (required for uploads)
+- **PDF upload error**: Check file size (max 50MB per storage rules)
+- **Image upload fails**: Verify file size (max 10MB for profiles, 50MB for others)
+- **"Unable to update product"**: Ensure admin is logged in and has upload permissions
+- **Check file MIME type**: PDFs must be `application/pdf` or `application/x-pdf`
 - Check Firebase Storage quota in Firebase Console
 
 ### **Notifications Not Working**
 - Ensure FCM token is saved after login
 - Check notification settings in app settings (admin panel)
 - Verify Firebase Cloud Messaging is enabled
+- Check notification permissions are granted on device
 
-### **Orders Not Appearing**
-- Clear app cache and restart
-- Verify trader status is "approved" in Firestore
+### **Orders/Requirements Not Appearing**
+- Clear app cache and restart: `flutter clean` then `flutter run`
+- Verify trader status is "approved" in Firestore `users` collection
 - Check Firestore security rules are properly deployed
+- Verify auth token is valid (re-login if needed)
+
+### **Images Not Loading**
+- Check internet connection
+- Verify image URL is correct in Firestore
+- Clear app cache: Settings → App Storage → Clear Cache
+- Check if using CachedNetworkImage with proper error handling
 
 ---
 
@@ -443,7 +522,18 @@ This project is proprietary software. All rights reserved.
 - **Architecture**: Clean Architecture with MVVM pattern
 
 ### **Last Updated**: July 2026
-### **Version**: 1.0.0
+### **Version**: 1.0.0 - Production Ready
+### **Status**: All 8 critical issues fixed ✅
+
+**Recent Fixes (Latest)**:
+- ✅ Login flow race condition resolved
+- ✅ Profile edit logout issue fixed
+- ✅ PDF upload functionality restored
+- ✅ Dynamic admin stats implemented
+- ✅ Security password change added
+- ✅ Form validation improvements
+- ✅ Image display fixes
+- ✅ Firestore & Storage rules enhanced
 
 ---
 

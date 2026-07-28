@@ -14,34 +14,73 @@ class SplashScreen extends ConsumerStatefulWidget {
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen> {
+class SplashScreen extends ConsumerWidget {
+  const SplashScreen({super.key});
+
   @override
-  void initState() {
-    super.initState();
-    _navigate();
-  }
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch auth state for changes
+    final authState = ref.watch(authStateProvider);
 
-  Future<void> _navigate() async {
-    // Wait for animation
-    await Future.delayed(const Duration(milliseconds: 2800));
-
-    if (!mounted) return;
-
-    final authState = ref.read(authStateProvider);
-
-    authState.when(
-      initial: () => context.go(AppRoutes.login),
-      loading: () => context.go(AppRoutes.login),
-      unauthenticated: () => context.go(AppRoutes.login),
-      profileIncomplete: () => context.go(AppRoutes.completeProfile),
-      pendingApproval: () => context.go(AppRoutes.pendingApproval),
-      authenticatedAdmin: (_) => context.go(AppRoutes.adminDashboard),
-      authenticatedTrader: (_) => context.go(AppRoutes.traderDashboard),
+    // Handle navigation based on auth state
+    authState.maybeWhen(
+      initial: () {
+        // Show splash while loading
+        return null;
+      },
+      loading: () {
+        // Show splash while loading
+        return null;
+      },
+      unauthenticated: () {
+        // Redirect to login after a short delay
+        Future.delayed(const Duration(milliseconds: 2800), () {
+          if (context.mounted) {
+            context.go(AppRoutes.login);
+          }
+        });
+        return null;
+      },
+      profileIncomplete: () {
+        // Redirect after animation
+        Future.delayed(const Duration(milliseconds: 2800), () {
+          if (context.mounted) {
+            context.go(AppRoutes.completeProfile);
+          }
+        });
+        return null;
+      },
+      pendingApproval: () {
+        Future.delayed(const Duration(milliseconds: 2800), () {
+          if (context.mounted) {
+            context.go(AppRoutes.pendingApproval);
+          }
+        });
+        return null;
+      },
+      authenticatedAdmin: (_) {
+        Future.delayed(const Duration(milliseconds: 2800), () {
+          if (context.mounted) {
+            context.go(AppRoutes.adminDashboard);
+          }
+        });
+        return null;
+      },
+      authenticatedTrader: (_) {
+        Future.delayed(const Duration(milliseconds: 2800), () {
+          if (context.mounted) {
+            context.go(AppRoutes.traderDashboard);
+          }
+        });
+        return null;
+      },
+      orElse: () => null,
     );
+
+    return _buildSplashUI(context);
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildSplashUI(BuildContext context) {
     return Scaffold(
       body: Container(
         width: double.infinity,

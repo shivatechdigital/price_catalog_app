@@ -8,6 +8,7 @@ import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/core/services/requirement_export_service.dart';
 import 'package:price_catalog_app/features/admin/categories/screens/admin_categories_screen.dart';
 import 'package:price_catalog_app/features/admin/traders/screens/admin_traders_screen.dart';
+import 'package:price_catalog_app/features/admin/security/screens/change_password_screen.dart';
 import 'package:price_catalog_app/features/auth/screens/profile_edit_screen.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/providers/requirement_provider.dart';
@@ -66,18 +67,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    _SettingsItem(
-                      icon: Iconsax.building,
-                      label: 'Company Profile',
-                      subtitle: 'Update company information',
-                      color: AppColors.traderPrimary,
-                      onTap: () {
-                        CustomSnackbar.showInfo(
-                          context,
-                          'Company profile settings will be available soon.',
-                        );
-                      },
-                    ),
+
                     _SettingsItem(
                       icon: Iconsax.category,
                       label: 'Categories',
@@ -98,32 +88,32 @@ class AdminSettingsScreen extends ConsumerWidget {
                 Gap(16.h),
 
                 _buildSettingsGroup(
-                  title: 'App',
+                  title: 'Account',
                   items: [
                     _SettingsItem(
-                      icon: Iconsax.notification,
-                      label: 'Notifications',
-                      subtitle: 'Review recent app alerts',
-                      color: AppColors.counter,
-                      onTap: () {
-                        CustomSnackbar.showInfo(
-                          context,
-                          'Notification settings will be added soon.',
-                        );
-                      },
-                    ),
-                    _SettingsItem(
-                      icon: Iconsax.security,
-                      label: 'Security',
-                      subtitle: 'Password & data security',
+                      icon: Iconsax.lock,
+                      label: 'Change Password',
+                      subtitle: 'Update your account password',
                       color: AppColors.adminPrimary,
                       onTap: () {
-                        CustomSnackbar.showInfo(
+                        Navigator.push(
                           context,
-                          'Security settings are coming soon.',
+                          MaterialPageRoute(
+                            builder: (_) => const ChangePasswordScreen(),
+                          ),
                         );
                       },
                     ),
+                  ],
+                ),
+
+                Gap(16.h),
+
+                _buildSettingsGroup(
+                  title: 'App',
+                  items: [
+
+
                     _SettingsItem(
                       icon: Iconsax.export,
                       label: 'Export Data',
@@ -180,18 +170,7 @@ class AdminSettingsScreen extends ConsumerWidget {
                         );
                       },
                     ),
-                    _SettingsItem(
-                      icon: Iconsax.refresh,
-                      label: 'Backup & Restore',
-                      subtitle: 'Cloud backup settings',
-                      color: AppColors.adminPrimary,
-                      onTap: () {
-                        CustomSnackbar.showInfo(
-                          context,
-                          'Backup support is planned for the next update.',
-                        );
-                      },
-                    ),
+
                   ],
                 ),
 

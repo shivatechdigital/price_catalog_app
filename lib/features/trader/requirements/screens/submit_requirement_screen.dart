@@ -977,6 +977,10 @@ class _SubmitRequirementScreenState
                   : Icons.arrow_forward_rounded,
               onPressed: () {
                 if (_currentStep < 2) {
+                  // Validate form before moving to next step
+                  if (!_formKey.currentState!.validate()) {
+                    return;
+                  }
                   _pageController.nextPage(
                     duration:
                         const Duration(milliseconds: 300),

@@ -4,8 +4,6 @@ service firebase.storage {
 
     // ═══════════════════════════════════════
     // HELPER FUNCTIONS
-    // (mirrors firestore.rules logic, reading the same
-    //  users/{uid} doc via the firestore.get()/exists() bridge)
     // ═══════════════════════════════════════
 
     function isLoggedIn() {
@@ -16,10 +14,25 @@ service firebase.storage {
       return firestore.get(/databases/(default)/documents/users/$(request.auth.uid));
     }
 
+    function userDocExists() {
+      return firestore.exists(/databases/(default)/documents/users/$(request.auth.uid));
+    }
+
     function isAdmin() {
       return isLoggedIn()
-        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && userDocExists()
         && userDoc().data.get('role', null) == 'admin';
+    }
+
+    function isApprovedTrader() {
+      return isLoggedIn()
+        && userDocExists()
+        && userDoc().data.get('role', null) == 'trader'
+        && userDoc().data.get('traderStatus', null) == 'approved';
+    }
+
+    function isAdminOrApprovedTrader() {
+      return isAdmin() || isApprovedTrader();
     }
 
     function isOwner(userId) {
@@ -34,7 +47,11 @@ service firebase.storage {
       return request.resource.contentType == 'application/pdf'
         || request.resource.contentType == 'application/x-pdf'
         || request.resource.contentType == 'application/octet-stream'
-        || request.resource.name.matches('.*\\.pdf');
+        || request.resource.name.matches('(?i).*\\.pdf$');
+    }
+
+    function isImageOrPDF() {
+      return isImage() || isPDF();
     }
 
     function isFileSizeValid(maxMB) {
@@ -43,12 +60,11 @@ service firebase.storage {
 
     // ═══════════════════════════════════════
     // PRODUCT IMAGES — products/{productId}/images/{fileName}
-    // Read: any logged in user. Write: admin only (matches products
-    // collection rule in firestore.rules).
+    // Read: any logged in user. Write: admin only.
     // ═══════════════════════════════════════
     match /products/{productId}/images/{fileName} {
       allow read: if isLoggedIn();
-      allow write: if isAdmin() && isImage();
+      allow write: if isAdmin() && isImage() && isFileSizeValid(50);
     }
 
     // ═══════════════════════════════════════
@@ -74,49 +90,92 @@ service firebase.storage {
     // ═══════════════════════════════════════
     // USER PROFILE IMAGES — users/{userId}/{fileName}
     // Read: any logged in user. Write: the user themself or admin.
+    // Max file size: 10MB
     // ═══════════════════════════════════════
     match /users/{userId}/{fileName} {
       allow read: if isLoggedIn();
-      allow write: if (isOwner(userId) || isAdmin()) && isImage();
+      allow write: if isAdminOrApprovedTrader() && (isOwner(userId) || isAdmin()) && isImage() && isFileSizeValid(10);
     }
 
     // ═══════════════════════════════════════
     // APP SETTINGS IMAGES — settings/{fileName}
     // Read: any logged in user. Write: admin only.
+    // Max file size: 25MB
     // ═══════════════════════════════════════
     match /settings/{fileName} {
       allow read: if isLoggedIn();
-      allow write: if isAdmin() && isImage();
+      allow write: if isAdmin() && isImage() && isFileSizeValid(25);
     }
 
     // ═══════════════════════════════════════
     // TRADER PROFILE CATALOGS — traders/{userId}/catalog/{fileName}
     // Read: any logged in user. Write: the owning trader or admin.
     // Supports both images and PDFs for catalog uploads
+    // Max file size: 50MB
     // ═══════════════════════════════════════
     match /traders/{userId}/catalog/{fileName} {
       allow read: if isLoggedIn();
-      allow write: if (isOwner(userId) || isAdmin()) && (isImage() || isPDF());
+      allow write: if isAdminOrApprovedTrader() && (isOwner(userId) || isAdmin()) && isImageOrPDF() && isFileSizeValid(50);
     }
 
     // ═══════════════════════════════════════
     // REQUIREMENT ATTACHMENTS — requirements/{requirementId}/{fileName}
     // Read: admin and the requirement creator. Write: same.
     // Supports images and PDFs for requirement attachments
+    // Max file size: 50MB
     // ═══════════════════════════════════════
     match /requirements/{requirementId}/{fileName} {
-      allow read: if isLoggedIn() && (isAdmin() || isOwner(firestore.get(/databases/(default)/documents/requirements/$(requirementId)).data.traderId));
-      allow write: if isLoggedIn() && (isAdmin() || isOwner(firestore.get(/databases/(default)/documents/requirements/$(requirementId)).data.traderId)) && (isImage() || isPDF());
+      allow read: if isAdminOrApprovedTrader() && (
+        isAdmin() || (
+          userDocExists() && 
+          request.auth.uid == firestore.get(/databases/(default)/documents/requirements/$(requirementId)).data.traderId
+        )
+      );
+      allow write: if isAdminOrApprovedTrader() && (
+        isAdmin() || (
+          userDocExists() && 
+          request.auth.uid == firestore.get(/databases/(default)/documents/requirements/$(requirementId)).data.traderId
+        )
+      ) && isImageOrPDF() && isFileSizeValid(50);
     }
 
     // ═══════════════════════════════════════
     // ORDER ATTACHMENTS — orders/{orderId}/{fileName}
     // Read: admin and the order creator. Write: same.
     // Supports images and PDFs for order attachments
+    // Max file size: 50MB
     // ═══════════════════════════════════════
     match /orders/{orderId}/{fileName} {
-      allow read: if isLoggedIn() && (isAdmin() || isOwner(firestore.get(/databases/(default)/documents/orders/$(orderId)).data.traderId));
-      allow write: if isLoggedIn() && (isAdmin() || isOwner(firestore.get(/databases/(default)/documents/orders/$(orderId)).data.traderId)) && (isImage() || isPDF());
+      allow read: if isAdminOrApprovedTrader() && (
+        isAdmin() || (
+          userDocExists() && 
+          request.auth.uid == firestore.get(/databases/(default)/documents/orders/$(orderId)).data.traderId
+        )
+      );
+      allow write: if isAdminOrApprovedTrader() && (
+        isAdmin() || (
+          userDocExists() && 
+          request.auth.uid == firestore.get(/databases/(default)/documents/orders/$(orderId)).data.traderId
+        )
+      ) && isImageOrPDF() && isFileSizeValid(50);
+    }
+
+    // ═══════════════════════════════════════
+    // REQUIREMENT EXPORT — exports/{userId}/{exportId}/{fileName}
+    // Read: only the user or admin. Write: same.
+    // Max file size: 100MB
+    // ═══════════════════════════════════════
+    match /exports/{userId}/{exportId}/{fileName} {
+      allow read: if isAdminOrApprovedTrader() && (isOwner(userId) || isAdmin());
+      allow write: if isAdminOrApprovedTrader() && (isOwner(userId) || isAdmin()) && isFileSizeValid(100);
+      allow delete: if isAdminOrApprovedTrader() && (isOwner(userId) || isAdmin());
+    }
+
+    // ═══════════════════════════════════════
+    // DEFAULT: Deny all
+    // ═══════════════════════════════════════
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

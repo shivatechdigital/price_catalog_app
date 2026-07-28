@@ -17,28 +17,37 @@ service cloud.firestore {
       return exists(userDocPath) ? get(userDocPath).data : {};
     }
 
+    // Get current user data
+    function currentUserData() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) 
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data 
+        : {};
+    }
+
     // Check if user is admin (safe, handles missing doc)
     function isAdmin() {
-      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return isLoggedIn() && exists(userDocPath) && get(userDocPath).data.get('role', null) == 'admin';
+      return isLoggedIn() && currentUserData().get('role', null) == 'admin';
     }
 
     // Check if user is approved trader (safe, handles missing doc)
     function isApprovedTrader() {
-      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      let userData = currentUserData();
       return isLoggedIn() 
-        && exists(userDocPath)
-        && get(userDocPath).data.get('role', null) == 'trader'
-        && get(userDocPath).data.get('traderStatus', null) == 'approved';
+        && userData.get('role', null) == 'trader'
+        && userData.get('traderStatus', null) == 'approved';
     }
 
     // Check if user is pending trader (for trader registration requests)
     function isPendingTrader() {
-      let userDocPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      let userData = currentUserData();
       return isLoggedIn() 
-        && exists(userDocPath)
-        && get(userDocPath).data.get('role', null) == 'trader'
-        && get(userDocPath).data.get('traderStatus', null) == 'pending';
+        && userData.get('role', null) == 'trader'
+        && userData.get('traderStatus', null) == 'pending';
+    }
+
+    // Check if user is trader (any status)
+    function isTrader() {
+      return isLoggedIn() && currentUserData().get('role', null) == 'trader';
     }
 
     // Check if user is admin OR approved trader
@@ -48,7 +57,7 @@ service cloud.firestore {
 
     // Check if document belongs to current user
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return isLoggedIn() && request.auth.uid == userId;
     }
 
     // ═══════════════════════════════════════
@@ -68,20 +77,34 @@ service cloud.firestore {
             : true);
 
       // Update: 
-      // - Own profile (limited fields)
-      // - Admin can update any user
+      // - Own profile (limited fields) - trader or admin
+      // - Admin can update any user (any field)
       allow update: if isLoggedIn() && (
-        (isOwner(userId) && onlyUpdatingAllowedFields()) 
+        (isOwner(userId) && allowedFieldsForUser()) 
         || isAdmin()
       );
 
       // Delete: Only admin
       allow delete: if isAdmin();
 
-      // Helper: Trader can only update these fields
-      function onlyUpdatingAllowedFields() {
-        return request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['name', 'phone', 'businessName', 'city', 'gstNumber', 'profileImage', 'fcmToken', 'lastLogin']);
+      // Helper: User can update these fields on their own profile
+      function allowedFieldsForUser() {
+        let affectedKeys = request.resource.data.diff(resource.data).affectedKeys();
+        return affectedKeys.hasOnly([
+          'name', 
+          'phone', 
+          'businessName', 
+          'city', 
+          'gstNumber', 
+          'profileImage', 
+          'fcmToken', 
+          'lastLogin',
+          'address',
+          'state',
+          'country',
+          'email',
+          'businessRegistration'
+        ]);
       }
     }
 
