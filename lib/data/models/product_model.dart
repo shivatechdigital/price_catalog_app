@@ -23,6 +23,8 @@ class ProductModel {
   final int viewCount;
   final Map<String, String> specifications;
   final List<String> tags;
+  final List<String> catalogUrls;
+  final List<String> drawingUrls;
 
   const ProductModel({
     required this.id,
@@ -39,6 +41,8 @@ class ProductModel {
     this.viewCount = 0,
     this.specifications = const {},
     this.tags = const [],
+    this.catalogUrls = const [],
+    this.drawingUrls = const [],
     required this.availability,
     required this.currentPrice,
     required this.isActive,
@@ -83,6 +87,8 @@ class ProductModel {
       viewCount: data['viewCount'] ?? 0,
       specifications: Map<String, String>.from(data['specifications'] ?? {}),
       tags: List<String>.from(data['tags'] ?? []),
+      catalogUrls: List<String>.from(data['catalogUrls'] ?? []),
+      drawingUrls: List<String>.from(data['drawingUrls'] ?? []),
     );
   }
 
@@ -107,6 +113,8 @@ class ProductModel {
       'viewCount': viewCount,
       'specifications': specifications,
       'tags': tags,
+      'catalogUrls': catalogUrls,
+      'drawingUrls': drawingUrls,
     };
   }
 }

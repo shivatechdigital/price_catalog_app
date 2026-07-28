@@ -314,6 +314,85 @@ class ProductRepository {
   }
 
   // ═══════════════════════════════════════
+  // UPLOAD PRODUCT CATALOG (PDF)
+  // ═══════════════════════════════════════
+  Future<String> uploadProductCatalog({
+    required String productId,
+    required File file,
+    required int index,
+  }) async {
+    final fileName =
+        'catalog_${productId}_${index}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+
+    final storageRef = FirebaseService.storage
+        .ref()
+        .child('products/$productId/catalogs/$fileName');
+
+    final uploadTask = await storageRef.putFile(
+      file,
+      SettableMetadata(contentType: 'application/pdf'),
+    );
+
+    final downloadUrl = await uploadTask.ref.getDownloadURL();
+
+    await _productsRef.doc(productId).update({
+      'catalogUrls': FieldValue.arrayUnion([downloadUrl]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    return downloadUrl;
+  }
+
+  // ═══════════════════════════════════════
+  // UPLOAD PRODUCT DRAWING (PDF)
+  // ═══════════════════════════════════════
+  Future<String> uploadProductDrawing({
+    required String productId,
+    required File file,
+    required int index,
+  }) async {
+    final fileName =
+        'drawing_${productId}_${index}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+
+    final storageRef = FirebaseService.storage
+        .ref()
+        .child('products/$productId/drawings/$fileName');
+
+    final uploadTask = await storageRef.putFile(
+      file,
+      SettableMetadata(contentType: 'application/pdf'),
+    );
+
+    final downloadUrl = await uploadTask.ref.getDownloadURL();
+
+    await _productsRef.doc(productId).update({
+      'drawingUrls': FieldValue.arrayUnion([downloadUrl]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    return downloadUrl;
+  }
+
+  // ═══════════════════════════════════════
+  // DELETE CATALOG/DRAWING FILE
+  // ═══════════════════════════════════════
+  Future<void> deleteProductFile({
+    required String productId,
+    required String fileUrl,
+    required String field, // 'catalogUrls' or 'drawingUrls'
+  }) async {
+    try {
+      final storageRef = FirebaseService.storage.refFromURL(fileUrl);
+      await storageRef.delete();
+    } catch (_) {}
+
+    await _productsRef.doc(productId).update({
+      field: FieldValue.arrayRemove([fileUrl]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // ═══════════════════════════════════════
   // WATCH PRICE HISTORY
   // ═══════════════════════════════════════
   Stream<List<PriceHistoryModel>> watchPriceHistory(String productId) {

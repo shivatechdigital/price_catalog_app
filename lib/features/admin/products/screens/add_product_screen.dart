@@ -3,6 +3,7 @@
 
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -16,8 +17,7 @@ import 'package:price_catalog_app/data/models/category_model.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/providers/category_provider.dart';
-import 'package:price_catalog_app/providers/product_provider.dart';
-import 'package:price_catalog_app/shared/widgets/custom_button.dart';
+import 'package:price_catalog_app/providers/product_provider.dart';import 'package:price_catalog_app/shared/widgets/custom_button.dart';
 import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
 
 class AddProductScreen extends ConsumerStatefulWidget {
@@ -56,6 +56,10 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   ProductAvailability _availability = ProductAvailability.inStock;
   List<File> _newImages = [];
   List<String> _existingImages = [];
+  List<File> _newCatalogFiles = [];
+  List<String> _existingCatalogUrls = [];
+  List<File> _newDrawingFiles = [];
+  List<String> _existingDrawingUrls = [];
   bool _isLoading = false;
 
   final List<String> _units = [
@@ -93,6 +97,8 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     _selectedUnit = p.unit;
     _availability = p.availability;
     _existingImages = List.from(p.images);
+    _existingCatalogUrls = List.from(p.catalogUrls);
+    _existingDrawingUrls = List.from(p.drawingUrls);
   }
 
   @override
@@ -145,6 +151,36 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     } catch (e) {
       if (mounted) {
         CustomSnackbar.showError(context, 'Failed to pick image');
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════
+  // PICK PDF FILE (Catalog or Drawing)
+  // ═══════════════════════════════════════
+  Future<void> _pickPdfFile(String type) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: true,
+      );
+      if (result != null && result.files.isNotEmpty) {
+        final files = result.files
+            .where((f) => f.path != null)
+            .map((f) => File(f.path!))
+            .toList();
+        setState(() {
+          if (type == 'catalog') {
+            _newCatalogFiles.addAll(files);
+          } else {
+            _newDrawingFiles.addAll(files);
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomSnackbar.showError(context, 'Failed to pick file');
       }
     }
   }
@@ -309,6 +345,22 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               index: i,
             );
           }
+          // Upload catalogs
+          for (int i = 0; i < _newCatalogFiles.length; i++) {
+            await repo.uploadProductCatalog(
+              productId: newProduct.id,
+              file: _newCatalogFiles[i],
+              index: i,
+            );
+          }
+          // Upload drawings
+          for (int i = 0; i < _newDrawingFiles.length; i++) {
+            await repo.uploadProductDrawing(
+              productId: newProduct.id,
+              file: _newDrawingFiles[i],
+              index: i,
+            );
+          }
         } catch (imageError) {
           debugPrint('Product image upload failed: $imageError');
           await repo.deleteProduct(newProduct.id);
@@ -399,6 +451,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                   _buildStep1BasicInfo(),
                   _buildStep2Pricing(),
                   _buildStep3Images(),
+                  _buildStep4Catalogs(),
                 ],
               ),
             ),
@@ -415,7 +468,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   // STEP INDICATOR
   // ═══════════════════════════════════════
   Widget _buildStepIndicator() {
-    final steps = ['Basic Info', 'Pricing', 'Images'];
+    final steps = ['Basic Info', 'Pricing', 'Images', 'Documents'];
     return Container(
       color: AppColors.white,
       padding: EdgeInsets.symmetric(
@@ -630,48 +683,157 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   // CATEGORY DROPDOWN
   // ═══════════════════════════════════════
   Widget _buildCategoryDropdown(List<CategoryModel> categories) {
-    return DropdownButtonFormField<String>(
-      value: _selectedCategoryId,
-      hint: Text(
-        'Select Category',
-        style: TextStyle(
-          fontSize: 14.sp,
-          color: AppColors.textHint,
-        ),
-      ),
-      decoration: InputDecoration(
-        prefixIcon: Icon(
-          Iconsax.category,
-          size: 20.sp,
-          color: AppColors.textHint,
-        ),
-      ),
-      items: categories
-          .map((c) => DropdownMenuItem(
-                value: c.id,
-                child: Row(
-                  children: [
-                    Text(c.icon),
-                    Gap(8.w),
-                    Text(
-                      c.name,
-                      style: TextStyle(fontSize: 14.sp),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          value: _selectedCategoryId,
+          hint: Text(
+            'Select Category',
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: AppColors.textHint,
+            ),
+          ),
+          decoration: InputDecoration(
+            prefixIcon: Icon(
+              Iconsax.category,
+              size: 20.sp,
+              color: AppColors.textHint,
+            ),
+          ),
+          items: categories
+              .map((c) => DropdownMenuItem(
+                    value: c.id,
+                    child: Row(
+                      children: [
+                        Text(c.icon),
+                        Gap(8.w),
+                        Text(
+                          c.name,
+                          style: TextStyle(fontSize: 14.sp),
+                        ),
+                      ],
                     ),
-                  ],
+                  ))
+              .toList(),
+          onChanged: (v) {
+            final category = categories.firstWhere((c) => c.id == v);
+            setState(() {
+              _selectedCategoryId = v;
+              _selectedCategoryName = category.name;
+              _selectedSubCategoryId = null;
+              _selectedSubCategoryName = null;
+            });
+          },
+          validator: (v) =>
+              v == null ? 'Please select a category' : null,
+        ),
+        Gap(8.h),
+        GestureDetector(
+          onTap: () => _showAddCategoryDialog(),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Iconsax.add_circle,
+                size: 16.sp,
+                color: AppColors.adminPrimary,
+              ),
+              Gap(4.w),
+              Text(
+                'Add New Category',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: AppColors.adminPrimary,
+                  fontWeight: FontWeight.w600,
                 ),
-              ))
-          .toList(),
-      onChanged: (v) {
-        final category = categories.firstWhere((c) => c.id == v);
-        setState(() {
-          _selectedCategoryId = v;
-          _selectedCategoryName = category.name;
-          _selectedSubCategoryId = null;
-          _selectedSubCategoryName = null;
-        });
-      },
-      validator: (v) =>
-          v == null ? 'Please select a category' : null,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ═══════════════════════════════════════
+  // ADD CATEGORY DIALOG
+  // ═══════════════════════════════════════
+  void _showAddCategoryDialog() {
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    String icon = '📦';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          'Add New Category',
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                labelText: 'Category Name *',
+                hintText: 'e.g. Iron and Steel',
+                prefixIcon: Icon(Iconsax.category, size: 20.sp),
+              ),
+            ),
+            Gap(12.h),
+            TextField(
+              controller: descCtrl,
+              decoration: InputDecoration(
+                labelText: 'Description',
+                hintText: 'Optional',
+                prefixIcon: Icon(Iconsax.document_text, size: 20.sp),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameCtrl.text.trim().isEmpty) return;
+              Navigator.pop(ctx);
+              final currentUser = ref.read(currentUserProvider);
+              final success = await ref
+                  .read(categoryNotifierProvider.notifier)
+                  .addCategory(
+                    name: nameCtrl.text.trim(),
+                    description: descCtrl.text.trim(),
+                    icon: icon,
+                    sortOrder: 0,
+                    createdBy: currentUser?.uid ?? '',
+                  );
+              if (mounted && success) {
+                CustomSnackbar.showSuccess(
+                  context,
+                  'Category "${nameCtrl.text.trim()}" created!',
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.adminPrimary,
+            ),
+            child: const Text(
+              'Create',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -683,57 +845,156 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
         .where((c) => c.id == _selectedCategoryId)
         .firstOrNull;
 
-    if (selectedCat == null ||
-        selectedCat.subCategories.isEmpty) {
-      return const SizedBox();
-    }
+    if (selectedCat == null) return const SizedBox();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildFieldLabel('Sub Category'),
         Gap(8.h),
-        DropdownButtonFormField<String>(
-          value: _selectedSubCategoryId,
-          hint: Text(
-            'Select Sub Category (Optional)',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: AppColors.textHint,
+        if (selectedCat.subCategories.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(color: AppColors.border),
             ),
-          ),
-          decoration: InputDecoration(
-            prefixIcon: Icon(
-              Iconsax.category_2,
-              size: 20.sp,
-              color: AppColors.textHint,
+            child: Text(
+              'No subcategories yet. Add one below.',
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: AppColors.textHint,
+              ),
             ),
+          )
+        else
+          DropdownButtonFormField<String>(
+            value: _selectedSubCategoryId,
+            hint: Text(
+              'Select Sub Category (Optional)',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textHint,
+              ),
+            ),
+            decoration: InputDecoration(
+              prefixIcon: Icon(
+                Iconsax.category_2,
+                size: 20.sp,
+                color: AppColors.textHint,
+              ),
+            ),
+            items: selectedCat.subCategories
+                .map((s) => DropdownMenuItem(
+                      value: s.id,
+                      child: Row(
+                        children: [
+                          Text(s.icon),
+                          Gap(8.w),
+                          Text(
+                            s.name,
+                            style: TextStyle(fontSize: 14.sp),
+                          ),
+                        ],
+                      ),
+                    ))
+                .toList(),
+            onChanged: (v) {
+              final sub = selectedCat.subCategories
+                  .firstWhere((s) => s.id == v);
+              setState(() {
+                _selectedSubCategoryId = v;
+                _selectedSubCategoryName = sub.name;
+              });
+            },
           ),
-          items: selectedCat.subCategories
-              .map((s) => DropdownMenuItem(
-                    value: s.id,
-                    child: Row(
-                      children: [
-                        Text(s.icon),
-                        Gap(8.w),
-                        Text(
-                          s.name,
-                          style: TextStyle(fontSize: 14.sp),
-                        ),
-                      ],
-                    ),
-                  ))
-              .toList(),
-          onChanged: (v) {
-            final sub = selectedCat.subCategories
-                .firstWhere((s) => s.id == v);
-            setState(() {
-              _selectedSubCategoryId = v;
-              _selectedSubCategoryName = sub.name;
-            });
-          },
+        Gap(8.h),
+        GestureDetector(
+          onTap: () => _showAddSubCategoryDialog(selectedCat.id),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Iconsax.add_circle,
+                size: 16.sp,
+                color: AppColors.adminPrimary,
+              ),
+              Gap(4.w),
+              Text(
+                'Add New Sub Category',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: AppColors.adminPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
+    );
+  }
+
+  // ═══════════════════════════════════════
+  // ADD SUBCATEGORY DIALOG
+  // ═══════════════════════════════════════
+  void _showAddSubCategoryDialog(String categoryId) {
+    final nameCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          'Add New Sub Category',
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: TextField(
+          controller: nameCtrl,
+          textCapitalization: TextCapitalization.words,
+          decoration: InputDecoration(
+            labelText: 'Sub Category Name *',
+            hintText: 'e.g. TMT Bars',
+            prefixIcon: Icon(Iconsax.category_2, size: 20.sp),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameCtrl.text.trim().isEmpty) return;
+              Navigator.pop(ctx);
+              final success = await ref
+                  .read(categoryNotifierProvider.notifier)
+                  .addSubCategory(
+                    categoryId: categoryId,
+                    name: nameCtrl.text.trim(),
+                    icon: '📦',
+                  );
+              if (mounted && success) {
+                CustomSnackbar.showSuccess(
+                  context,
+                  'Sub category "${nameCtrl.text.trim()}" created!',
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.adminPrimary,
+            ),
+            child: const Text(
+              'Create',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1109,6 +1370,214 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     );
   }
 
+  // ═══════════════════════════════════════
+  // STEP 4 - CATALOGS & DRAWINGS
+  // ═══════════════════════════════════════
+  Widget _buildStep4Catalogs() {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: EdgeInsets.all(20.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Info
+          Container(
+            padding: EdgeInsets.all(14.w),
+            decoration: BoxDecoration(
+              color: AppColors.adminPrimary.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: AppColors.adminPrimary.withOpacity(0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Iconsax.info_circle,
+                  size: 18.sp,
+                  color: AppColors.adminPrimary,
+                ),
+                Gap(10.w),
+                Expanded(
+                  child: Text(
+                    'Upload product catalogs and technical drawings (PDF). '
+                    'Sales team can view and share these with customers.',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: AppColors.adminPrimary,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Gap(24.h),
+
+          // ─── Product Catalogs ────────────────────────
+          _buildFieldLabel('Product Catalogs (PDF)'),
+          Gap(8.h),
+          Text(
+            'Upload product brochures or specifications',
+            style: TextStyle(fontSize: 11.sp, color: AppColors.textHint),
+          ),
+          Gap(12.h),
+
+          // Existing catalog URLs
+          ..._existingCatalogUrls.asMap().entries.map((e) =>
+              _buildFileListTile(
+                name: 'Catalog ${e.key + 1}',
+                icon: Iconsax.document_text,
+                color: AppColors.adminPrimary,
+                onRemove: () => setState(
+                  () => _existingCatalogUrls.removeAt(e.key),
+                ),
+              )),
+
+          // New catalog files
+          ..._newCatalogFiles.asMap().entries.map((e) =>
+              _buildFileListTile(
+                name: e.value.path.split('/').last,
+                icon: Iconsax.document_text,
+                color: AppColors.adminPrimary,
+                isNew: true,
+                onRemove: () => setState(
+                  () => _newCatalogFiles.removeAt(e.key),
+                ),
+              )),
+
+          Gap(8.h),
+          OutlinedButton.icon(
+            onPressed: () => _pickPdfFile('catalog'),
+            icon: Icon(Iconsax.add_circle, size: 18.sp),
+            label: const Text('Add Catalog PDF'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.adminPrimary,
+              side: BorderSide(color: AppColors.adminPrimary),
+              padding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 10.h,
+              ),
+            ),
+          ),
+
+          Gap(28.h),
+
+          // ─── Technical Drawings ──────────────────────
+          _buildFieldLabel('Technical Drawings (PDF)'),
+          Gap(8.h),
+          Text(
+            'Upload CAD drawings or technical specifications',
+            style: TextStyle(fontSize: 11.sp, color: AppColors.textHint),
+          ),
+          Gap(12.h),
+
+          // Existing drawing URLs
+          ..._existingDrawingUrls.asMap().entries.map((e) =>
+              _buildFileListTile(
+                name: 'Drawing ${e.key + 1}',
+                icon: Iconsax.pen_tool_2,
+                color: AppColors.counter,
+                onRemove: () => setState(
+                  () => _existingDrawingUrls.removeAt(e.key),
+                ),
+              )),
+
+          // New drawing files
+          ..._newDrawingFiles.asMap().entries.map((e) =>
+              _buildFileListTile(
+                name: e.value.path.split('/').last,
+                icon: Iconsax.pen_tool_2,
+                color: AppColors.counter,
+                isNew: true,
+                onRemove: () => setState(
+                  () => _newDrawingFiles.removeAt(e.key),
+                ),
+              )),
+
+          Gap(8.h),
+          OutlinedButton.icon(
+            onPressed: () => _pickPdfFile('drawing'),
+            icon: Icon(Iconsax.add_circle, size: 18.sp),
+            label: const Text('Add Drawing PDF'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.counter,
+              side: BorderSide(color: AppColors.counter),
+              padding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 10.h,
+              ),
+            ),
+          ),
+
+          Gap(20.h),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFileListTile({
+    required String name,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onRemove,
+    bool isNew = false,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(10.r),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20.sp, color: color),
+          Gap(10.w),
+          Expanded(
+            child: Text(
+              name,
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (isNew)
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+              decoration: BoxDecoration(
+                color: AppColors.counter,
+                borderRadius: BorderRadius.circular(4.r),
+              ),
+              child: Text(
+                'New',
+                style: TextStyle(
+                  fontSize: 9.sp,
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          Gap(8.w),
+          GestureDetector(
+            onTap: onRemove,
+            child: Icon(
+              Icons.close_rounded,
+              size: 18.sp,
+              color: AppColors.rejected,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAddImageBtn() {
     return GestureDetector(
       onTap: _showImageSourcePicker,
@@ -1337,18 +1806,18 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           Expanded(
             flex: 2,
             child: CustomButton(
-              label: _currentStep == 2
+              label: _currentStep == 3
                   ? (widget.isEditing
                       ? 'Update Product'
                       : 'Save Product')
                   : 'Continue',
               isLoading: _isLoading,
               gradient: AppColors.adminGradient,
-              prefixIcon: _currentStep == 2
+              prefixIcon: _currentStep == 3
                   ? Icons.check_rounded
                   : Icons.arrow_forward_rounded,
               onPressed: () {
-                if (_currentStep < 2) {
+                if (_currentStep < 3) {
                   _pageController.nextPage(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,

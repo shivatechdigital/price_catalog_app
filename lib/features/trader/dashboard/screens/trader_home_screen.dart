@@ -7,8 +7,11 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/data/models/requirement_model.dart';
 import 'package:price_catalog_app/features/trader/catalog/screens/trader_catalog_screen.dart';
+import 'package:price_catalog_app/features/trader/catalog/screens/trader_product_detail_screen.dart';
 import 'package:price_catalog_app/features/trader/dashboard/screens/trader_dashboard_screen.dart';
+import 'package:price_catalog_app/features/trader/requirements/screens/select_products_screen.dart';
 import 'package:price_catalog_app/features/trader/requirements/screens/trader_requirements_screen.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/providers/product_provider.dart';
 import 'package:price_catalog_app/providers/requirement_provider.dart';
@@ -325,12 +328,15 @@ class TraderHomeScreen extends ConsumerWidget {
             Gap(10.w),
             Expanded(
               child: _QuickActionBtn(
-                icon: Iconsax.add_square,
-                label: 'New\nRequirement',
+                icon: Iconsax.shopping_cart,
+                label: 'Create\nPO',
                 color: AppColors.traderPrimary,
-                onTap: () => ref
-                    .read(traderNavIndexProvider.notifier)
-                    .state = 1,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SelectProductsScreen(),
+                  ),
+                ),
               ),
             ),
             Gap(10.w),
@@ -339,12 +345,37 @@ class TraderHomeScreen extends ConsumerWidget {
                 icon: Iconsax.document_upload,
                 label: 'Share\nCatalog',
                 color: AppColors.approved,
-                onTap: () {},
+                onTap: () => _shareCatalog(context, ref),
               ),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  // ═══════════════════════════════════════
+  // SHARE CATALOG
+  // ═══════════════════════════════════════
+  void _shareCatalog(BuildContext context, WidgetRef ref) {
+    final productsAsync = ref.read(productsStreamProvider);
+    final products = productsAsync.asData?.value ?? [];
+    if (products.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No products available to share')),
+      );
+      return;
+    }
+    final buffer = StringBuffer();
+    buffer.writeln('📦 *Product Catalog*\n');
+    for (final p in products) {
+      buffer.writeln('• *${p.name}* (${p.productCode})');
+      buffer.writeln('  Brand: ${p.brand}');
+      buffer.writeln('  Price: ₹${p.currentPrice.sellingPrice.toStringAsFixed(0)}/${p.unit}');
+      buffer.writeln();
+    }
+    SharePlus.instance.share(
+      ShareParams(text: buffer.toString(), subject: 'Product Catalog'),
     );
   }
 
@@ -439,7 +470,12 @@ class TraderHomeScreen extends ConsumerWidget {
         itemBuilder: (context, index) {
           final product = products[index];
           return GestureDetector(
-            onTap: () {},
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TraderProductDetailScreen(product: product),
+              ),
+            ),
             child: Container(
               width: 150.w,
               decoration: BoxDecoration(

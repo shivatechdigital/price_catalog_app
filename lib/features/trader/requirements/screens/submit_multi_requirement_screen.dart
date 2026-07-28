@@ -208,7 +208,7 @@ class _SubmitMultiRequirementScreenState
           ),
         ),
         title: Text(
-          'Submit Requirement',
+          'Create Purchase Order',
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w700,
@@ -996,7 +996,7 @@ class _SubmitMultiRequirementScreenState
           Expanded(
             flex: 2,
             child: CustomButton(
-              label: isLastStep ? 'Submit Requirement' : 'Continue',
+              label: isLastStep ? 'Submit PO' : 'Continue',
               isLoading: _isLoading,
               gradient: AppColors.traderGradient,
               prefixIcon: isLastStep

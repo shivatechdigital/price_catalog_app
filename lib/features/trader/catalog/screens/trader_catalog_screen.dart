@@ -7,6 +7,7 @@ import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
+import 'package:price_catalog_app/data/models/requirement_model.dart';
 import 'package:price_catalog_app/features/trader/catalog/screens/trader_product_detail_screen.dart';
 import 'package:price_catalog_app/features/trader/requirements/screens/select_products_screen.dart';
 import 'package:price_catalog_app/providers/category_provider.dart';
@@ -448,7 +449,7 @@ class _TraderCatalogScreenState
 // ═══════════════════════════════════════
 // TRADER PRODUCT CARD (Grid)
 // ═══════════════════════════════════════
-class _TraderProductCard extends StatelessWidget {
+class _TraderProductCard extends ConsumerWidget {
   final ProductModel product;
   final VoidCallback onTap;
 
@@ -457,8 +458,46 @@ class _TraderProductCard extends StatelessWidget {
     required this.onTap,
   });
 
+  void _addToCart(BuildContext context, WidgetRef ref) {
+    final currentItems = ref.read(selectedRequirementItemsProvider);
+    final exists = currentItems.any((i) => i.productId == product.id);
+    if (exists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${product.name} already in cart'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+    final newItem = RequirementItemModel(
+      productId: product.id,
+      productName: product.name,
+      productCode: product.productCode,
+      productImage:
+          product.primaryImage.isNotEmpty ? product.primaryImage : null,
+      categoryName: product.categoryName,
+      quantity: 1,
+      unit: product.unit,
+      productCurrentPrice: product.currentPrice.sellingPrice,
+      customerDemandedPrice: product.currentPrice.sellingPrice,
+      traderOfferedPrice: product.currentPrice.sellingPrice,
+    );
+    ref.read(selectedRequirementItemsProvider.notifier).state = [
+      ...currentItems,
+      newItem,
+    ];
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${product.name} added to cart'),
+        backgroundColor: AppColors.approved,
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -570,26 +609,29 @@ class _TraderProductCard extends StatelessWidget {
                           ),
                         ),
                         // Add to cart button
-                        Container(
-                          width: 28.w,
-                          height: 28.w,
-                          decoration: BoxDecoration(
-                            gradient: AppColors.traderGradient,
-                            borderRadius:
-                                BorderRadius.circular(8.r),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.traderPrimary
-                                    .withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.add_rounded,
-                            size: 16.sp,
-                            color: AppColors.white,
+                        GestureDetector(
+                          onTap: () => _addToCart(context, ref),
+                          child: Container(
+                            width: 28.w,
+                            height: 28.w,
+                            decoration: BoxDecoration(
+                              gradient: AppColors.traderGradient,
+                              borderRadius:
+                                  BorderRadius.circular(8.r),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.traderPrimary
+                                      .withOpacity(0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.add_rounded,
+                              size: 16.sp,
+                              color: AppColors.white,
+                            ),
                           ),
                         ),
                       ],
@@ -657,7 +699,7 @@ class _TraderProductCard extends StatelessWidget {
 // ═══════════════════════════════════════
 // TRADER PRODUCT LIST TILE
 // ═══════════════════════════════════════
-class _TraderProductListTile extends StatelessWidget {
+class _TraderProductListTile extends ConsumerWidget {
   final ProductModel product;
   final VoidCallback onTap;
 
@@ -666,8 +708,46 @@ class _TraderProductListTile extends StatelessWidget {
     required this.onTap,
   });
 
+  void _addToCart(BuildContext context, WidgetRef ref) {
+    final currentItems = ref.read(selectedRequirementItemsProvider);
+    final exists = currentItems.any((i) => i.productId == product.id);
+    if (exists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${product.name} already in cart'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+    final newItem = RequirementItemModel(
+      productId: product.id,
+      productName: product.name,
+      productCode: product.productCode,
+      productImage:
+          product.primaryImage.isNotEmpty ? product.primaryImage : null,
+      categoryName: product.categoryName,
+      quantity: 1,
+      unit: product.unit,
+      productCurrentPrice: product.currentPrice.sellingPrice,
+      customerDemandedPrice: product.currentPrice.sellingPrice,
+      traderOfferedPrice: product.currentPrice.sellingPrice,
+    );
+    ref.read(selectedRequirementItemsProvider.notifier).state = [
+      ...currentItems,
+      newItem,
+    ];
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${product.name} added to cart'),
+        backgroundColor: AppColors.approved,
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -776,16 +856,35 @@ class _TraderProductListTile extends StatelessWidget {
 
             Gap(8.w),
 
-            // ─── Availability + Arrow ─────────────────────
+            // ─── Add to Cart + Availability ────────────
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 _availabilityDot(product.availability),
                 Gap(12.h),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14.sp,
-                  color: AppColors.textHint,
+                GestureDetector(
+                  onTap: () => _addToCart(context, ref),
+                  child: Container(
+                    width: 30.w,
+                    height: 30.w,
+                    decoration: BoxDecoration(
+                      gradient: AppColors.traderGradient,
+                      borderRadius: BorderRadius.circular(8.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.traderPrimary
+                              .withOpacity(0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.add_rounded,
+                      size: 18.sp,
+                      color: AppColors.white,
+                    ),
+                  ),
                 ),
               ],
             ),

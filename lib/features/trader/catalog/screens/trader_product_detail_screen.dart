@@ -11,7 +11,9 @@ import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
 import 'package:price_catalog_app/features/trader/requirements/screens/submit_requirement_screen.dart';
 import 'package:price_catalog_app/providers/product_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:url_launcher/url_launcher.dart';
 
 class TraderProductDetailScreen extends ConsumerStatefulWidget {
   final ProductModel product;
@@ -98,7 +100,7 @@ class _TraderProductDetailScreenState
                   ],
                 ),
                 child: IconButton(
-                  onPressed: () {},
+                  onPressed: () => _shareProduct(context),
                   icon: Icon(
                     Iconsax.share,
                     size: 18.sp,
@@ -125,6 +127,22 @@ class _TraderProductDetailScreenState
                 if (product.description.isNotEmpty)
                   _buildDescriptionCard(product),
                 Gap(12.h),
+                if (product.catalogUrls.isNotEmpty)
+                  _buildDocumentsCard(
+                    title: 'Product Catalogs',
+                    icon: Iconsax.document_text,
+                    color: AppColors.adminPrimary,
+                    urls: product.catalogUrls,
+                  ),
+                if (product.catalogUrls.isNotEmpty) Gap(12.h),
+                if (product.drawingUrls.isNotEmpty)
+                  _buildDocumentsCard(
+                    title: 'Technical Drawings',
+                    icon: Iconsax.pen_tool_2,
+                    color: AppColors.counter,
+                    urls: product.drawingUrls,
+                  ),
+                if (product.drawingUrls.isNotEmpty) Gap(12.h),
                 _buildPriceHistoryCard(product),
                 Gap(100.h),
               ],
@@ -134,10 +152,39 @@ class _TraderProductDetailScreenState
       ),
 
       // ═══════════════════════════════════════
-      // BOTTOM - SUBMIT REQUIREMENT BUTTON
+      // BOTTOM - CREATE PO BUTTON
       // ═══════════════════════════════════════
       bottomNavigationBar: _buildBottomBar(context, product),
     );
+  }
+
+  void _shareProduct(BuildContext context) {
+    final product = widget.product;
+    final text = '''
+📦 *${product.name}*
+Brand: ${product.brand}
+Code: ${product.productCode}
+Category: ${product.categoryName}
+Price: ₹${product.currentPrice.sellingPrice.toStringAsFixed(0)} per ${product.unit}
+Dealer Price: ₹${product.currentPrice.dealerPrice.toStringAsFixed(0)}
+Availability: ${product.availability.name}
+''';
+    SharePlus.instance.share(
+      ShareParams(text: text, subject: product.name),
+    );
+  }
+
+  void _shareFile(String url, String name) {
+    SharePlus.instance.share(
+      ShareParams(text: 'Sharing $name: $url', subject: name),
+    );
+  }
+
+  Future<void> _openFile(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   // ═══════════════════════════════════════
@@ -579,6 +626,117 @@ class _TraderProductDetailScreenState
   }
 
   // ═══════════════════════════════════════
+  // DOCUMENTS CARD (Catalogs / Drawings)
+  // ═══════════════════════════════════════
+  Widget _buildDocumentsCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<String> urls,
+  }) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16.w),
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18.sp, color: color),
+              Gap(8.w),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          Gap(12.h),
+          ...urls.asMap().entries.map((e) {
+            final index = e.key;
+            final url = e.value;
+            return Container(
+              margin: EdgeInsets.only(bottom: 10.h),
+              padding: EdgeInsets.symmetric(
+                horizontal: 12.w,
+                vertical: 10.h,
+              ),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(10.r),
+                border: Border.all(color: color.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Iconsax.document_text,
+                    size: 20.sp,
+                    color: color,
+                  ),
+                  Gap(10.w),
+                  Expanded(
+                    child: Text(
+                      '${title.split(' ').first} ${index + 1}.pdf',
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  // Open button
+                  GestureDetector(
+                    onTap: () => _openFile(url),
+                    child: Container(
+                      padding: EdgeInsets.all(6.w),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        Iconsax.eye,
+                        size: 16.sp,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                  Gap(8.w),
+                  // Share button
+                  GestureDetector(
+                    onTap: () => _shareFile(
+                      url,
+                      '${title.split(' ').first} ${index + 1}',
+                    ),
+                    child: Container(
+                      padding: EdgeInsets.all(6.w),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        Iconsax.share,
+                        size: 16.sp,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    ).animate().fadeIn(delay: 150.ms);
+  }
+
+  // ═══════════════════════════════════════
   // PRICE HISTORY
   // ═══════════════════════════════════════
   Widget _buildPriceHistoryCard(ProductModel product) {
@@ -751,14 +909,14 @@ class _TraderProductDetailScreenState
                   elevation: 0,
                 ),
                 icon: Icon(
-                  Iconsax.add_square,
+                  Iconsax.shopping_cart,
                   color: AppColors.white,
                   size: 20.sp,
                 ),
                 label: Text(
                   isOutOfStock
                       ? 'Out of Stock'
-                      : 'Submit Requirement',
+                      : 'Create PO',
                   style: TextStyle(
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w700,
