@@ -8,8 +8,10 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
 import 'package:price_catalog_app/data/models/requirement_model.dart';
+import 'package:price_catalog_app/data/models/requirement_model.dart';
 import 'package:price_catalog_app/features/trader/catalog/screens/trader_product_detail_screen.dart';
 import 'package:price_catalog_app/features/trader/requirements/screens/select_products_screen.dart';
+import 'package:price_catalog_app/features/trader/requirements/screens/submit_multi_requirement_screen.dart';
 import 'package:price_catalog_app/providers/category_provider.dart';
 import 'package:price_catalog_app/providers/product_provider.dart';
 import 'package:price_catalog_app/providers/requirement_provider.dart';
@@ -45,6 +47,11 @@ class _TraderCatalogScreenState
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButtonLocation:
+          FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: selectedItems.isNotEmpty
+          ? _buildProceedBar(context, selectedItems.length)
+          : null,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
@@ -139,6 +146,75 @@ class _TraderCatalogScreenState
                   : _buildList(products),
             );
           },
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════
+  // PROCEED BAR
+  // ═══════════════════════════════════════
+  Widget _buildProceedBar(BuildContext context, int count) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16.w),
+      height: 56.h,
+      decoration: BoxDecoration(
+        gradient: AppColors.traderGradient,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.traderPrimary.withOpacity(0.4),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16.r),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const SubmitMultiRequirementScreen(),
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: Row(
+              children: [
+                Icon(
+                  Iconsax.shopping_cart,
+                  color: AppColors.white,
+                  size: 20.sp,
+                ),
+                Gap(10.w),
+                Text(
+                  '$count ${count == 1 ? 'product' : 'products'} selected',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  'Proceed',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Gap(6.w),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  color: AppColors.white,
+                  size: 18.sp,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -509,6 +585,12 @@ class _TraderProductCard extends ConsumerWidget {
                       product.availability,
                     ),
                   ),
+                  // Add to cart button
+                  Positioned(
+                    bottom: 8,
+                    right: 8,
+                    child: _buildAddButton(ref),
+                  ),
                 ],
               ),
             ),
@@ -567,6 +649,71 @@ class _TraderProductCard extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildAddButton(WidgetRef ref) {
+    final selectedItems = ref.watch(selectedRequirementItemsProvider);
+    final isSelected =
+        selectedItems.any((i) => i.productId == product.id);
+    return GestureDetector(
+      onTap: () => _toggleProduct(ref),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 30.w,
+        height: 30.w,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.approved
+              : AppColors.traderPrimary,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.25),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(
+          isSelected
+              ? Icons.check_rounded
+              : Icons.add_rounded,
+          color: AppColors.white,
+          size: 16.sp,
+        ),
+      ),
+    );
+  }
+
+  void _toggleProduct(WidgetRef ref) {
+    final currentItems = ref.read(selectedRequirementItemsProvider);
+    final exists =
+        currentItems.any((i) => i.productId == product.id);
+    if (exists) {
+      ref.read(selectedRequirementItemsProvider.notifier).state =
+          currentItems
+              .where((i) => i.productId != product.id)
+              .toList();
+    } else {
+      final newItem = RequirementItemModel(
+        productId: product.id,
+        productName: product.name,
+        productCode: product.productCode,
+        productImage: product.primaryImage.isNotEmpty
+            ? product.primaryImage
+            : null,
+        categoryName: product.categoryName,
+        quantity: 1,
+        unit: product.unit,
+        productCurrentPrice: product.currentPrice.sellingPrice,
+        customerDemandedPrice: product.currentPrice.sellingPrice,
+        traderOfferedPrice: product.currentPrice.sellingPrice,
+      );
+      ref.read(selectedRequirementItemsProvider.notifier).state = [
+        ...currentItems,
+        newItem,
+      ];
+    }
   }
 
   Widget _buildImagePlaceholder() {
@@ -741,12 +888,75 @@ class _TraderProductListTile extends ConsumerWidget {
 
             Gap(8.w),
 
-            // ─── Availability Badge ────────────
-            _availabilityDot(product.availability),
+            // ─── Add Button ──────────────────────────────
+            _buildAddButton(ref),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildAddButton(WidgetRef ref) {
+    final selectedItems = ref.watch(selectedRequirementItemsProvider);
+    final isSelected =
+        selectedItems.any((i) => i.productId == product.id);
+    return GestureDetector(
+      onTap: () => _toggleProduct(ref),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 34.w,
+        height: 34.w,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.approved
+              : AppColors.traderPrimary,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(
+          isSelected ? Icons.check_rounded : Icons.add_rounded,
+          color: AppColors.white,
+          size: 18.sp,
+        ),
+      ),
+    );
+  }
+
+  void _toggleProduct(WidgetRef ref) {
+    final currentItems = ref.read(selectedRequirementItemsProvider);
+    final exists =
+        currentItems.any((i) => i.productId == product.id);
+    if (exists) {
+      ref.read(selectedRequirementItemsProvider.notifier).state =
+          currentItems
+              .where((i) => i.productId != product.id)
+              .toList();
+    } else {
+      final newItem = RequirementItemModel(
+        productId: product.id,
+        productName: product.name,
+        productCode: product.productCode,
+        productImage: product.primaryImage.isNotEmpty
+            ? product.primaryImage
+            : null,
+        categoryName: product.categoryName,
+        quantity: 1,
+        unit: product.unit,
+        productCurrentPrice: product.currentPrice.sellingPrice,
+        customerDemandedPrice: product.currentPrice.sellingPrice,
+        traderOfferedPrice: product.currentPrice.sellingPrice,
+      );
+      ref.read(selectedRequirementItemsProvider.notifier).state = [
+        ...currentItems,
+        newItem,
+      ];
+    }
   }
 
   Widget _availabilityDot(ProductAvailability availability) {
