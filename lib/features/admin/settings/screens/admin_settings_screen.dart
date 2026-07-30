@@ -7,6 +7,7 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/core/services/requirement_export_service.dart';
 import 'package:price_catalog_app/features/admin/categories/screens/admin_categories_screen.dart';
+import 'package:price_catalog_app/features/admin/reports/screens/admin_reports_screen.dart';
 import 'package:price_catalog_app/features/admin/traders/screens/admin_traders_screen.dart';
 import 'package:price_catalog_app/features/admin/security/screens/change_password_screen.dart';
 import 'package:price_catalog_app/features/auth/screens/profile_edit_screen.dart';
@@ -113,6 +114,18 @@ class AdminSettingsScreen extends ConsumerWidget {
                   title: 'App',
                   items: [
 
+                    _SettingsItem(
+                      icon: Iconsax.chart_2,
+                      label: 'Reports & Analytics',
+                      subtitle: 'Sales, products & trader insights',
+                      color: const Color(0xFF7C3AED),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminReportsScreen(),
+                        ),
+                      ),
+                    ),
 
                     _SettingsItem(
                       icon: Iconsax.export,
