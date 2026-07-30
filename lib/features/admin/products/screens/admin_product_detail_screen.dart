@@ -1,9 +1,12 @@
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
+import 'package:http/http.dart' as http;
 import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
@@ -12,7 +15,9 @@ import 'package:price_catalog_app/features/admin/products/screens/add_product_sc
 import 'package:price_catalog_app/features/admin/products/screens/price_update_screen.dart';
 import 'package:price_catalog_app/providers/product_provider.dart';
 import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:url_launcher/url_launcher.dart';
 
 class AdminProductDetailScreen extends ConsumerWidget {
   final ProductModel product;
@@ -123,6 +128,22 @@ class AdminProductDetailScreen extends ConsumerWidget {
                   _buildInfoSection(product),
                   // Price Section
                   _buildPriceSection(context, product, ref),
+                  // Catalogs
+                  if (product.catalogUrls.isNotEmpty)
+                    _DocumentsCard(
+                      title: 'Product Catalogs',
+                      icon: Iconsax.document_text,
+                      color: AppColors.adminPrimary,
+                      urls: product.catalogUrls,
+                    ),
+                  // Technical Drawings
+                  if (product.drawingUrls.isNotEmpty)
+                    _DocumentsCard(
+                      title: 'Technical Drawings',
+                      icon: Iconsax.pen_tool_2,
+                      color: AppColors.counter,
+                      urls: product.drawingUrls,
+                    ),
                   // Price History
                   _buildPriceHistorySection(ref, product),
                   // Actions
@@ -784,6 +805,197 @@ class AdminProductDetailScreen extends ConsumerWidget {
               color: AppColors.textSecondary,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════
+// DOCUMENTS CARD (Catalogs / Drawings)
+// ═══════════════════════════════════════
+class _DocumentsCard extends StatefulWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final List<String> urls;
+
+  const _DocumentsCard({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.urls,
+  });
+
+  @override
+  State<_DocumentsCard> createState() => _DocumentsCardState();
+}
+
+class _DocumentsCardState extends State<_DocumentsCard> {
+  int? _sharingIndex;
+
+  Future<void> _openFile(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      try {
+        await launchUrl(uri);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Unable to open file')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _shareFile(String url, String name, int index) async {
+    setState(() => _sharingIndex = index);
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/$name.pdf');
+        await file.writeAsBytes(response.bodyBytes);
+        if (mounted) {
+          await SharePlus.instance.share(
+            ShareParams(
+              files: [XFile(file.path, mimeType: 'application/pdf')],
+              subject: name,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to download file')),
+          );
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not share file')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sharingIndex = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.w),
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(widget.icon, size: 18.sp, color: widget.color),
+              Gap(8.w),
+              Text(
+                widget.title,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          Gap(12.h),
+          ...widget.urls.asMap().entries.map((e) {
+            final index = e.key;
+            final url = e.value;
+            final label =
+                '${widget.title.split(' ').first} ${index + 1}';
+            final isSharing = _sharingIndex == index;
+            return Container(
+              margin: EdgeInsets.only(bottom: 10.h),
+              padding: EdgeInsets.symmetric(
+                horizontal: 12.w,
+                vertical: 10.h,
+              ),
+              decoration: BoxDecoration(
+                color: widget.color.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(10.r),
+                border: Border.all(
+                    color: widget.color.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Iconsax.document_text,
+                    size: 20.sp,
+                    color: widget.color,
+                  ),
+                  Gap(10.w),
+                  Expanded(
+                    child: Text(
+                      '$label.pdf',
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  // View button
+                  GestureDetector(
+                    onTap: () => _openFile(url),
+                    child: Container(
+                      padding: EdgeInsets.all(6.w),
+                      decoration: BoxDecoration(
+                        color: widget.color.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        Iconsax.eye,
+                        size: 16.sp,
+                        color: widget.color,
+                      ),
+                    ),
+                  ),
+                  Gap(8.w),
+                  // Share button
+                  GestureDetector(
+                    onTap: isSharing
+                        ? null
+                        : () => _shareFile(url, label, index),
+                    child: Container(
+                      padding: EdgeInsets.all(6.w),
+                      decoration: BoxDecoration(
+                        color: widget.color.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: isSharing
+                          ? SizedBox(
+                              width: 16.sp,
+                              height: 16.sp,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: widget.color,
+                              ),
+                            )
+                          : Icon(
+                              Iconsax.share,
+                              size: 16.sp,
+                              color: widget.color,
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );
