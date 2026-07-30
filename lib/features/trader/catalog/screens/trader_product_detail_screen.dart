@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -174,16 +177,61 @@ Availability: ${product.availability.name}
     );
   }
 
-  void _shareFile(String url, String name) {
-    SharePlus.instance.share(
-      ShareParams(text: 'Sharing $name: $url', subject: name),
+  Future<void> _shareFile(String url, String name) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Preparing file for sharing...'),
+        duration: Duration(seconds: 30),
+      ),
     );
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/$name.pdf');
+        await file.writeAsBytes(response.bodyBytes);
+        if (mounted) {
+          messenger.hideCurrentSnackBar();
+          await SharePlus.instance.share(
+            ShareParams(
+              files: [XFile(file.path, mimeType: 'application/pdf')],
+              subject: name,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          messenger.hideCurrentSnackBar();
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Failed to download file')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Could not share file')),
+        );
+      }
+    }
   }
 
   Future<void> _openFile(String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
+    try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      try {
+        await launchUrl(uri);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Unable to open file')),
+          );
+        }
+      }
     }
   }
 
