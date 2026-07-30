@@ -453,12 +453,13 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               : null,
         );
 
-        // Sync removed catalogs/drawings back to Firestore
+        // Sync removed images/catalogs/drawings back to Firestore
         // (updateProduct doesn't touch these arrays, so we update directly)
         await ref
             .read(productRepositoryProvider)
             .updateProductFiles(
               productId: widget.product!.id,
+              imageUrls: _existingImages,
               catalogUrls: _existingCatalogUrls,
               drawingUrls: _existingDrawingUrls,
             );

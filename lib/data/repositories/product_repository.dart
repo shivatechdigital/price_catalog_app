@@ -318,10 +318,12 @@ class ProductRepository {
   // ═══════════════════════════════════════
   Future<void> updateProductFiles({
     required String productId,
+    required List<String> imageUrls,
     required List<String> catalogUrls,
     required List<String> drawingUrls,
   }) async {
     await _productsRef.doc(productId).update({
+      'images': imageUrls,
       'catalogUrls': catalogUrls,
       'drawingUrls': drawingUrls,
       'updatedAt': FieldValue.serverTimestamp(),
