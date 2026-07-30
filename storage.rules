@@ -98,6 +98,16 @@ service firebase.storage {
     }
 
     // ═══════════════════════════════════════
+    // TRADER DOCUMENTS — trader_documents/{userId}/{fileName}
+    // Verification ID images (Aadhar/PAN front & back)
+    // Read: admin only. Write: the authenticated user (self-upload during registration).
+    // ═══════════════════════════════════════
+    match /trader_documents/{userId}/{fileName} {
+      allow read: if isAdmin() || isOwner(userId);
+      allow write: if isLoggedIn() && isOwner(userId) && isImage() && isFileSizeValid(10);
+    }
+
+    // ═══════════════════════════════════════
     // APP SETTINGS IMAGES — settings/{fileName}
     // Read: any logged in user. Write: admin only.
     // Max file size: 25MB

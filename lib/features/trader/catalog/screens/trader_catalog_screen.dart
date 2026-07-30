@@ -82,34 +82,6 @@ class _TraderCatalogScreenState
                 ),
               ),
 
-              // ✅ FIX: Cart button - selectedItems from provider
-              IconButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        const SelectProductsScreen(),
-                  ),
-                ),
-                icon: Badge(
-                  label: Text(
-                    '${selectedItems.length}',
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  isLabelVisible: selectedItems.isNotEmpty,
-                  backgroundColor: AppColors.rejected,
-                  child: Icon(
-                    Iconsax.shopping_cart,
-                    color: AppColors.textPrimary,
-                    size: 22.sp,
-                  ),
-                ),
-              ),
-
               SizedBox(width: 8.w),
             ],
             bottom: PreferredSize(

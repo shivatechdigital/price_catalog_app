@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -203,20 +205,49 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     required String email,
     required String password,
     String? city,
-    String? documentFrontUrl,
-    String? documentBackUrl,
+    File? documentFront,
+    File? documentBack,
   }) async {
     try {
       _updateState(const AuthLoading());
 
-      // Create Firebase Auth user
+      // Step 1: Create Firebase Auth user
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
 
       final uid = credential.user!.uid;
-      // Create user document in Firestore
+
+      // Step 2: Upload document images (user is now authenticated)
+      String? documentFrontUrl;
+      String? documentBackUrl;
+
+      if (documentFront != null) {
+        try {
+          final ref = FirebaseStorage.instance
+              .ref()
+              .child('trader_documents/$uid/front.jpg');
+          final task = await ref.putFile(documentFront);
+          documentFrontUrl = await task.ref.getDownloadURL();
+        } catch (e) {
+          debugPrint('Front doc upload failed: $e');
+        }
+      }
+
+      if (documentBack != null) {
+        try {
+          final ref = FirebaseStorage.instance
+              .ref()
+              .child('trader_documents/$uid/back.jpg');
+          final task = await ref.putFile(documentBack);
+          documentBackUrl = await task.ref.getDownloadURL();
+        } catch (e) {
+          debugPrint('Back doc upload failed: $e');
+        }
+      }
+
+      // Step 3: Save user document to Firestore
       final user = UserModel(
         uid: uid,
         name: name.trim(),
@@ -224,7 +255,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
         phone: phone.trim(),
         businessName: '',
         role: UserRole.trader,
-        traderStatus: TraderStatus.pending, // Pending by default
+        traderStatus: TraderStatus.pending,
         city: city?.trim(),
         documentFrontUrl: documentFrontUrl,
         documentBackUrl: documentBackUrl,

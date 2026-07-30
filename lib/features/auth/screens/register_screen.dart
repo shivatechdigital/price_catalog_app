@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -122,47 +121,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     setState(() => _isLoading = true);
     FocusScope.of(context).unfocus();
 
-    try {
-      // Upload document images to Firebase Storage
-      final uid = DateTime.now().millisecondsSinceEpoch.toString();
-      String? frontUrl;
-      String? backUrl;
+    final result = await ref
+        .read(authStateProvider.notifier)
+        .registerTrader(
+          name: _nameController.text,
+          phone: _phoneController.text,
+          email: _emailController.text,
+          password: _passwordController.text,
+          city: _cityController.text,
+          documentFront: _frontDocImage,
+          documentBack: _backDocImage,
+        );
 
-      final frontRef = FirebaseStorage.instance
-          .ref()
-          .child('trader_documents/${uid}_front.jpg');
-      final frontTask = await frontRef.putFile(_frontDocImage!);
-      frontUrl = await frontTask.ref.getDownloadURL();
+    if (!mounted) return;
+    setState(() => _isLoading = false);
 
-      final backRef = FirebaseStorage.instance
-          .ref()
-          .child('trader_documents/${uid}_back.jpg');
-      final backTask = await backRef.putFile(_backDocImage!);
-      backUrl = await backTask.ref.getDownloadURL();
-
-      final result = await ref
-          .read(authStateProvider.notifier)
-          .registerTrader(
-            name: _nameController.text,
-            phone: _phoneController.text,
-            email: _emailController.text,
-            password: _passwordController.text,
-            city: _cityController.text,
-            documentFrontUrl: frontUrl,
-            documentBackUrl: backUrl,
-          );
-
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-
-      if (!result.isSuccess) {
-        CustomSnackbar.showError(context, result.errorMessage!);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      CustomSnackbar.showError(
-          context, 'Failed to upload documents. Please try again.');
+    if (!result.isSuccess) {
+      CustomSnackbar.showError(context, result.errorMessage!);
     }
   }
 
