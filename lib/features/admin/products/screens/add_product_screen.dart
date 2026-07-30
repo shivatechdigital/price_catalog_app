@@ -453,6 +453,16 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               : null,
         );
 
+        // Sync removed catalogs/drawings back to Firestore
+        // (updateProduct doesn't touch these arrays, so we update directly)
+        await ref
+            .read(productRepositoryProvider)
+            .updateProductFiles(
+              productId: widget.product!.id,
+              catalogUrls: _existingCatalogUrls,
+              drawingUrls: _existingDrawingUrls,
+            );
+
         // Update price if changed
         final oldPrice = widget.product!.currentPrice;
         if (price.sellingPrice != oldPrice.sellingPrice ||

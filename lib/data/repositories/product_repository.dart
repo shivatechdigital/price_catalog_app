@@ -312,6 +312,23 @@ class ProductRepository {
   }
 
   // ═══════════════════════════════════════
+  // UPDATE PRODUCT FILES (catalogs & drawings after edit)
+  // Sets the arrays to the exact remaining URLs
+  // (call before uploading new files so arrayUnion adds correctly)
+  // ═══════════════════════════════════════
+  Future<void> updateProductFiles({
+    required String productId,
+    required List<String> catalogUrls,
+    required List<String> drawingUrls,
+  }) async {
+    await _productsRef.doc(productId).update({
+      'catalogUrls': catalogUrls,
+      'drawingUrls': drawingUrls,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // ═══════════════════════════════════════
   // INCREMENT VIEW COUNT
   // ═══════════════════════════════════════
   Future<void> incrementViewCount(String productId) async {
