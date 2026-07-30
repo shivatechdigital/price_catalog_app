@@ -72,10 +72,16 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   @override
   void initState() {
     super.initState();
+    // Live update Price Summary box
+    _purchasePriceController.addListener(_onPriceChanged);
+    _sellingPriceController.addListener(_onPriceChanged);
+    _dealerPriceController.addListener(_onPriceChanged);
     if (widget.isEditing) {
       _populateFields();
     }
   }
+
+  void _onPriceChanged() => setState(() {});
 
   void _populateFields() {
     final p = widget.product!;
