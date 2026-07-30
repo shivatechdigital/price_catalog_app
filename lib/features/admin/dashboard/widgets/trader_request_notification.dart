@@ -459,6 +459,42 @@ class _PendingTraderCardState
             ),
           ],
 
+          // ─── Document Images ─────────────────────────
+          if (trader.documentFrontUrl != null ||
+              trader.documentBackUrl != null) ...[
+            Gap(10.h),
+            Text(
+              'Verification Documents',
+              style: TextStyle(
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            Gap(6.h),
+            Row(
+              children: [
+                if (trader.documentFrontUrl != null)
+                  Expanded(
+                    child: _DocImageTile(
+                      url: trader.documentFrontUrl!,
+                      label: 'Front',
+                    ),
+                  ),
+                if (trader.documentFrontUrl != null &&
+                    trader.documentBackUrl != null)
+                  Gap(8.w),
+                if (trader.documentBackUrl != null)
+                  Expanded(
+                    child: _DocImageTile(
+                      url: trader.documentBackUrl!,
+                      label: 'Back',
+                    ),
+                  ),
+              ],
+            ),
+          ],
+
           Gap(12.h),
 
           // ─── Action Buttons ──────────────────────────
@@ -564,6 +600,89 @@ class _PendingTraderCardState
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── Document Image Tile ─────────────────────────────────────
+class _DocImageTile extends StatelessWidget {
+  final String url;
+  final String label;
+
+  const _DocImageTile({required this.url, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _showFullscreen(context),
+      child: Container(
+        height: 90.h,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(9.r),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                url,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: AppColors.background,
+                  child: Icon(
+                    Iconsax.document_text,
+                    color: AppColors.textHint,
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  color: Colors.black.withOpacity(0.5),
+                  padding: EdgeInsets.symmetric(vertical: 3.h),
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showFullscreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+            title: Text(
+              '$label Document',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              child: Image.network(url),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

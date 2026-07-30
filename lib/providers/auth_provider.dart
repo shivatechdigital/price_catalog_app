@@ -203,6 +203,8 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     required String email,
     required String password,
     String? city,
+    String? documentFrontUrl,
+    String? documentBackUrl,
   }) async {
     try {
       _updateState(const AuthLoading());
@@ -224,6 +226,8 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
         role: UserRole.trader,
         traderStatus: TraderStatus.pending, // Pending by default
         city: city?.trim(),
+        documentFrontUrl: documentFrontUrl,
+        documentBackUrl: documentBackUrl,
         createdAt: DateTime.now(),
       );
 

@@ -6,6 +6,7 @@ import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/core/services/requirement_export_service.dart';
+import 'package:price_catalog_app/features/admin/reports/screens/admin_reports_screen.dart';
 import 'package:price_catalog_app/features/auth/screens/profile_edit_screen.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/providers/notification_provider.dart';
@@ -199,6 +200,19 @@ class AdminProfileScreen extends ConsumerWidget {
                           // Navigate to notifications
                         },
                         color: AppColors.adminPrimary,
+                      ),
+                      Gap(12.h),
+                      _ProfileActionTile(
+                        icon: Iconsax.chart_2,
+                        label: 'Reports & Analytics',
+                        subtitle: 'Sales, products & trader insights',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminReportsScreen(),
+                          ),
+                        ),
+                        color: const Color(0xFF7C3AED),
                       ),
                       Gap(12.h),
                       _ProfileActionTile(

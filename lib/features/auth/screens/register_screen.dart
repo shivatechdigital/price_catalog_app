@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -6,6 +8,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/shared/widgets/custom_button.dart';
@@ -36,6 +40,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   int _currentPage = 0;
   bool _agreeToTerms = false;
 
+  // Document images
+  File? _frontDocImage;
+  File? _backDocImage;
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -53,7 +61,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // ═══════════════════════════════════════
   void _nextPage() {
     if (_currentPage == 0) {
-      // Validate page 1 fields
       if (_nameController.text.isEmpty ||
           _phoneController.text.isEmpty) {
         CustomSnackbar.showWarning(
@@ -70,7 +77,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         return;
       }
     }
-
+    if (_currentPage == 1) {
+      if (!_formKey.currentState!.validate()) return;
+      if (!_agreeToTerms) {
+        CustomSnackbar.showWarning(
+          context,
+          'Please agree to terms and conditions',
+        );
+        return;
+      }
+      if (_passwordController.text != _confirmPasswordController.text) {
+        CustomSnackbar.showError(context, 'Passwords do not match');
+        return;
+      }
+    }
     _pageController.nextPage(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
@@ -91,39 +111,59 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // REGISTER ACTION
   // ═══════════════════════════════════════
   Future<void> _handleRegister() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    if (!_agreeToTerms) {
+    if (_frontDocImage == null || _backDocImage == null) {
       CustomSnackbar.showWarning(
         context,
-        'Please agree to terms and conditions',
+        'Please upload both front and back document images',
       );
-      return;
-    }
-
-    if (_passwordController.text != _confirmPasswordController.text) {
-      CustomSnackbar.showError(context, 'Passwords do not match');
       return;
     }
 
     setState(() => _isLoading = true);
     FocusScope.of(context).unfocus();
 
-    final result = await ref.read(authStateProvider.notifier).registerTrader(
-          name: _nameController.text,
-          phone: _phoneController.text,
-          email: _emailController.text,
-          password: _passwordController.text,
-          city: _cityController.text,
-        );
+    try {
+      // Upload document images to Firebase Storage
+      final uid = DateTime.now().millisecondsSinceEpoch.toString();
+      String? frontUrl;
+      String? backUrl;
 
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+      final frontRef = FirebaseStorage.instance
+          .ref()
+          .child('trader_documents/${uid}_front.jpg');
+      final frontTask = await frontRef.putFile(_frontDocImage!);
+      frontUrl = await frontTask.ref.getDownloadURL();
 
-    if (!result.isSuccess) {
-      CustomSnackbar.showError(context, result.errorMessage!);
+      final backRef = FirebaseStorage.instance
+          .ref()
+          .child('trader_documents/${uid}_back.jpg');
+      final backTask = await backRef.putFile(_backDocImage!);
+      backUrl = await backTask.ref.getDownloadURL();
+
+      final result = await ref
+          .read(authStateProvider.notifier)
+          .registerTrader(
+            name: _nameController.text,
+            phone: _phoneController.text,
+            email: _emailController.text,
+            password: _passwordController.text,
+            city: _cityController.text,
+            documentFrontUrl: frontUrl,
+            documentBackUrl: backUrl,
+          );
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (!result.isSuccess) {
+        CustomSnackbar.showError(context, result.errorMessage!);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      CustomSnackbar.showError(
+          context, 'Failed to upload documents. Please try again.');
     }
-    // Navigation handled by router
   }
 
   @override
@@ -162,6 +202,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     children: [
                       _buildPage1(),
                       _buildPage2(),
+                      _buildPage3(),
                     ],
                   ),
                 ),
@@ -234,7 +275,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       child: Column(
         children: [
           Row(
-            children: List.generate(2, (index) {
+            children: List.generate(3, (index) {
               final isActive = index <= _currentPage;
               final isCurrent = index == _currentPage;
               return Expanded(
@@ -266,7 +307,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Step ${_currentPage + 1} of 2',
+                'Step ${_currentPage + 1} of 3',
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: AppColors.textSecondary,
@@ -276,7 +317,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               Text(
                 _currentPage == 0
                     ? 'Basic Info'
-                    : 'Account Setup',
+                    : _currentPage == 1
+                        ? 'Account Setup'
+                        : 'Documents',
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: AppColors.adminPrimary,
@@ -655,13 +698,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         children: [
           // Main Action Button
           CustomButton(
-            label: _currentPage == 0 ? 'Continue' : 'Create Account',
+            label: _currentPage < 2 ? 'Continue' : 'Create Account',
             isLoading: _isLoading,
             gradient: AppColors.adminGradient,
-            prefixIcon: _currentPage == 0
+            prefixIcon: _currentPage < 2
                 ? Icons.arrow_forward_rounded
                 : Iconsax.user_add,
-            onPressed: _currentPage == 0 ? _nextPage : _handleRegister,
+            onPressed: _currentPage < 2 ? _nextPage : _handleRegister,
           ),
 
           Gap(16.h),
@@ -739,6 +782,332 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               return null;
             }
           : null,
+    );
+  }
+
+  // ═══════════════════════════════════════
+  // PAGE 3 - DOCUMENT UPLOAD
+  // ═══════════════════════════════════════
+  Widget _buildPage3() {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Gap(24.h),
+
+          Text(
+            'Document Verification',
+            style: TextStyle(
+              fontSize: 22.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ).animate().fadeIn().slideY(begin: 0.3, end: 0),
+
+          Gap(6.h),
+
+          Text(
+            'Upload front & back of your ID (Aadhar/PAN/GST)',
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: AppColors.textSecondary,
+            ),
+          ).animate().fadeIn(delay: 100.ms),
+
+          Gap(28.h),
+
+          // Front Image
+          _buildLabel('Document Front Side *'),
+          Gap(10.h),
+          _buildDocImagePicker(
+            image: _frontDocImage,
+            label: 'Front Side',
+            icon: Iconsax.card,
+            onPick: () => _pickDocImage(isFront: true),
+          ).animate().fadeIn(delay: 150.ms),
+
+          Gap(20.h),
+
+          // Back Image
+          _buildLabel('Document Back Side *'),
+          Gap(10.h),
+          _buildDocImagePicker(
+            image: _backDocImage,
+            label: 'Back Side',
+            icon: Iconsax.card_slash,
+            onPick: () => _pickDocImage(isFront: false),
+          ).animate().fadeIn(delay: 200.ms),
+
+          Gap(20.h),
+
+          // Info box
+          Container(
+            padding: EdgeInsets.all(14.w),
+            decoration: BoxDecoration(
+              color: AppColors.adminPrimary.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: AppColors.adminPrimary.withOpacity(0.2),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Iconsax.shield_tick,
+                  size: 18.sp,
+                  color: AppColors.adminPrimary,
+                ),
+                Gap(10.w),
+                Expanded(
+                  child: Text(
+                    'Your documents are encrypted and only visible to admin for verification.',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: AppColors.adminPrimary,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ).animate().fadeIn(delay: 250.ms),
+
+          Gap(32.h),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocImagePicker({
+    required File? image,
+    required String label,
+    required IconData icon,
+    required VoidCallback onPick,
+  }) {
+    return GestureDetector(
+      onTap: onPick,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: double.infinity,
+        height: 160.h,
+        decoration: BoxDecoration(
+          color: image != null
+              ? Colors.transparent
+              : AppColors.background,
+          borderRadius: BorderRadius.circular(14.r),
+          border: Border.all(
+            color: image != null
+                ? AppColors.adminPrimary
+                : AppColors.border,
+            width: image != null ? 2 : 1.5,
+          ),
+        ),
+        child: image != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(13.r),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.file(image, fit: BoxFit.cover),
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.adminPrimary,
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                        child: Text(
+                          'Tap to change',
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: 36.sp,
+                    color: AppColors.textHint,
+                  ),
+                  Gap(10.h),
+                  Text(
+                    'Tap to upload $label',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Gap(4.h),
+                  Text(
+                    'Camera or Gallery',
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: AppColors.textHint,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  void _pickDocImage({required bool isFront}) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(20.r)),
+        ),
+        padding: EdgeInsets.all(20.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+            ),
+            Gap(16.h),
+            Text(
+              isFront ? 'Upload Front Side' : 'Upload Back Side',
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            Gap(20.h),
+            Row(
+              children: [
+                Expanded(
+                  child: _pickOption(
+                    icon: Iconsax.camera,
+                    label: 'Camera',
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await _pickAndCrop(
+                        source: ImageSource.camera,
+                        isFront: isFront,
+                      );
+                    },
+                  ),
+                ),
+                Gap(12.w),
+                Expanded(
+                  child: _pickOption(
+                    icon: Iconsax.gallery,
+                    label: 'Gallery',
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await _pickAndCrop(
+                        source: ImageSource.gallery,
+                        isFront: isFront,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Gap(20.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndCrop({
+    required ImageSource source,
+    required bool isFront,
+  }) async {
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 90,
+    );
+    if (picked == null) return;
+
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: picked.path,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: isFront ? 'Crop Front Side' : 'Crop Back Side',
+          toolbarColor: AppColors.adminPrimary,
+          toolbarWidgetColor: Colors.white,
+          activeControlsWidgetColor: AppColors.adminPrimary,
+          initAspectRatio: CropAspectRatioPreset.ratio16x9,
+          lockAspectRatio: false,
+          hideBottomControls: false,
+        ),
+        IOSUiSettings(
+          title: isFront ? 'Crop Front Side' : 'Crop Back Side',
+          aspectRatioLockEnabled: false,
+          resetAspectRatioEnabled: true,
+        ),
+      ],
+    );
+
+    if (cropped != null && mounted) {
+      setState(() {
+        if (isFront) {
+          _frontDocImage = File(cropped.path);
+        } else {
+          _backDocImage = File(cropped.path);
+        }
+      });
+    }
+  }
+
+  Widget _pickOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 16.h),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 28.sp, color: AppColors.adminPrimary),
+            Gap(8.h),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

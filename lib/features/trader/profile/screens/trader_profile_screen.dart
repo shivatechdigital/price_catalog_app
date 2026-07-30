@@ -6,6 +6,7 @@ import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/core/services/requirement_export_service.dart';
+import 'package:price_catalog_app/features/trader/reports/screens/trader_reports_screen.dart';
 import 'package:price_catalog_app/features/auth/screens/profile_edit_screen.dart';
 import 'package:price_catalog_app/features/trader/notifications/screens/trader_notifications_screen.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
@@ -156,6 +157,19 @@ class TraderProfileScreen extends ConsumerWidget {
                           ),
                         ),
                         color: AppColors.traderPrimary,
+                      ),
+                      Gap(12.h),
+                      _ProfileActionTile(
+                        icon: Iconsax.chart_2,
+                        label: 'My Reports',
+                        subtitle: 'Stats, customers & product insights',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TraderReportsScreen(),
+                          ),
+                        ),
+                        color: const Color(0xFF7C3AED),
                       ),
                       Gap(12.h),
                       _ProfileActionTile(

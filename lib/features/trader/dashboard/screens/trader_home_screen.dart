@@ -58,7 +58,7 @@ class TraderHomeScreen extends ConsumerWidget {
                 ),
               ),
               title: Text(
-                'PriceCatalog',
+                'Price Catalog',
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,

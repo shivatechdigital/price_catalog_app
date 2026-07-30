@@ -15,6 +15,8 @@ class UserModel {
   final String? fcmToken;
   final String? city;
   final String? gstNumber;
+  final String? documentFrontUrl;
+  final String? documentBackUrl;
   final DateTime createdAt;
   final DateTime? lastLogin;
 
@@ -30,6 +32,8 @@ class UserModel {
     this.fcmToken,
     this.city,
     this.gstNumber,
+    this.documentFrontUrl,
+    this.documentBackUrl,
     required this.createdAt,
     this.lastLogin,
   });
@@ -60,6 +64,8 @@ class UserModel {
       fcmToken: data['fcmToken'],
       city: data['city'],
       gstNumber: data['gstNumber'],
+      documentFrontUrl: data['documentFrontUrl'],
+      documentBackUrl: data['documentBackUrl'],
       createdAt: data['createdAt'] is Timestamp
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -81,6 +87,8 @@ class UserModel {
       'fcmToken': fcmToken,
       'city': city,
       'gstNumber': gstNumber,
+      'documentFrontUrl': documentFrontUrl,
+      'documentBackUrl': documentBackUrl,
       'createdAt': Timestamp.fromDate(createdAt),
       'lastLogin': lastLogin != null ? Timestamp.fromDate(lastLogin!) : null,
     };
