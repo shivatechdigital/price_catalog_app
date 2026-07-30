@@ -197,6 +197,119 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   }
 
   // ═══════════════════════════════════════
+  // PICK DRAWING (PDF or Image)
+  // ═══════════════════════════════════════
+  void _showDrawingPickerSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(20.r),
+          ),
+        ),
+        padding: EdgeInsets.all(20.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+            ),
+            Gap(16.h),
+            Text(
+              'Add Technical Drawing',
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            Gap(20.h),
+            Row(
+              children: [
+                Expanded(
+                  child: _ImageSourceOption(
+                    icon: Iconsax.document_text,
+                    label: 'PDF File',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickPdfFile('drawing');
+                    },
+                  ),
+                ),
+                Gap(12.w),
+                Expanded(
+                  child: _ImageSourceOption(
+                    icon: Iconsax.camera,
+                    label: 'Camera',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickDrawingImage(ImageSource.camera);
+                    },
+                  ),
+                ),
+                Gap(12.w),
+                Expanded(
+                  child: _ImageSourceOption(
+                    icon: Iconsax.gallery,
+                    label: 'Gallery',
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickDrawingImage(ImageSource.gallery);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Gap(20.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickDrawingImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      if (source == ImageSource.gallery) {
+        final images = await picker.pickMultiImage(
+          imageQuality: 85,
+          maxWidth: 1200,
+          maxHeight: 1200,
+        );
+        if (images.isNotEmpty) {
+          setState(() {
+            _newDrawingFiles.addAll(
+              images.map((e) => File(e.path)).toList(),
+            );
+          });
+        }
+      } else {
+        final image = await picker.pickImage(
+          source: source,
+          imageQuality: 85,
+          maxWidth: 1200,
+          maxHeight: 1200,
+        );
+        if (image != null) {
+          setState(() => _newDrawingFiles.add(File(image.path)));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomSnackbar.showError(context, 'Failed to pick image');
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════
   // SHOW IMAGE SOURCE PICKER
   // ═══════════════════════════════════════
   void _showImageSourcePicker() {
@@ -1542,7 +1655,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           Gap(28.h),
 
           // ─── Technical Drawings ──────────────────────
-          _buildFieldLabel('Technical Drawings (PDF)'),
+          _buildFieldLabel('Technical Drawings (PDF / Image)'),
           Gap(8.h),
           Text(
             'Upload CAD drawings or technical specifications',
@@ -1575,9 +1688,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
 
           Gap(8.h),
           OutlinedButton.icon(
-            onPressed: () => _pickPdfFile('drawing'),
+            onPressed: _showDrawingPickerSheet,
             icon: Icon(Iconsax.add_circle, size: 18.sp),
-            label: const Text('Add Drawing PDF'),
+            label: const Text('Add Drawing'),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.counter,
               side: BorderSide(color: AppColors.counter),

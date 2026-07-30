@@ -407,8 +407,11 @@ class ProductRepository {
     required File file,
     required int index,
   }) async {
+    final ext = file.path.contains('.')
+        ? file.path.split('.').last.toLowerCase()
+        : 'pdf';
     final fileName =
-        'drawing_${productId}_${index}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        'drawing_${productId}_${index}_${DateTime.now().millisecondsSinceEpoch}.$ext';
 
     final storageRef = FirebaseService.storage.ref().child(
       'products/$productId/drawings/$fileName',
