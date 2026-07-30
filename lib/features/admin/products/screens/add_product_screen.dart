@@ -130,6 +130,20 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   // PICK IMAGES
   // ═══════════════════════════════════════
   Future<void> _pickImages(ImageSource source) async {
+    const maxImages = 10;
+    final currentCount = _existingImages.length + _newImages.length;
+    final remaining = maxImages - currentCount;
+
+    if (remaining <= 0) {
+      if (mounted) {
+        CustomSnackbar.showWarning(
+          context,
+          'Maximum 10 images allowed',
+        );
+      }
+      return;
+    }
+
     try {
       if (source == ImageSource.gallery) {
         final picker = ImagePicker();
@@ -137,13 +151,21 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           imageQuality: 85,
           maxWidth: 1200,
           maxHeight: 1200,
+          limit: remaining,
         );
         if (images.isNotEmpty) {
+          final allowed = images.take(remaining).toList();
           setState(() {
             _newImages.addAll(
-              images.map((e) => File(e.path)).toList(),
+              allowed.map((e) => File(e.path)).toList(),
             );
           });
+          if (images.length > remaining && mounted) {
+            CustomSnackbar.showWarning(
+              context,
+              'Only $remaining more image(s) allowed. Added $remaining.',
+            );
+          }
         }
       } else {
         final picker = ImagePicker();
@@ -1488,7 +1510,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           Gap(8.h),
 
           Text(
-            'Add up to 10 images. First image will be the main photo.',
+            'Tap image to set as main photo. First image = main.',
             style: TextStyle(
               fontSize: 12.sp,
               color: AppColors.textHint,
@@ -1804,19 +1826,260 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     );
   }
 
-  Widget _buildExistingImageCard(String url, int index) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12.r),
-          child: Image.network(
-            url,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-          ),
+  void _setExistingAsMain(int index) {
+    if (index == 0) return;
+    setState(() {
+      final img = _existingImages.removeAt(index);
+      _existingImages.insert(0, img);
+    });
+  }
+
+  void _setNewAsMain(int index) {
+    if (_existingImages.isNotEmpty) {
+      // New image can't be main while existing images are present
+      // Just reorder within new list
+      setState(() {
+        final img = _newImages.removeAt(index);
+        _newImages.insert(0, img);
+      });
+      CustomSnackbar.showWarning(
+        context,
+        'Existing images take priority. Remove existing images to make a new image main.',
+      );
+      return;
+    }
+    setState(() {
+      final img = _newImages.removeAt(index);
+      _newImages.insert(0, img);
+    });
+  }
+
+  void _showImageOptions({
+    required bool isExisting,
+    required int index,
+    required bool isAlreadyMain,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(20.r)),
         ),
-        if (index == 0)
+        padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 32.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+            ),
+            Gap(16.h),
+            if (!isAlreadyMain)
+              ListTile(
+                leading: Container(
+                  width: 40.w,
+                  height: 40.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.adminPrimary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                  child: Icon(
+                    Icons.star_rounded,
+                    color: AppColors.adminPrimary,
+                    size: 20.sp,
+                  ),
+                ),
+                title: Text(
+                  'Set as Main Photo',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  'This image will appear as the product cover',
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: AppColors.textHint,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  if (isExisting) {
+                    _setExistingAsMain(index);
+                  } else {
+                    _setNewAsMain(index);
+                  }
+                },
+              ),
+            ListTile(
+              leading: Container(
+                width: 40.w,
+                height: 40.w,
+                decoration: BoxDecoration(
+                  color: AppColors.rejectedLight,
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Icon(
+                  Icons.delete_outline_rounded,
+                  color: AppColors.rejected,
+                  size: 20.sp,
+                ),
+              ),
+              title: Text(
+                'Remove Image',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.rejected,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() {
+                  if (isExisting) {
+                    _existingImages.removeAt(index);
+                  } else {
+                    _newImages.removeAt(index);
+                  }
+                });
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExistingImageCard(String url, int index) {
+    final isMain = index == 0;
+    return GestureDetector(
+      onTap: () => _showImageOptions(
+        isExisting: true,
+        index: index,
+        isAlreadyMain: isMain,
+      ),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12.r),
+            child: Image.network(
+              url,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          ),
+          // Main badge
+          if (isMain)
+            Positioned(
+              bottom: 6,
+              left: 6,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 6.w,
+                  vertical: 2.h,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.adminPrimary,
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.star_rounded,
+                      size: 9.sp,
+                      color: AppColors.white,
+                    ),
+                    Gap(2.w),
+                    Text(
+                      'Main',
+                      style: TextStyle(
+                        fontSize: 9.sp,
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          // Tap hint for non-main
+          if (!isMain)
+            Positioned(
+              bottom: 6,
+              left: 6,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 5.w,
+                  vertical: 2.h,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.45),
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                child: Icon(
+                  Icons.star_border_rounded,
+                  size: 11.sp,
+                  color: AppColors.white,
+                ),
+              ),
+            ),
+          // Remove button
+          Positioned(
+            top: 6,
+            right: 6,
+            child: GestureDetector(
+              onTap: () => setState(() => _existingImages.removeAt(index)),
+              child: Container(
+                width: 22.w,
+                height: 22.w,
+                decoration: BoxDecoration(
+                  color: AppColors.rejected,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 12.sp,
+                  color: AppColors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNewImageCard(File file, int index) {
+    final isMain = _existingImages.isEmpty && index == 0;
+    return GestureDetector(
+      onTap: () => _showImageOptions(
+        isExisting: false,
+        index: index,
+        isAlreadyMain: isMain,
+      ),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12.r),
+            child: Image.file(
+              file,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          ),
+          // Main or New badge (bottom-left)
           Positioned(
             bottom: 6,
             left: 6,
@@ -1826,106 +2089,78 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 vertical: 2.h,
               ),
               decoration: BoxDecoration(
-                color: AppColors.adminPrimary,
+                color: isMain
+                    ? AppColors.adminPrimary
+                    : AppColors.counter,
                 borderRadius: BorderRadius.circular(4.r),
               ),
-              child: Text(
-                'Main',
-                style: TextStyle(
-                  fontSize: 9.sp,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isMain) ...[
+                    Icon(
+                      Icons.star_rounded,
+                      size: 9.sp,
+                      color: AppColors.white,
+                    ),
+                    Gap(2.w),
+                  ],
+                  Text(
+                    isMain ? 'Main' : 'New',
+                    style: TextStyle(
+                      fontSize: 9.sp,
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Star hint for non-main
+          if (!isMain)
+            Positioned(
+              bottom: 6,
+              right: 30.w,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 5.w,
+                  vertical: 2.h,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.45),
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                child: Icon(
+                  Icons.star_border_rounded,
+                  size: 11.sp,
                   color: AppColors.white,
-                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          // Remove button
+          Positioned(
+            top: 6,
+            right: 6,
+            child: GestureDetector(
+              onTap: () => setState(() => _newImages.removeAt(index)),
+              child: Container(
+                width: 22.w,
+                height: 22.w,
+                decoration: BoxDecoration(
+                  color: AppColors.rejected,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 12.sp,
+                  color: AppColors.white,
                 ),
               ),
             ),
           ),
-        Positioned(
-          top: 6,
-          right: 6,
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                _existingImages.removeAt(index);
-              });
-            },
-            child: Container(
-              width: 22.w,
-              height: 22.w,
-              decoration: BoxDecoration(
-                color: AppColors.rejected,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.close_rounded,
-                size: 12.sp,
-                color: AppColors.white,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNewImageCard(File file, int index) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12.r),
-          child: Image.file(
-            file,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-          ),
-        ),
-        Positioned(
-          top: 6,
-          left: 6,
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: 6.w,
-              vertical: 2.h,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.counter,
-              borderRadius: BorderRadius.circular(4.r),
-            ),
-            child: Text(
-              'New',
-              style: TextStyle(
-                fontSize: 9.sp,
-                color: AppColors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 6,
-          right: 6,
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                _newImages.removeAt(index);
-              });
-            },
-            child: Container(
-              width: 22.w,
-              height: 22.w,
-              decoration: BoxDecoration(
-                color: AppColors.rejected,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.close_rounded,
-                size: 12.sp,
-                color: AppColors.white,
-              ),
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
