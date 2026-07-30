@@ -1,549 +1,448 @@
 # 📦 Price Catalog App
 
-A comprehensive **Flutter e-commerce platform** for B2B price catalog management, trader registration, and purchase order (PO) workflows. Admins manage products, catalogs, and pricing while traders browse catalogs and submit purchase requirements.
+A comprehensive **Flutter B2B platform** for price catalog management, trader registration, document verification, and purchase order (PO) workflows. Admins manage products, catalogs, pricing, and reports while traders browse catalogs, submit requirements, and track their business performance.
 
 ---
 
-## 🎯 Key Features
+## 🎯 Features
 
-### **Admin Features**
-- ✅ Product catalog management (create, edit, delete products)
-- ✅ Upload multiple catalogs & technical drawings (PDF support)
-- ✅ Category & subcategory management
-- ✅ Dynamic pricing with price history tracking
-- ✅ Product images & specifications
-- ✅ Trader approval & status management
-- ✅ Purchase order review & counter-offer workflow
-- ✅ Real-time notifications for trader activities
-- ✅ Security settings - Change password securely
-- ✅ Export data functionality with date range filtering
+### 🔑 Admin Features
 
-### **Trader Features**
-- ✅ Browse product catalog with search & filtering
-- ✅ View product details, specifications, and price history
-- ✅ Download catalogs & technical drawings
-- ✅ Create purchase orders (PO) with multiple products
-- ✅ Submit multi-product requirements with quantity & custom prices
-- ✅ Respond to counter-offers from admin
-- ✅ Track order status (pending, approved, rejected, counter-offer)
-- ✅ Share products & catalogs via WhatsApp, email, etc.
-- ✅ Profile management with company details
-- ✅ Form validation before submission (mandatory fields check)
-- ✅ Export requirements with custom date ranges
+| Feature | Description |
+|---|---|
+| Product Management | Add, edit, delete products with multi-step form |
+| Stock Quantity | Set stock per product; auto-deducts on order, restores on reject |
+| Real-time Price Summary | Live price preview updates as admin types |
+| Product Images | Up to 10 images; tap any to set as main cover photo |
+| Technical Drawings | Upload PDF **and** image files (camera/gallery) |
+| Product Catalogs | Upload multiple PDFs; view & share with eye/share icons |
+| Category Management | Create categories with icons, subcategories |
+| Dynamic Pricing | Price history tracking with change reasons |
+| Trader Approval | Review trader registrations with document images (front/back) |
+| Requirements Review | Approve, reject, or counter-offer per-item or full requirement |
+| Reports & Analytics | Sales stats, monthly trends, top products, top traders; export PDF/Excel |
+| Notifications | Real-time FCM push notifications |
+| Security | Password change with re-authentication |
+| Export | Requirements export as PDF or Excel with date range filters |
 
-### **Core Features**
-- 🔐 Role-based authentication (Admin/Trader)
-- 📱 Responsive Material Design UI
-- 🔔 Real-time notifications system
-- 📊 Purchase order workflow with item-level approvals
-- 💾 Cloud Firestore database integration
-- ☁️ Firebase Storage for file management
-- 🎨 Dynamic theming & animations
+### 🛒 Trader Features
+
+| Feature | Description |
+|---|---|
+| Product Catalog | Browse with search, category filters, grid/list toggle |
+| Add to Cart | `+` button on every product card; proceed bar with item count |
+| Stock Limit | Cannot enter quantity beyond available stock |
+| PDF View & Share | Eye icon opens PDF; share icon downloads & shares actual file |
+| Multi-product PO | Select multiple products, set qty & price, proceed to submit |
+| Single PO | Create requirement from product detail screen |
+| Counter-offer | Accept or reject admin counter-offers |
+| Document Upload | Submit Aadhar/PAN front & back with native crop support |
+| My Reports | Stats, monthly trend, top customers, top products; export PDF/Excel |
+| Notifications | Receive approval/rejection/counter-offer alerts |
+| Profile Management | Edit name, phone, city, business details |
+
+### ⚙️ Core Features
+
+- 🔐 Role-based authentication (Admin / Trader)
+- 📱 Responsive Material Design with `flutter_screenutil`
+- 🔔 Real-time push notifications via Firebase Cloud Messaging
+- 💾 Cloud Firestore with live stream providers
+- ☁️ Firebase Storage for images, PDFs, and documents
+- 🎨 Smooth animations with `flutter_animate`
+- 📤 Share files natively via `share_plus`
 
 ---
 
 ## 🏗️ Architecture
 
-### **Clean Architecture Layers**
-
 ```
 lib/
-├── core/                  # Core utilities & constants
-│   ├── constants/        # App-wide constants
-│   ├── errors/           # Error handling
-│   ├── services/         # Firebase, notification services
-│   ├── theme/            # Color schemes, typography
-│   └── utils/            # Helper functions
+├── core/
+│   ├── constants/          # AppColors, app constants
+│   ├── services/           # Firebase, PDF, Excel, Share, Notification services
+│   ├── theme/              # Color schemes, typography
+│   └── utils/              # Permission helper, etc.
 │
-├── data/                  # Data layer (Firestore & Storage)
-│   ├── datasources/       # Remote data sources
-│   ├── models/            # Data models with serialization
-│   └── repositories/      # Repository implementations
+├── data/
+│   ├── models/             # ProductModel, UserModel, RequirementModel, etc.
+│   └── repositories/       # ProductRepository, RequirementRepository
 │
-├── features/              # Feature modules (business logic)
-│   ├── admin/            # Admin dashboard & product management
-│   ├── auth/             # Authentication & registration
-│   ├── splash/           # Splash screen
-│   └── trader/           # Trader dashboard, catalog, cart, orders
+├── features/
+│   ├── admin/
+│   │   ├── dashboard/      # Admin home with stats
+│   │   ├── products/       # Add/edit product (4-step form)
+│   │   ├── requirements/   # Approve/reject/counter requirements
+│   │   ├── traders/        # Trader management
+│   │   ├── reports/        # Admin reports & analytics
+│   │   ├── settings/       # App settings & export
+│   │   └── profile/        # Admin profile
+│   │
+│   ├── auth/
+│   │   ├── register_screen.dart      # 3-step trader registration
+│   │   ├── login_screen.dart
+│   │   ├── pending_approval_screen.dart
+│   │   └── profile_edit_screen.dart
+│   │
+│   └── trader/
+│       ├── catalog/        # Product catalog with cart (+) buttons
+│       ├── dashboard/      # Trader home screen
+│       ├── requirements/   # Submit & track requirements
+│       ├── reports/        # Trader reports & analytics
+│       └── profile/        # Trader profile
 │
-├── providers/            # Riverpod state management
-├── router/               # Route definitions (go_router)
-├── shared/               # Shared widgets & dialogs
-└── main.dart             # App entry point
+├── providers/              # Riverpod providers (auth, product, requirement, etc.)
+├── router/                 # GoRouter route definitions
+├── shared/                 # Reusable widgets (CustomButton, Snackbar, etc.)
+└── main.dart
 ```
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| **Framework** | Flutter | Latest |
-| **Language** | Dart | 3.11.0+ |
-| **State Management** | flutter_riverpod | 3.3.2 |
-| **Database** | Cloud Firestore | 6.6.0 |
-| **Storage** | Firebase Storage | 13.4.3 |
-| **Routing** | go_router | 17.3.0 |
-| **File Picking** | file_picker | 8.1.4 |
-| **Sharing** | share_plus | 13.2.0 |
-| **Image Caching** | cached_network_image | 3.4.1 |
-| **UI/UX** | flutter_screenutil, flutter_animate | Latest |
-| **Analytics** | Firebase Analytics | Latest |
+| Layer | Package | Version |
+|-------|---------|---------|
+| Framework | Flutter | Latest stable |
+| Language | Dart | ^3.10.0 |
+| State Management | flutter_riverpod | ^3.3.2 |
+| Routing | go_router | ^17.3.0 |
+| Database | cloud_firestore | ^6.6.0 |
+| Auth | firebase_auth | ^6.5.4 |
+| Storage | firebase_storage | ^13.4.3 |
+| Notifications | firebase_messaging | ^16.4.1 |
+| Images | cached_network_image | ^3.4.1 |
+| Image Picking | image_picker | ^1.2.3 |
+| Image Cropping | image_cropper | ^9.1.0 |
+| File Picking | file_picker | ^8.1.4 |
+| PDF Generation | pdf | ^3.12.0 |
+| Excel Export | excel | ^4.0.6 |
+| Sharing | share_plus | ^12.0.2 |
+| URL Launch | url_launcher | ^6.3.2 |
+| Open File | open_file | ^3.1.0 |
+| Animations | flutter_animate | ^4.5.2 |
+| Responsive UI | flutter_screenutil | ^5.9.3 |
+| Photo Viewer | photo_view | ^0.15.0 |
 
 ---
 
-## 📊 Database Structure
+## 📊 Database Schema
 
-### **Collections**
-
-#### 1. **users** - User profiles & account info
-```dart
+### `users` collection
+```json
 {
-  uid: "user-123",
-  name: "John Trader",
-  email: "john@example.com",
-  role: "trader",  // "admin" or "trader"
-  traderStatus: "approved",  // "pending", "approved", "rejected"
-  phone: "+923001234567",
-  city: "Karachi",
-  profileImage: "url-to-image",
-  fcmToken: "notification-token",
-  lastLogin: Timestamp,
-  createdAt: Timestamp
+  "uid": "user-abc123",
+  "name": "Rajesh Sharma",
+  "email": "rajesh@example.com",
+  "phone": "9876543210",
+  "businessName": "Rajesh Hardware",
+  "city": "Pune",
+  "role": "trader",
+  "traderStatus": "approved",
+  "documentFrontUrl": "https://storage.../front.jpg",
+  "documentBackUrl": "https://storage.../back.jpg",
+  "profileImage": "https://storage.../profile.jpg",
+  "fcmToken": "fcm-token",
+  "gstNumber": "27ABCDE1234F1Z5",
+  "createdAt": "Timestamp",
+  "lastLogin": "Timestamp"
 }
 ```
 
-#### 2. **products** - Product catalog
-```dart
+### `products` collection
+```json
 {
-  id: "prod-001",
-  name: "Steel Coil",
-  category: "category-123",
-  subcategory: "subcategory-456",
-  brand: "XYZ Steel",
-  code: "SC-001",
-  description: "High-quality steel coil",
-  images: ["url1", "url2"],
-  prices: {
-    "wholesale": 1000,
-    "retail": 1500,
-    "special": 900
+  "id": "prod-001",
+  "name": "Electric Motor 2HP",
+  "productCode": "EM-001",
+  "categoryId": "cat-001",
+  "categoryName": "Motor",
+  "brand": "Valsal",
+  "description": "High efficiency electric motor",
+  "unit": "piece",
+  "images": ["url1", "url2"],
+  "availability": "inStock",
+  "stockQuantity": 500,
+  "currentPrice": {
+    "purchasePrice": 2000,
+    "sellingPrice": 3500,
+    "dealerPrice": 3000,
+    "minAcceptedPrice": 2800,
+    "updatedAt": "Timestamp",
+    "updatedBy": "admin-uid"
   },
-  specifications: {"thickness": "2mm", "width": "1200mm"},
-  availability: "In Stock",
-  catalogUrls: ["catalog1.pdf", "catalog2.pdf"],  // Multiple catalogs
-  drawingUrls: ["drawing1.pdf"],  // Technical drawings
-  createdAt: Timestamp,
-  updatedAt: Timestamp
+  "catalogUrls": ["https://storage.../catalog1.pdf"],
+  "drawingUrls": ["https://storage.../drawing1.jpg"],
+  "specifications": { "Power": "2HP", "Voltage": "415V" },
+  "tags": ["motor", "electric"],
+  "viewCount": 42,
+  "isActive": true,
+  "createdAt": "Timestamp",
+  "updatedAt": "Timestamp"
 }
 ```
 
-#### 3. **categories** - Product categories
-```dart
+### `requirements` collection
+```json
 {
-  id: "cat-001",
-  name: "Steel & Iron",
-  description: "Steel products",
-  icon: "url-to-icon",
-  subcategories: ["subcat-001", "subcat-002"],
-  createdAt: Timestamp
-}
-```
-
-#### 4. **requirements** - Single/Multi-product purchase requests
-```dart
-{
-  id: "req-001",
-  traderId: "user-123",
-  productId: "prod-001",  // For single product (deprecated, use items)
-  items: [  // For multiple products (current standard)
+  "id": "req-001",
+  "traderId": "user-abc123",
+  "traderName": "Rajesh Sharma",
+  "traderBusinessName": "Rajesh Hardware",
+  "items": [
     {
-      productId: "prod-001",
-      quantity: 10,
-      requestedPrice: 950,
-      status: "pending",  // "pending", "approved", "rejected", "counterOffer"
-      counterPrice: null
+      "productId": "prod-001",
+      "productName": "Electric Motor 2HP",
+      "productCode": "EM-001",
+      "quantity": 10,
+      "unit": "piece",
+      "productCurrentPrice": 3500,
+      "customerDemandedPrice": 3200,
+      "traderOfferedPrice": 3300,
+      "itemStatus": "approved"
     }
   ],
-  status: "pending",  // Overall requirement status
-  requiresAdminConfirmation: false,
-  adminNote: "Need approval",
-  createdAt: Timestamp,
-  actionTakenAt: Timestamp
-}
-```
-
-#### 5. **orders** - Multi-product purchase orders (PO)
-```dart
-{
-  id: "order-001",
-  traderId: "user-123",
-  items: [
-    {
-      productId: "prod-001",
-      quantity: 10,
-      requestedPrice: 950,
-      itemStatus: "pending",  // "pending", "approved", "rejected", "counterOffer"
-      counterPrice: null
-    }
-  ],
-  orderStatus: "pending",  // "pending", "approved", "rejected", "partiallyApproved"
-  approvedCount: 1,
-  rejectedCount: 0,
-  counterCount: 1,
-  pendingCount: 1,
-  approvedOrderValue: 15000,
-  adminNote: "Processing PO",
-  createdAt: Timestamp,
-  lastActionAt: Timestamp
-}
-```
-
-#### 6. **price_history** - Price tracking for products
-```dart
-{
-  productId: "prod-001",
-  historyId: "hist-001",
-  prices: {
-    "wholesale": 1000,
-    "retail": 1500
-  },
-  changeReason: "Market rate update",
-  changedBy: "admin-uid",
-  changedAt: Timestamp
-}
-```
-
-#### 7. **notifications** - User notifications
-```dart
-{
-  userId: "user-123",
-  notificationId: "notif-001",
-  title: "PO Approved",
-  message: "Your PO #123 has been approved",
-  type: "order_approved",  // "order_approved", "status_change", "new_product"
-  referenceId: "order-001",
-  read: false,
-  createdAt: Timestamp
-}
-```
-
-#### 8. **app_settings** - Admin configuration
-```dart
-{
-  id: "settings",
-  appName: "Price Catalog",
-  appVersion: "1.0.0",
-  maintenanceMode: false,
-  supportEmail: "support@example.com",
-  contactPhone: "+923001234567"
+  "customerName": "Mahesh Hardware Store",
+  "customerPhone": "9123456789",
+  "customerBusinessName": "Mahesh Hardware",
+  "customerCity": "Mumbai",
+  "paymentType": "fullCash",
+  "status": "approved",
+  "submittedAt": "Timestamp",
+  "actionTakenAt": "Timestamp"
 }
 ```
 
 ---
 
-## 🔐 Security & User Roles
+## 🔐 Security & Access Control
 
-### **Role-Based Access Control (RBAC)**
+### Role-Based Access
 
-| Action | Admin | Approved Trader | Pending Trader | Not Authenticated |
-|--------|-------|-----------------|---|---|
-| View Products | ✅ | ✅ | ❌ | ❌ |
-| Manage Products | ✅ | ❌ | ❌ | ❌ |
-| Create PO | ✅ | ✅ | ❌ | ❌ |
-| Approve Orders | ✅ | ❌ | ❌ | ❌ |
-| View Own Profile | ✅ | ✅ | ✅ | ❌ |
-| View All Users | ✅ | ❌ | ❌ | ❌ |
+| Action | Admin | Approved Trader | Pending Trader |
+|--------|-------|-----------------|----------------|
+| Manage Products | ✅ | ❌ | ❌ |
+| View Catalog | ✅ | ✅ | ❌ |
+| Submit Requirements | ✅ | ✅ | ❌ |
+| Approve/Reject Orders | ✅ | ❌ | ❌ |
+| View All Traders | ✅ | ❌ | ❌ |
+| View All Reports | ✅ | ❌ | ❌ |
+| View Own Reports | ✅ | ✅ | ❌ |
 
-### **Firebase Security Rules**
-
-#### Firestore Rules (`firestore.rules`)
-- ✅ Users can only read their own profile (traders) or all profiles (admins)
-- ✅ Only admins can create/edit/delete products with validation
-- ✅ Products have optional `catalogUrls` and `drawingUrls` arrays
-- ✅ Traders can only create orders for themselves
-- ✅ Admin approval workflow for orders with counter-offer support
-- ✅ Notifications are user-specific and secure
-
-#### Storage Rules (`storage.rules`) - Enhanced Security
-- ✅ **Product Images**: `products/{id}/images/` - Admin upload only, max 50MB, logged-in users read
-- ✅ **Product Catalogs (PDF)**: `products/{id}/catalogs/` - Admin upload only, max 50MB, logged-in users read
-- ✅ **Product Drawings (PDF)**: `products/{id}/drawings/` - Admin upload only, max 50MB, logged-in users read
-- ✅ **User Profile Images**: `users/{id}/` - Self + admin upload, max 10MB, logged-in users read
-- ✅ **Trader Catalogs**: `traders/{id}/catalog/` - Self + admin upload, images & PDFs, max 50MB
-- ✅ **Requirement Attachments**: `requirements/{id}/` - Self + admin access only, images & PDFs, max 50MB
-- ✅ **Order Attachments**: `orders/{id}/` - Self + admin access only, images & PDFs, max 50MB
-- ✅ **Exports**: `exports/{id}/` - User-specific data exports, max 100MB
-- ✅ **File Type Validation**: Strict MIME type checking with regex for PDFs
-- ✅ **Default Deny**: All unlisted paths blocked (security best practice)
+### Security Implemented
+- ✅ Firebase Auth token verification on all requests
+- ✅ Firestore security rules with role checks
+- ✅ Storage rules: admin-only upload, authenticated-only read
+- ✅ Re-authentication required for password change
+- ✅ Stock quantity via `FieldValue.increment` (atomic, tamper-proof)
+- ✅ Trader document images stored in `trader_documents/` (private path)
 
 ---
 
-## ✅ Recent Improvements & Bug Fixes (v1.0.0)
+## 🔄 Key Workflows
 
-### **Authentication & Profile**
-- ✅ Fixed login flow race condition - splash screen now reactively watches auth state
-- ✅ Fixed profile edit logout issue - users stay logged in when editing profile
-- ✅ Added password change functionality with re-authentication
+### Stock Management Flow
+```
+Admin sets stockQuantity on product (e.g. 500 TON)
+    ↓
+Trader views product → validator shows max available
+    ↓
+Trader cannot enter qty > stockQuantity
+    ↓
+Trader submits requirement
+    ↓
+stockQuantity -= qty  (FieldValue.increment, atomic)
+    ↓
+Admin rejects requirement
+    ↓
+stockQuantity += qty  (automatically restored)
+```
 
-### **Product Management**
-- ✅ Fixed PDF upload errors in product edit mode - catalogs & drawings now upload properly
-- ✅ Added proper file size validation (max 50MB for PDFs, 10MB for images)
-- ✅ Improved image display with CachedNetworkImage in trader home
+### Cart & Purchase Order Flow
+```
+Trader taps + on product card → added to cart
+    ↓
+Proceed bar shows "N products selected → Proceed"
+    ↓
+Tap Proceed → SubmitMultiRequirementScreen
+    ↓
+Fill customer details, quantity, offered price
+    ↓
+Submit → Stock deducted → Admin notified
+    ↓
+Admin reviews per-item:
+    ├── Approve ✅  → Trader notified
+    ├── Reject ❌   → Stock restored, trader notified
+    └── Counter 💰  → Trader accepts or rejects
+```
 
-### **Admin Features**
-- ✅ Made category & trader stats dynamic on admin home (no more hardcoded values)
-- ✅ Removed unimplemented "coming soon" menu items
-- ✅ Added functional Security option for password management
-
-### **Trader Features**
-- ✅ Removed duplicate "+" cart button from product catalog (use top app bar only)
-- ✅ Added mandatory field validation before requirement submission
-- ✅ Product images now display properly in latest products section
-
-### **Security & Storage**
-- ✅ Enhanced Firestore rules with better permission checks
-- ✅ Improved Storage rules with strict MIME type validation
-- ✅ Added file size limits for all upload paths
-- ✅ Added default deny rule for unlisted paths
-- ✅ Better error handling for missing user documents
+### Trader Registration Flow
+```
+Step 1: Basic Info (Name, Phone, City)
+    ↓
+Step 2: Account Setup (Email, Password, Terms)
+    ↓
+Step 3: Document Verification
+        (ID Front + Back — Camera/Gallery with native crop)
+    ↓
+Account created → Status: Pending
+    ↓
+Admin sees document thumbnails → Reviews
+    ↓
+Admin approves → Trader can login
+```
 
 ---
 
-## 🔐 Security Best Practices Implemented
+## 📈 Reports & Analytics
 
-- ✅ Role-based access control (RBAC) on Firestore & Storage
-- ✅ Only authenticated users can access resources
-- ✅ File type validation (images: .jpg, .png; PDFs: strict checking)
-- ✅ File size limits to prevent storage abuse
-- ✅ User ownership verification for personal data
-- ✅ Admin-only operations for product management
-- ✅ Secure password re-authentication for profile changes
-- ✅ Default deny for unspecified paths
+### Admin Reports (`Profile → Reports & Analytics`)
+| Section | Details |
+|---|---|
+| Overview Stats | Total, Approved, Rejected, Pending, Counter, Products |
+| Deal Value Card | Total approved requirement value with gradient |
+| Monthly Trend | Bar chart — last 6 months |
+| Top Products | Top 5 demanded products with progress bars |
+| Top Traders | Top 5 active traders |
+| Status Breakdown | Percentage bars for each status |
+| Export PDF | Full report shared as PDF |
+| Export Excel | Summary sheet + Requirements sheet |
+
+### Trader Reports (`Profile → My Reports`)
+| Section | Details |
+|---|---|
+| My Stats | Total, Approved, Rejected, Pending, Counter, Customers |
+| My Deal Value | Approved requirements total value |
+| Monthly Activity | Last 6 months requirements bar chart |
+| Status Breakdown | My requirement distribution |
+| Top Customers | Top 5 customers by order count |
+| Top Products | Top 5 products I order most |
+| Export PDF | My requirements as shareable PDF |
+| Export Excel | My requirements as Excel file |
 
 ---
 
-### **Prerequisites**
-- Flutter SDK (latest version)
-- Dart 3.11.0+
-- Firebase Project setup
-- Android Studio / Xcode for mobile development
+## 🚀 Getting Started
 
-### **Installation**
+### Prerequisites
+- Flutter SDK (latest stable)
+- Dart ^3.10.0
+- Android Studio / VS Code
+- Firebase project (Firestore + Auth + Storage + FCM)
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/shivatechdigital/price_catalog_app.git
-   cd price_catalog_app
-   ```
+### Installation
 
-2. **Install dependencies**
-   ```bash
-   flutter pub get
-   ```
-
-3. **Setup Firebase**
-   ```bash
-   # Download your google-services.json (Android) and GoogleService-Info.plist (iOS)
-   # Place them in: android/app/ and ios/Runner/ respectively
-   
-   # Or use FlutterFire CLI:
-   flutter pub global activate flutterfire_cli
-   flutterfire configure
-   ```
-
-4. **Run the app**
-   ```bash
-   flutter run
-   ```
-
-### **Build for Release**
-
-**Android:**
 ```bash
+# 1. Clone
+git clone https://github.com/shivatechdigital/price_catalog_app.git
+cd price_catalog_app
+
+# 2. Install dependencies
+flutter pub get
+
+# 3. Add Firebase config files
+# → android/app/google-services.json
+# → ios/Runner/GoogleService-Info.plist
+
+# 4. Run
+flutter run
+```
+
+### Build Release
+
+```bash
+# Android APK
 flutter build apk --release
-# or
-flutter build appbundle --release  # For Google Play
-```
 
-**iOS:**
-```bash
+# Android App Bundle (Play Store)
+flutter build appbundle --release
+
+# iOS
 flutter build ios --release
 ```
 
 ---
 
-## 📁 Key Files Overview
+## 🐛 Common Issues
+
+| Issue | Solution |
+|---|---|
+| PDF not opening | Check internet; Firebase Storage URLs need auth |
+| Stock not deducting | Set `stockQuantity` on product (null = unlimited) |
+| Document upload fails | Check Firebase Storage rules for `trader_documents/` path |
+| Image cropper not showing | Grant camera/storage permissions |
+| Reports showing 0 | Check Firestore rules for `requirements` collection read access |
+| Cart not clearing | `selectedRequirementItemsProvider` resets on `SelectProductsScreen` open |
+
+---
+
+## 📋 Changelog
+
+### v1.2.0 — July 2026 (Latest)
+- ✅ **Reports Dashboard** — Admin & Trader analytics with PDF/Excel export
+- ✅ **Document Verification** — 3-step registration with ID front/back + native crop
+- ✅ **Stock Management** — Set stock; auto-deduct on submit, restore on reject
+- ✅ **Cart Feature** — `+` buttons on product cards with animated proceed bar
+- ✅ **Main Image Selection** — Tap any product image to set as cover photo
+- ✅ **Technical Drawing Images** — Now accepts PDF and image files (camera/gallery)
+- ✅ **Image Limit Enforcement** — Max 10 images with gallery `limit` parameter
+- ✅ **Real-time Price Summary** — Live preview in pricing step
+- ✅ **PDF View & Share** — Actual file download & share (not just link)
+- ✅ **Admin Document Review** — Document thumbnails in trader approval cards
+
+### v1.1.0 — June 2026
+- ✅ Multi-product requirements (bulk PO)
+- ✅ Per-item approve/reject/counter
+- ✅ Price history tracking
+- ✅ Firebase FCM notifications
+- ✅ Requirement export PDF/Excel
+
+### v1.0.0 — May 2026
+- ✅ Role-based auth (Admin/Trader)
+- ✅ Product catalog with categories
+- ✅ Single product requirements
+- ✅ Admin trader approval workflow
+
+---
+
+## 📁 Key Files Reference
 
 | File | Purpose |
 |------|---------|
-| `lib/main.dart` | App initialization, Firebase setup, routing |
-| `lib/providers/` | State management (Riverpod providers) |
-| `lib/data/models/product_model.dart` | Product data model with catalog/drawing URLs |
-| `lib/data/repositories/product_repository.dart` | Database & storage operations |
-| `lib/features/admin/` | Admin dashboard & product management |
-| `lib/features/trader/` | Trader catalog, cart, PO workflow |
-| `firestore.rules` | Firestore security & validation rules |
-| `storage.rules` | Firebase Storage access control |
-| `pubspec.yaml` | Project dependencies |
-
----
-
-## 📋 Workflow Examples
-
-### **Admin: Upload Product with Catalogs**
-1. Admin goes to Product Management → Add Product
-2. Fill product details (name, category, pricing)
-3. Step 4: Upload catalogs (PDF) and drawings (PDF) - supports multiple files
-4. Edit mode also supports adding new catalogs & drawings to existing products
-5. Save → Files auto-upload to Firebase Storage
-6. Product appears in trader catalog with download links
-7. Images display properly with CachedNetworkImage for performance
-
-### **Admin: Change Password**
-1. Admin goes to Profile → Account Settings → Account → Change Password
-2. Enter current password (must verify to proceed for security)
-3. Enter new password (6+ characters, cannot match current)
-4. Confirm password (must match exactly)
-5. Submit → Auto-logout and prompt to re-login with new password
-6. Enhanced security: Re-authentication required, no session continuation
-
-### **Trader: Create Purchase Order**
-1. Trader browses catalog → Search/filter products
-2. Click (+) button to add product to cart
-3. Click "Create PO" → Multi-step checkout
-4. Enter quantity, negotiated price, delivery location
-5. Submit → Admin receives notification
-6. Admin can approve, reject, or send counter-offer
-7. Trader responds to counter-offer or order completes
-
-### **Admin: Manage Orders**
-1. Admin Dashboard → Purchase Orders
-2. View pending orders with trader details
-3. Approve/reject individual items (item-level granularity)
-4. Send counter-offer with new price
-5. Track approval stats (approved/rejected/pending/counter)
-
----
-
-## 🔄 Purchase Order Workflow
-
-```
-Trader Submits PO
-    ↓
-Admin Receives Notification
-    ↓
-Admin Reviews Items
-    ├─ Approve ✅ → Order Approved
-    ├─ Reject ❌ → Trader Notified
-    └─ Counter-Offer 💰 → Trader Responds
-         ├─ Accept ✅ → Order Approved
-         └─ Reject ❌ → Order Cancelled
-```
-
----
-
-## 🐛 Troubleshooting
-
-### **Authentication & Login Issues**
-- **Issue**: Login flow shows splash screen, then login page reappears
-  - **Solution**: Cleared race condition in splash_screen.dart - now uses `ref.watch()` for reactive state management
-- **Issue**: User logged out after profile edit
-  - **Solution**: updateProfile() now restores previous auth state instead of logging out on error
-- **Issue**: Password change doesn't work
-  - **Solution**: Ensure current password is correct (re-authentication required)
-
-### **Firebase Connection Issues**
-- Verify `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) are in correct directories
-- Check Firebase project settings match your app package name
-- Ensure Firebase Firestore and Storage are enabled in Firebase Console
-- Verify security rules are properly deployed (use Firebase Console → Rules tab)
-
-### **File Upload Fails**
-- **PDF upload error**: Check file size (max 50MB per storage rules)
-- **Image upload fails**: Verify file size (max 10MB for profiles, 50MB for others)
-- **"Unable to update product"**: Ensure admin is logged in and has upload permissions
-- **Check file MIME type**: PDFs must be `application/pdf` or `application/x-pdf`
-- Check Firebase Storage quota in Firebase Console
-
-### **Notifications Not Working**
-- Ensure FCM token is saved after login
-- Check notification settings in app settings (admin panel)
-- Verify Firebase Cloud Messaging is enabled
-- Check notification permissions are granted on device
-
-### **Orders/Requirements Not Appearing**
-- Clear app cache and restart: `flutter clean` then `flutter run`
-- Verify trader status is "approved" in Firestore `users` collection
-- Check Firestore security rules are properly deployed
-- Verify auth token is valid (re-login if needed)
-
-### **Images Not Loading**
-- Check internet connection
-- Verify image URL is correct in Firestore
-- Clear app cache: Settings → App Storage → Clear Cache
-- Check if using CachedNetworkImage with proper error handling
-
----
-
-## 📈 Future Enhancements
-
-- [ ] Invoice generation & export
-- [ ] Payment gateway integration (Stripe, JazzCash)
-- [ ] Bulk import products via CSV
-- [ ] Advanced analytics dashboard for admin
-- [ ] Mobile app for trader order tracking
-- [ ] Supplier integration for auto-pricing
-- [ ] Multi-language support (Urdu, English)
-- [ ] Wishlist feature for traders
-
----
-
-## 📞 Support & Contact
-
-For questions or support:
-- 📧 Email: support@example.com
-- 📱 WhatsApp: +923001234567
-- 🐛 Report Issues: GitHub Issues
-
----
-
-## 📄 License
-
-This project is proprietary software. All rights reserved.
+| `lib/main.dart` | App entry, Firebase init |
+| `lib/data/models/product_model.dart` | ProductModel with `stockQuantity` |
+| `lib/data/models/user_model.dart` | UserModel with `documentFrontUrl/BackUrl` |
+| `lib/data/repositories/product_repository.dart` | CRUD + `adjustStockQuantity()` |
+| `lib/data/repositories/requirement_repository.dart` | Submit (deduct) & Reject (restore) stock |
+| `lib/features/admin/products/screens/add_product_screen.dart` | 4-step product form |
+| `lib/features/admin/reports/screens/admin_reports_screen.dart` | Admin analytics |
+| `lib/features/trader/catalog/screens/trader_catalog_screen.dart` | Cart `+` buttons |
+| `lib/features/trader/catalog/screens/trader_product_detail_screen.dart` | PDF view/share |
+| `lib/features/trader/reports/screens/trader_reports_screen.dart` | Trader analytics |
+| `lib/features/auth/screens/register_screen.dart` | 3-step registration + doc upload |
+| `firestore.rules` | Firestore security rules |
+| `storage.rules` | Firebase Storage access rules |
 
 ---
 
 ## 👨‍💻 Developer Info
 
 - **Framework**: Flutter (Dart)
-- **Backend**: Firebase (Firestore + Storage + Auth)
-- **State Management**: Riverpod
-- **Architecture**: Clean Architecture with MVVM pattern
-
-### **Last Updated**: July 2026
-### **Version**: 1.0.0 - Production Ready
-### **Status**: All 8 critical issues fixed ✅
-
-**Recent Fixes (Latest)**:
-- ✅ Login flow race condition resolved
-- ✅ Profile edit logout issue fixed
-- ✅ PDF upload functionality restored
-- ✅ Dynamic admin stats implemented
-- ✅ Security password change added
-- ✅ Form validation improvements
-- ✅ Image display fixes
-- ✅ Firestore & Storage rules enhanced
+- **Backend**: Firebase (Firestore + Storage + Auth + FCM)
+- **State Management**: Riverpod (StateNotifier + StreamProvider + StateProvider)
+- **Architecture**: Feature-first Clean Architecture
+- **Version**: 1.2.0
+- **Last Updated**: July 2026
 
 ---
 
-## 📚 Additional Resources
+## 📚 Resources
 
-- [Flutter Documentation](https://docs.flutter.dev/)
-- [Firebase for Flutter](https://firebase.flutter.dev/)
-- [Riverpod Documentation](https://riverpod.dev/)
-- [Firestore Documentation](https://firebase.google.com/docs/firestore)
+- [Flutter Docs](https://docs.flutter.dev/)
+- [Firebase Flutter](https://firebase.flutter.dev/)
+- [Riverpod Docs](https://riverpod.dev/)
+- [Go Router](https://pub.dev/packages/go_router)
+- [image_cropper](https://pub.dev/packages/image_cropper)
 
 ---
 
-**Happy Coding! 🚀**
+**Built with ❤️ using Flutter & Firebase**
