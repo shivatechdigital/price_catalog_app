@@ -7,13 +7,6 @@ import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/router/app_router.dart';
 
-class SplashScreen extends ConsumerStatefulWidget {
-  const SplashScreen({super.key});
-
-  @override
-  ConsumerState<SplashScreen> createState() => _SplashScreenState();
-}
-
 class SplashScreen extends ConsumerWidget {
   const SplashScreen({super.key});
 
@@ -23,17 +16,10 @@ class SplashScreen extends ConsumerWidget {
     final authState = ref.watch(authStateProvider);
 
     // Handle navigation based on auth state
-    authState.maybeWhen(
-      initial: () {
-        // Show splash while loading
-        return null;
-      },
-      loading: () {
-        // Show splash while loading
-        return null;
-      },
+    authState.when(
+      initial: () => null,
+      loading: () => null,
       unauthenticated: () {
-        // Redirect to login after a short delay
         Future.delayed(const Duration(milliseconds: 2800), () {
           if (context.mounted) {
             context.go(AppRoutes.login);
@@ -42,7 +28,6 @@ class SplashScreen extends ConsumerWidget {
         return null;
       },
       profileIncomplete: () {
-        // Redirect after animation
         Future.delayed(const Duration(milliseconds: 2800), () {
           if (context.mounted) {
             context.go(AppRoutes.completeProfile);
@@ -74,7 +59,6 @@ class SplashScreen extends ConsumerWidget {
         });
         return null;
       },
-      orElse: () => null,
     );
 
     return _buildSplashUI(context);
