@@ -138,7 +138,7 @@ class SplashScreen extends ConsumerWidget {
               // APP NAME (download/install name)
               // ═══════════════════════════════════════
               Text(
-                'Anandeshwar Traders',
+                'Shri Anandeshwar Traders',
                 style: TextStyle(
                   fontSize: 30.sp,
                   fontWeight: FontWeight.w700,

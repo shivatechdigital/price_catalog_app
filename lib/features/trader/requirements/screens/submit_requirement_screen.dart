@@ -569,6 +569,10 @@ class _SubmitRequirementScreenState
                   double.parse(v) <= 0) {
                 return 'Enter valid quantity';
               }
+              final stock = widget.product.stockQuantity;
+              if (stock != null && double.parse(v) > stock) {
+                return 'Only ${stock.toStringAsFixed(0)} ${widget.product.unit.toUpperCase()} available';
+              }
               return null;
             },
           ),

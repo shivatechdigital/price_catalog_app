@@ -7,6 +7,9 @@ import 'package:price_catalog_app/core/services/firebase_service.dart';
 import 'package:price_catalog_app/data/models/price_history_model.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
 
+// Sentinel for optional nullable param in updateProduct
+const _sentinel = Object();
+
 class ProductRepository {
   final _productsRef = FirebaseService.productsRef;
 
@@ -82,6 +85,8 @@ class ProductRepository {
     required String unit,
     required PriceModel price,
     required String createdBy,
+    ProductAvailability availability = ProductAvailability.inStock,
+    double? stockQuantity,
     Map<String, String>? specifications,
     List<String>? tags,
   }) async {
@@ -99,7 +104,7 @@ class ProductRepository {
       description: description.trim(),
       unit: unit,
       images: [],
-      availability: ProductAvailability.inStock,
+      availability: availability,
       currentPrice: price,
       isActive: true,
       viewCount: 0,
@@ -108,6 +113,7 @@ class ProductRepository {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       createdBy: createdBy,
+      stockQuantity: stockQuantity,
     );
 
     await docRef.set(product.toFirestore());
@@ -132,6 +138,7 @@ class ProductRepository {
     bool? isActive,
     Map<String, String>? specifications,
     List<String>? tags,
+    Object? stockQuantity = _sentinel,
   }) async {
     final updates = <String, dynamic>{
       'updatedAt': FieldValue.serverTimestamp(),
@@ -154,6 +161,9 @@ class ProductRepository {
     if (isActive != null) updates['isActive'] = isActive;
     if (specifications != null) updates['specifications'] = specifications;
     if (tags != null) updates['tags'] = tags;
+    if (!identical(stockQuantity, _sentinel)) {
+      updates['stockQuantity'] = stockQuantity; // can be null (unlimited)
+    }
 
     await _productsRef.doc(productId).update(updates);
   }
@@ -308,6 +318,24 @@ class ProductRepository {
     await _productsRef.doc(productId).update({
       'viewCount': FieldValue.increment(1),
     });
+  }
+
+  // ═══════════════════════════════════════
+  // ADJUST STOCK QUANTITY
+  // delta < 0 = deduct, delta > 0 = restore
+  // ═══════════════════════════════════════
+  Future<void> adjustStockQuantity(
+    String productId,
+    double delta,
+  ) async {
+    try {
+      await _productsRef.doc(productId).update({
+        'stockQuantity': FieldValue.increment(delta),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      // If stockQuantity field doesn't exist (product has no limit), ignore
+    }
   }
 
   // ═══════════════════════════════════════

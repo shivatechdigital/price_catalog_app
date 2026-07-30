@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:price_catalog_app/core/services/firebase_service.dart';
 import 'package:price_catalog_app/data/models/notification_model.dart';
 import 'package:price_catalog_app/data/models/requirement_model.dart';
+import 'package:price_catalog_app/data/repositories/product_repository.dart';
 
 class RequirementRepository {
   final _ref = FirebaseService.requirementsRef;
+  final _productRepo = ProductRepository();
 
   // ═══════════════════════════════════════
   // SUBMIT NEW REQUIREMENT (Trader) - Single Product
@@ -154,6 +156,18 @@ class RequirementRepository {
       print("===============");
     }
 
+    // Deduct stock for each item
+    for (final item in requirementWithId.items) {
+      final product =
+          await _productRepo.getProductById(item.productId);
+      if (product != null && product.stockQuantity != null) {
+        await _productRepo.adjustStockQuantity(
+          item.productId,
+          -item.quantity,
+        );
+      }
+    }
+
     // Notify admin
     await _notifyAdmin(requirementWithId);
 
@@ -278,6 +292,21 @@ class RequirementRepository {
     required String rejectionReason,
     String? adminNote,
   }) async {
+    // Restore stock before updating status
+    final requirement = await getRequirementById(requirementId);
+    if (requirement != null) {
+      for (final item in requirement.items) {
+        final product =
+            await _productRepo.getProductById(item.productId);
+        if (product != null && product.stockQuantity != null) {
+          await _productRepo.adjustStockQuantity(
+            item.productId,
+            item.quantity, // positive = restore
+          );
+        }
+      }
+    }
+
     await _ref.doc(requirementId).update({
       'status': RequirementStatus.rejected.name,
       'rejectionReason': rejectionReason,
@@ -419,6 +448,18 @@ class RequirementRepository {
           ? RejectionBy.admin
           : item.rejectionBy,
     );
+
+    // Restore stock if this item is being rejected
+    if (itemStatus == RequirementStatus.rejected &&
+        item.itemStatus != RequirementStatus.rejected) {
+      final product = await _productRepo.getProductById(item.productId);
+      if (product != null && product.stockQuantity != null) {
+        await _productRepo.adjustStockQuantity(
+          item.productId,
+          item.quantity, // positive = restore
+        );
+      }
+    }
 
     await _ref.doc(requirement.id).update({
       'items': items.map((i) => i.toFirestore()).toList(),

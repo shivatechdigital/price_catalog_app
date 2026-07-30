@@ -25,6 +25,7 @@ class ProductModel {
   final List<String> tags;
   final List<String> catalogUrls;
   final List<String> drawingUrls;
+  final double? stockQuantity; // null = unlimited
 
   const ProductModel({
     required this.id,
@@ -43,6 +44,7 @@ class ProductModel {
     this.tags = const [],
     this.catalogUrls = const [],
     this.drawingUrls = const [],
+    this.stockQuantity,
     required this.availability,
     required this.currentPrice,
     required this.isActive,
@@ -89,6 +91,7 @@ class ProductModel {
       tags: List<String>.from(data['tags'] ?? []),
       catalogUrls: List<String>.from(data['catalogUrls'] ?? []),
       drawingUrls: List<String>.from(data['drawingUrls'] ?? []),
+      stockQuantity: (data['stockQuantity'] as num?)?.toDouble(),
     );
   }
 
@@ -115,6 +118,7 @@ class ProductModel {
       'tags': tags,
       'catalogUrls': catalogUrls,
       'drawingUrls': drawingUrls,
+      'stockQuantity': stockQuantity,
     };
   }
 }

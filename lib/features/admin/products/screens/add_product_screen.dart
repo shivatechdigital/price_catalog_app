@@ -46,6 +46,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   final _sellingPriceController = TextEditingController();
   final _dealerPriceController = TextEditingController();
   final _minPriceController = TextEditingController();
+  final _stockQtyController = TextEditingController();
 
   // State
   String? _selectedCategoryId;
@@ -99,6 +100,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     _existingImages = List.from(p.images);
     _existingCatalogUrls = List.from(p.catalogUrls);
     _existingDrawingUrls = List.from(p.drawingUrls);
+    if (p.stockQuantity != null) {
+      _stockQtyController.text = p.stockQuantity!.toStringAsFixed(0);
+    }
   }
 
   @override
@@ -112,6 +116,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     _sellingPriceController.dispose();
     _dealerPriceController.dispose();
     _minPriceController.dispose();
+    _stockQtyController.dispose();
     super.dispose();
   }
 
@@ -302,6 +307,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           description: _descController.text,
           unit: _selectedUnit,
           availability: _availability,
+          stockQuantity: _stockQtyController.text.isNotEmpty
+              ? double.tryParse(_stockQtyController.text)
+              : null,
         );
 
         // Update price if changed
@@ -367,6 +375,10 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           brand: _brandController.text,
           description: _descController.text,
           unit: _selectedUnit,
+          availability: _availability,
+          stockQuantity: _stockQtyController.text.isNotEmpty
+              ? double.tryParse(_stockQtyController.text)
+              : null,
           price: price,
           createdBy: currentUser?.uid ?? '',
         );
@@ -687,6 +699,29 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           _buildFieldLabel('Availability'),
           Gap(8.h),
           _buildAvailabilitySelector(),
+
+          Gap(16.h),
+
+          // Stock Quantity
+          _buildFieldLabel('Stock Quantity (optional)'),
+          Gap(8.h),
+          TextFormField(
+            controller: _stockQtyController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(
+                RegExp(r'^\d*\.?\d*'),
+              ),
+            ],
+            decoration: InputDecoration(
+              hintText: 'e.g. 500 (leave blank = unlimited)',
+              prefixIcon: Icon(
+                Iconsax.box_1,
+                size: 20.sp,
+                color: AppColors.textHint,
+              ),
+            ),
+          ),
 
           Gap(16.h),
 

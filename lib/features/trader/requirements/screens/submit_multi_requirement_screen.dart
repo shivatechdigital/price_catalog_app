@@ -8,6 +8,7 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/data/models/requirement_model.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
+import 'package:price_catalog_app/providers/product_provider.dart';
 import 'package:price_catalog_app/providers/requirement_provider.dart';
 import 'package:price_catalog_app/shared/widgets/custom_button.dart';
 import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
@@ -331,6 +332,19 @@ class _SubmitMultiRequirementScreenState
             return _ProductPriceCard(
               item: item,
               index: index,
+              stockQuantity: ref
+                  .read(filteredProductsProvider)
+                  .asData
+                  ?.value
+                  ?.firstWhere(
+                    (p) => p.id == item.productId,
+                    orElse: () => ref
+                        .read(filteredProductsProvider)
+                        .asData!
+                        .value!
+                        .first,
+                  )
+                  .stockQuantity,
               qtyController: _qtyControllers[item.productId]!,
               demandController: _demandPriceControllers[item.productId]!,
               offerController: _offerPriceControllers[item.productId]!,
@@ -1139,6 +1153,7 @@ class _SubmitMultiRequirementScreenState
 class _ProductPriceCard extends StatelessWidget {
   final RequirementItemModel item;
   final int index;
+  final double? stockQuantity;
   final TextEditingController qtyController;
   final TextEditingController demandController;
   final TextEditingController offerController;
@@ -1147,6 +1162,7 @@ class _ProductPriceCard extends StatelessWidget {
   const _ProductPriceCard({
     required this.item,
     required this.index,
+    this.stockQuantity,
     required this.qtyController,
     required this.demandController,
     required this.offerController,
@@ -1361,6 +1377,10 @@ class _ProductPriceCard extends StatelessWidget {
                               if (double.tryParse(v) == null ||
                                   double.parse(v) <= 0) {
                                 return 'Invalid';
+                              }
+                              if (stockQuantity != null &&
+                                  double.parse(v) > stockQuantity!) {
+                                return 'Max ${stockQuantity!.toStringAsFixed(0)} ${item.unit.toUpperCase()}';
                               }
                               return null;
                             },

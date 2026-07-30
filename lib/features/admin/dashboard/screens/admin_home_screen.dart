@@ -83,7 +83,7 @@ class AdminHomeScreen extends ConsumerWidget {
                 ),
               ),
               title: Text(
-                'PriceCatalog',
+                'Price Catalog',
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
@@ -359,7 +359,7 @@ class AdminHomeScreen extends ConsumerWidget {
             Gap(12.w),
             Expanded(
               child: AdminStatCard(
-                title: 'Pending',
+                title: 'Pending Orders',
                 value: pendingCountAsync.when(
                   data: (c) => '$c',
                   loading: () => '...',
