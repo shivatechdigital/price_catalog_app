@@ -180,6 +180,7 @@ class RequirementItemModel {
 
 class RequirementModel {
   final String id;
+  final String? orderNumber;
   final String traderId;
   final String traderName;
   final String traderBusinessName;
@@ -219,6 +220,7 @@ class RequirementModel {
 
   const RequirementModel({
     required this.id,
+    this.orderNumber,
     required this.traderId,
     required this.traderName,
     required this.traderBusinessName,
@@ -262,6 +264,15 @@ class RequirementModel {
   double get agreedPrice =>
       counterPrice ?? items.firstOrNull?.customerDemandedPrice ?? 0;
 
+  String get displayOrderNumber {
+    if (orderNumber != null && orderNumber!.trim().isNotEmpty) {
+      return orderNumber!;
+    }
+
+    final fallback = id.length >= 6 ? id.substring(0, 6) : id;
+    return 'REQ-${fallback.toUpperCase()}';
+  }
+
   // Total value across all items
   double get totalValue => items.fold<double>(
     0,
@@ -299,6 +310,7 @@ class RequirementModel {
 
     return RequirementModel(
       id: doc.id,
+      orderNumber: data['orderNumber'] as String?,
       traderId: data['traderId'] ?? '',
       traderName: data['traderName'] ?? '',
       traderBusinessName: data['traderBusinessName'] ?? '',
@@ -339,6 +351,7 @@ class RequirementModel {
 
   Map<String, dynamic> toFirestore() {
     return {
+      'orderNumber': orderNumber,
       'traderId': traderId,
       'traderName': traderName,
       'traderBusinessName': traderBusinessName,
@@ -382,9 +395,11 @@ class RequirementModel {
     double? advanceAmount,
     List<RequirementItemModel>? items,
     bool? requiresAdminConfirmation,
+    String? orderNumber,
   }) {
     return RequirementModel(
       id: id,
+      orderNumber: orderNumber ?? this.orderNumber,
       traderId: traderId,
       traderName: traderName,
       traderBusinessName: traderBusinessName,

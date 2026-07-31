@@ -88,9 +88,9 @@ class RequirementCard extends StatelessWidget {
 
                   Gap(8.w),
 
-                  // Req ID
+                  // Requirement Number
                   Text(
-                    '#${requirement.id.substring(0, 8).toUpperCase()}',
+                    requirement.displayOrderNumber,
                     style: TextStyle(
                       fontSize: 11.sp,
                       color: AppColors.textHint,

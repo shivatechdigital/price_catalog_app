@@ -173,7 +173,7 @@ class AdminRequirementDetailScreen extends ConsumerWidget {
             ),
           ),
           Text(
-            '#${requirement.id.substring(0, 8).toUpperCase()}',
+            req.displayOrderNumber,
             style: TextStyle(fontSize: 11.sp, color: AppColors.textHint),
           ),
         ],

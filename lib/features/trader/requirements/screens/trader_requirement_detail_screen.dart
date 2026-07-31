@@ -257,8 +257,13 @@ class _TraderRequirementDetailScreenState
         // Copy Req ID
         GestureDetector(
           onTap: () {
-            Clipboard.setData(ClipboardData(text: req.id));
-            CustomSnackbar.showSuccess(context, 'Requirement ID copied!');
+            Clipboard.setData(
+              ClipboardData(text: req.displayOrderNumber),
+            );
+            CustomSnackbar.showSuccess(
+              context,
+              'Requirement number copied!',
+            );
           },
           child: Container(
             margin: EdgeInsets.only(right: 16.w),
@@ -272,7 +277,7 @@ class _TraderRequirementDetailScreenState
                 Icon(Iconsax.copy, size: 14.sp, color: AppColors.white),
                 Gap(4.w),
                 Text(
-                  'Copy ID',
+                  'Copy No.',
                   style: TextStyle(
                     fontSize: 11.sp,
                     color: AppColors.white,
@@ -362,7 +367,7 @@ class _TraderRequirementDetailScreenState
                       ),
                       Gap(4.w),
                       Text(
-                        '#${req.id.substring(0, 8).toUpperCase()}',
+                        req.displayOrderNumber,
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: AppColors.white.withOpacity(0.8),

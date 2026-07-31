@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -10,6 +11,8 @@ enum ExportRange { today, thisWeek, thisYear, all, custom }
 enum ExportFormat { csv, pdf }
 
 class RequirementExportService {
+  static const String _pdfHeaderName = 'Shri Anandeshwar Traders';
+
   static List<RequirementModel> filterRequirementsByRange(
     List<RequirementModel> requirements,
     ExportRange range, {
@@ -87,7 +90,7 @@ class RequirementExportService {
 
     for (final requirement in requirements) {
       rows.add([
-        requirement.id,
+        requirement.displayOrderNumber,
         DateFormat('dd MMM yyyy, HH:mm').format(requirement.submittedAt),
         _statusLabel(requirement.status),
         requirement.traderName,
@@ -144,6 +147,14 @@ class RequirementExportService {
     final file = File('${Directory.systemTemp.path}/$fileName');
 
     if (format == ExportFormat.pdf) {
+      pw.MemoryImage? logoImage;
+      try {
+        final logoBytes = await rootBundle.load('assets/icons/app_icon.png');
+        logoImage = pw.MemoryImage(logoBytes.buffer.asUint8List());
+      } catch (_) {
+        logoImage = null;
+      }
+
       final pdf = pw.Document();
       pdf.addPage(
         pw.MultiPage(
@@ -158,10 +169,25 @@ class RequirementExportService {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
+                    if (logoImage != null) ...[
+                      pw.Container(
+                        width: 54,
+                        height: 54,
+                        decoration: pw.BoxDecoration(
+                          border: pw.Border.all(color: PdfColors.grey300),
+                          borderRadius: const pw.BorderRadius.all(
+                            pw.Radius.circular(10),
+                          ),
+                        ),
+                        padding: const pw.EdgeInsets.all(8),
+                        child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+                      ),
+                      pw.SizedBox(height: 10),
+                    ],
                     pw.Text(
-                      'Price Catalog',
+                      _pdfHeaderName,
                       style: pw.TextStyle(
-                        fontSize: 28,
+                        fontSize: 22,
                         fontWeight: pw.FontWeight.bold,
                       ),
                     ),
@@ -234,7 +260,7 @@ class RequirementExportService {
                           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                           children: [
                             pw.Text(
-                              '$index. ${requirement.id}',
+                              '$index. PO. NO.: ${requirement.displayOrderNumber}',
                               style: pw.TextStyle(
                                 fontSize: 12,
                                 fontWeight: pw.FontWeight.bold,
@@ -276,8 +302,16 @@ class RequirementExportService {
                           ),
                           data: [
                             [
-                              'Trader',
-                              '${requirement.traderName}\n${requirement.traderBusinessName}',
+                              'Trader Name',
+                              requirement.traderName.isEmpty
+                                  ? '-'
+                                  : requirement.traderName,
+                            ],
+                            [
+                              'Trader Business',
+                              requirement.traderBusinessName.isEmpty
+                                  ? '-'
+                                  : requirement.traderBusinessName,
                             ],
                             [
                               'Customer',

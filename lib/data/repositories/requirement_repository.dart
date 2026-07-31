@@ -4,6 +4,31 @@ import 'package:price_catalog_app/data/models/notification_model.dart';
 import 'package:price_catalog_app/data/models/requirement_model.dart';
 import 'package:price_catalog_app/data/repositories/product_repository.dart';
 
+class RequirementValidationException implements Exception {
+  final String message;
+
+  RequirementValidationException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+class RequirementStockException implements Exception {
+  final String productName;
+  final double requestedQuantity;
+  final double availableQuantity;
+
+  RequirementStockException({
+    required this.productName,
+    required this.requestedQuantity,
+    required this.availableQuantity,
+  });
+
+  @override
+  String toString() =>
+      'Insufficient stock for $productName. Requested: ${requestedQuantity.toStringAsFixed(0)}, Available: ${availableQuantity.toStringAsFixed(0)}';
+}
+
 class RequirementRepository {
   final _ref = FirebaseService.requirementsRef;
   final _productRepo = ProductRepository();
@@ -126,10 +151,14 @@ class RequirementRepository {
   Future<RequirementModel> _submitRequirement(
     RequirementModel requirement,
   ) async {
+    _validateRequirementInput(requirement);
+
     final docRef = _ref.doc();
+    final orderNumber = _buildOrderNumber(docRef.id);
 
     final requirementWithId = RequirementModel(
       id: docRef.id,
+      orderNumber: orderNumber,
       traderId: requirement.traderId,
       traderName: requirement.traderName,
       traderBusinessName: requirement.traderBusinessName,
@@ -147,31 +176,92 @@ class RequirementRepository {
       submittedAt: requirement.submittedAt,
     );
 
-    try {
-      await docRef.set(requirementWithId.toFirestore());
-    } on FirebaseException catch (e) {
-      print("===============");
-      print(e.code);
-      print(e.message);
-      print("===============");
-    }
-
-    // Deduct stock for each item
-    for (final item in requirementWithId.items) {
-      final product =
-          await _productRepo.getProductById(item.productId);
-      if (product != null && product.stockQuantity != null) {
-        await _productRepo.adjustStockQuantity(
-          item.productId,
-          -item.quantity,
-        );
-      }
-    }
+    await _saveRequirementAndReserveStock(requirementWithId, docRef.id);
 
     // Notify admin
     await _notifyAdmin(requirementWithId);
 
     return requirementWithId;
+  }
+
+  void _validateRequirementInput(RequirementModel requirement) {
+    if (requirement.items.isEmpty) {
+      throw RequirementValidationException(
+        'At least one product is required.',
+      );
+    }
+
+    if (requirement.customerName.trim().isEmpty ||
+        requirement.customerPhone.trim().isEmpty ||
+        requirement.customerBusinessName.trim().isEmpty ||
+        requirement.customerCity.trim().isEmpty) {
+      throw RequirementValidationException(
+        'Please fill all mandatory customer details.',
+      );
+    }
+
+    if (requirement.paymentType == PaymentType.credit &&
+        (requirement.creditDays == null || requirement.creditDays! <= 0)) {
+      throw RequirementValidationException(
+        'Valid credit days are required for credit payment.',
+      );
+    }
+
+    for (final item in requirement.items) {
+      if (item.quantity <= 0) {
+        throw RequirementValidationException(
+          'Quantity must be greater than zero for ${item.productName}.',
+        );
+      }
+      if (item.customerDemandedPrice <= 0 || item.traderOfferedPrice <= 0) {
+        throw RequirementValidationException(
+          'Price must be greater than zero for ${item.productName}.',
+        );
+      }
+    }
+  }
+
+  Future<void> _saveRequirementAndReserveStock(
+    RequirementModel requirement,
+    String requirementId,
+  ) async {
+    await FirebaseService.firestore.runTransaction((transaction) async {
+      for (final item in requirement.items) {
+        final productRef = FirebaseService.productsRef.doc(item.productId);
+        final productSnapshot = await transaction.get(productRef);
+
+        if (!productSnapshot.exists) {
+          throw RequirementValidationException(
+            'Product not found: ${item.productName}.',
+          );
+        }
+
+        final data = productSnapshot.data() ?? <String, dynamic>{};
+        final stockRaw = data['stockQuantity'];
+
+        // null stock means unlimited quantity for this product.
+        if (stockRaw == null) {
+          continue;
+        }
+
+        final available = (stockRaw as num).toDouble();
+        if (item.quantity > available) {
+          throw RequirementStockException(
+            productName: item.productName,
+            requestedQuantity: item.quantity,
+            availableQuantity: available,
+          );
+        }
+
+        transaction.update(productRef, {
+          'stockQuantity': available - item.quantity,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      final requirementRef = _ref.doc(requirementId);
+      transaction.set(requirementRef, requirement.toFirestore());
+    });
   }
 
   // ═══════════════════════════════════════
@@ -193,7 +283,8 @@ class RequirementRepository {
           title: title ?? '🔔 New Requirement!',
           message:
               message ??
-              '${requirement.traderName} submitted requirement for '
+              '${requirement.traderName} submitted '
+                '${requirement.displayOrderNumber} for '
                   '${requirement.productName} at '
                   '₹${requirement.customerDemandedPrice.toStringAsFixed(0)}',
           type: NotificationType.newRequirement,
@@ -207,6 +298,13 @@ class RequirementRepository {
         ).add(notification.toFirestore());
       }
     } catch (_) {}
+  }
+
+  String _buildOrderNumber(String requirementId) {
+    final token = requirementId.length >= 6
+        ? requirementId.substring(0, 6)
+        : requirementId;
+    return 'REQ-${token.toUpperCase()}';
   }
 
   // ═══════════════════════════════════════

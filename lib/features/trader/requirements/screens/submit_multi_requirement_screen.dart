@@ -48,6 +48,121 @@ class _SubmitMultiRequirementScreenState
 
   bool _isLoading = false;
 
+  bool _validateProductStep(List<RequirementItemModel> items) {
+    if (items.isEmpty) {
+      CustomSnackbar.showWarning(
+        context,
+        'Please select at least one product',
+      );
+      return false;
+    }
+
+    final latestProducts =
+        ref.read(productsStreamProvider).asData?.value ?? const [];
+
+    for (final item in items) {
+      final qtyText = _qtyControllers[item.productId]?.text.trim() ?? '';
+      final demandText =
+          _demandPriceControllers[item.productId]?.text.trim() ?? '';
+      final offerText =
+          _offerPriceControllers[item.productId]?.text.trim() ?? '';
+
+      final qty = double.tryParse(qtyText);
+      final demandPrice = double.tryParse(demandText);
+      final offerPrice = double.tryParse(offerText);
+
+      if (qty == null || qty <= 0) {
+        CustomSnackbar.showWarning(
+          context,
+          'Enter valid quantity for ${item.productName}',
+        );
+        return false;
+      }
+
+      if (demandPrice == null || demandPrice <= 0) {
+        CustomSnackbar.showWarning(
+          context,
+          'Enter valid customer demanded price for ${item.productName}',
+        );
+        return false;
+      }
+
+      if (offerPrice == null || offerPrice <= 0) {
+        CustomSnackbar.showWarning(
+          context,
+          'Enter valid offered price for ${item.productName}',
+        );
+        return false;
+      }
+
+      final latest = latestProducts
+          .where((p) => p.id == item.productId)
+          .firstOrNull;
+      final availableStock = latest?.stockQuantity;
+      if (availableStock != null && qty > availableStock) {
+        CustomSnackbar.showWarning(
+          context,
+          'Stock low for ${item.productName}. Available: ${availableStock.toStringAsFixed(0)} ${item.unit.toUpperCase()}',
+        );
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool _validateCustomerStep() {
+    final customerName = _customerNameCtrl.text.trim();
+    final customerPhone = _customerPhoneCtrl.text.trim();
+    final customerBusiness = _customerBusinessCtrl.text.trim();
+    final customerCity = _customerCityCtrl.text.trim();
+
+    if (customerName.isEmpty) {
+      CustomSnackbar.showWarning(context, 'Customer name is required');
+      return false;
+    }
+    if (customerPhone.length != 10) {
+      CustomSnackbar.showWarning(
+        context,
+        'Enter valid 10 digit phone number',
+      );
+      return false;
+    }
+    if (customerBusiness.isEmpty) {
+      CustomSnackbar.showWarning(context, 'Business name is required');
+      return false;
+    }
+    if (customerCity.isEmpty) {
+      CustomSnackbar.showWarning(context, 'City is required');
+      return false;
+    }
+    return true;
+  }
+
+  bool _validatePaymentStep() {
+    if (_paymentType == PaymentType.credit) {
+      if (_creditDays == null || _creditDays! <= 0) {
+        CustomSnackbar.showWarning(
+          context,
+          'Enter valid credit days',
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _validateBeforeSubmit(List<RequirementItemModel> items) {
+    final formValid = _formKey.currentState?.validate() ?? false;
+    if (!formValid) {
+      return false;
+    }
+
+    return _validateProductStep(items) &&
+        _validateCustomerStep() &&
+        _validatePaymentStep();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -75,9 +190,15 @@ class _SubmitMultiRequirementScreenState
     _customerAddressCtrl.dispose();
     _deliveryLocationCtrl.dispose();
     _noteCtrl.dispose();
-    for (final c in _qtyControllers.values) c.dispose();
-    for (final c in _demandPriceControllers.values) c.dispose();
-    for (final c in _offerPriceControllers.values) c.dispose();
+    for (final c in _qtyControllers.values) {
+      c.dispose();
+    }
+    for (final c in _demandPriceControllers.values) {
+      c.dispose();
+    }
+    for (final c in _offerPriceControllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -85,7 +206,8 @@ class _SubmitMultiRequirementScreenState
   // SUBMIT REQUIREMENT
   // ═══════════════════════════════════════
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    final items = ref.read(selectedRequirementItemsProvider);
+    if (!_validateBeforeSubmit(items)) return;
 
     setState(() => _isLoading = true);
     FocusScope.of(context).unfocus();
@@ -329,22 +451,15 @@ class _SubmitMultiRequirementScreenState
           ...items.asMap().entries.map((entry) {
             final index = entry.key;
             final item = entry.value;
+            final products =
+                ref.read(productsStreamProvider).asData?.value ?? const [];
             return _ProductPriceCard(
               item: item,
               index: index,
-              stockQuantity: ref
-                  .read(filteredProductsProvider)
-                  .asData
-                  ?.value
-                  ?.firstWhere(
-                    (p) => p.id == item.productId,
-                    orElse: () => ref
-                        .read(filteredProductsProvider)
-                        .asData!
-                        .value!
-                        .first,
-                  )
-                  .stockQuantity,
+              stockQuantity: products
+                  .where((p) => p.id == item.productId)
+                  .firstOrNull
+                  ?.stockQuantity,
               qtyController: _qtyControllers[item.productId]!,
               demandController: _demandPriceControllers[item.productId]!,
               offerController: _offerPriceControllers[item.productId]!,
@@ -1020,27 +1135,21 @@ class _SubmitMultiRequirementScreenState
                   ? null
                   : () {
                       if (_currentStep < 3) {
-                        // Validate current step
-                        if (_currentStep == 0) {
-                          // Check quantities
-                          bool valid = true;
-                          for (final item in items) {
-                            final qty = double.tryParse(
-                              _qtyControllers[item.productId]?.text ?? '0',
-                            );
-                            if (qty == null || qty <= 0) {
-                              valid = false;
-                              break;
-                            }
-                          }
-                          if (!valid) {
-                            CustomSnackbar.showWarning(
-                              context,
-                              'Please enter valid quantity for all products',
-                            );
-                            return;
-                          }
+                        if (_currentStep == 0 &&
+                            !_validateProductStep(items)) {
+                          return;
                         }
+                        if (_currentStep == 1 && !_validateCustomerStep()) {
+                          return;
+                        }
+                        if (_currentStep == 2 && !_validatePaymentStep()) {
+                          return;
+                        }
+
+                        if (!(_formKey.currentState?.validate() ?? false)) {
+                          return;
+                        }
+
                         _pageController.nextPage(
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
@@ -1434,8 +1543,16 @@ class _ProductPriceCard extends StatelessWidget {
                                 vertical: 10.h,
                               ),
                             ),
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Required' : null,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return 'Required';
+                              }
+                              final price = double.tryParse(v);
+                              if (price == null || price <= 0) {
+                                return 'Invalid';
+                              }
+                              return null;
+                            },
                           ),
                         ],
                       ),
@@ -1481,8 +1598,16 @@ class _ProductPriceCard extends StatelessWidget {
                                 vertical: 10.h,
                               ),
                             ),
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Required' : null,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return 'Required';
+                              }
+                              final price = double.tryParse(v);
+                              if (price == null || price <= 0) {
+                                return 'Invalid';
+                              }
+                              return null;
+                            },
                           ),
                         ],
                       ),

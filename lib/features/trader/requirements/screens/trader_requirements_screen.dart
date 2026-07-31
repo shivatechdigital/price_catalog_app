@@ -441,6 +441,15 @@ class _TraderRequirementCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+                  Gap(8.w),
+                  Text(
+                    requirement.displayOrderNumber,
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      color: AppColors.textHint,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const Spacer(),
                   Text(
                     timeago.format(requirement.submittedAt),
