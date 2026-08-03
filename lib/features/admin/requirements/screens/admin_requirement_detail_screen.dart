@@ -16,16 +16,23 @@ import 'package:intl/intl.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:url_launcher/url_launcher.dart';
 
-class AdminRequirementDetailScreen extends ConsumerWidget {
+class AdminRequirementDetailScreen extends ConsumerStatefulWidget {
   final RequirementModel requirement;
 
   const AdminRequirementDetailScreen({super.key, required this.requirement});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminRequirementDetailScreen> createState() =>
+      _AdminRequirementDetailScreenState();
+}
+
+class _AdminRequirementDetailScreenState
+    extends ConsumerState<AdminRequirementDetailScreen> {
+  @override
+  Widget build(BuildContext context) {
     // Watch the live document so per-item actions reflect instantly.
-    final liveReq = ref.watch(requirementByIdProvider(requirement.id)).value;
-    final req = liveReq ?? requirement;
+    final liveReq = ref.watch(requirementByIdProvider(widget.requirement.id)).value;
+    final req = liveReq ?? widget.requirement;
 
     final hasPendingItems = req.items.any(
       (item) => item.itemStatus == RequirementStatus.pending,
@@ -1088,6 +1095,11 @@ class AdminRequirementDetailScreen extends ConsumerWidget {
                         context,
                         'All pending products approved!',
                       );
+                    } else {
+                      CustomSnackbar.showError(
+                        context,
+                        'Failed to approve. Please try again.',
+                      );
                     }
                   }
                 },
@@ -1145,6 +1157,11 @@ class AdminRequirementDetailScreen extends ConsumerWidget {
                               context,
                               'Counter offer sent for all pending products!',
                             );
+                          } else {
+                            CustomSnackbar.showError(
+                              context,
+                              'Failed to send counter offer. Please try again.',
+                            );
                           }
                         }
                       },
@@ -1199,6 +1216,11 @@ class AdminRequirementDetailScreen extends ConsumerWidget {
                             CustomSnackbar.showSuccess(
                               context,
                               'All pending products rejected',
+                            );
+                          } else {
+                            CustomSnackbar.showError(
+                              context,
+                              'Failed to reject. Please try again.',
                             );
                           }
                         }

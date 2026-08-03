@@ -37,16 +37,49 @@ class AdminDashboardScreen extends ConsumerWidget {
       AdminSettingsScreen(),
     ];
 
-    return Scaffold(
-      body: IndexedStack(
-        index: currentIndex,
-        children: screens,
-      ),
-      bottomNavigationBar: _buildBottomNav(
-        context,
-        ref,
-        currentIndex,
-        unreadCount.asData?.value ?? 0,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (currentIndex != 0) {
+          // Go back to home tab instead of exiting
+          ref.read(adminNavIndexProvider.notifier).state = 0;
+          return;
+        }
+        // On home tab — ask before exiting
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Exit App'),
+            content: const Text('Do you want to close the app?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Exit'),
+              ),
+            ],
+          ),
+        );
+        if (shouldExit == true && context.mounted) {
+          // Pop using the system navigator
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: currentIndex,
+          children: screens,
+        ),
+        bottomNavigationBar: _buildBottomNav(
+          context,
+          ref,
+          currentIndex,
+          unreadCount.asData?.value ?? 0,
+        ),
       ),
     );
   }

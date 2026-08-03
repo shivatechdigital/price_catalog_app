@@ -10,6 +10,8 @@ import 'package:price_catalog_app/features/admin/dashboard/widgets/admin_stat_ca
 import 'package:price_catalog_app/features/admin/dashboard/widgets/pending_requirement_card.dart';
 import 'package:price_catalog_app/features/admin/dashboard/widgets/recent_price_update_card.dart';
 import 'package:price_catalog_app/features/admin/notifications/screens/admin_notifications_screen.dart';
+import 'package:price_catalog_app/features/admin/categories/screens/admin_categories_screen.dart';
+import 'package:price_catalog_app/features/admin/traders/screens/admin_traders_screen.dart';
 import 'package:price_catalog_app/features/admin/dashboard/screens/admin_dashboard_screen.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/providers/notification_provider.dart';
@@ -395,6 +397,12 @@ class AdminHomeScreen extends ConsumerWidget {
                   colors: [Color(0xFF11998E), Color(0xFF38EF7D)],
                 ),
                 delay: 200,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AdminCategoriesScreen(),
+                  ),
+                ),
               ),
             ),
             Gap(12.w),
@@ -411,6 +419,12 @@ class AdminHomeScreen extends ConsumerWidget {
                   colors: [Color(0xFFFC5C7D), Color(0xFF6A3093)],
                 ),
                 delay: 300,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AdminTradersScreen(),
+                  ),
+                ),
               ),
             ),
           ],

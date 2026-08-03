@@ -7,7 +7,7 @@ import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
-import 'package:price_catalog_app/features/admin/products/screens/add_product_screen.dart';
+import 'package:price_catalog_app/features/admin/products/screens/excel_import_screen.dart';
 import 'package:price_catalog_app/features/admin/products/screens/admin_product_detail_screen.dart';
 import 'package:price_catalog_app/features/admin/products/widgets/admin_product_grid_card.dart';
 import 'package:price_catalog_app/features/admin/products/widgets/admin_product_list_tile.dart';
@@ -95,6 +95,21 @@ class _AdminProductsScreenState
                           .state = ViewMode.list,
                     ),
                   ],
+                ),
+              ),
+              // Excel Import Button
+              IconButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ExcelImportScreen(),
+                  ),
+                ),
+                tooltip: 'Import via Excel',
+                icon: Icon(
+                  Iconsax.document_upload,
+                  size: 22.sp,
+                  color: AppColors.adminPrimary,
                 ),
               ),
               // Add Button

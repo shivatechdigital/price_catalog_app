@@ -89,6 +89,9 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
 
   StreamSubscription<User?>? _authSubscription;
 
+  // Flag to prevent auth listener from interfering during registration
+  bool _isRegistering = false;
+
   AuthStateNotifier(this._ref) : super(const AuthInitial()) {
     _init();
   }
@@ -98,6 +101,8 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   // ═══════════════════════════════════════
   void _init() {
     _authSubscription = _auth.authStateChanges().listen((User? user) async {
+      // Skip while registration is in progress to avoid race conditions
+      if (_isRegistering) return;
       if (user == null) {
         _updateState(const AuthUnauthenticated());
       } else {
@@ -209,6 +214,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     File? documentBack,
   }) async {
     try {
+      _isRegistering = true;
       _updateState(const AuthLoading());
 
       // Step 1: Create Firebase Auth user
@@ -270,12 +276,15 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
       // Notify admin about new trader registration
       await _notifyAdminNewTrader(user);
 
+      _isRegistering = false;
       _updateState(const AuthPendingApproval());
       return const AuthResult.success();
     } on FirebaseAuthException catch (e) {
+      _isRegistering = false;
       _updateState(const AuthUnauthenticated());
       return AuthResult.error(_getAuthErrorMessage(e.code));
     } catch (e) {
+      _isRegistering = false;
       _updateState(const AuthUnauthenticated());
       return AuthResult.error('Registration failed. Please try again.');
     }
@@ -288,6 +297,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     required String password,
   }) async {
     try {
+      _isRegistering = true;
       _updateState(const AuthLoading());
 
       final credential = await _auth.createUserWithEmailAndPassword(
@@ -309,11 +319,14 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
 
       await _firestore.collection('users').doc(uid).set(user.toFirestore());
 
+      _isRegistering = false;
       return const AuthResult.success();
     } on FirebaseAuthException catch (e) {
+      _isRegistering = false;
       _updateState(const AuthUnauthenticated());
       return AuthResult.error(_getAuthErrorMessage(e.code));
     } catch (e) {
+      _isRegistering = false;
       _updateState(const AuthUnauthenticated());
       return AuthResult.error('Admin registration failed. Please try again.');
     }

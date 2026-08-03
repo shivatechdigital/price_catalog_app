@@ -36,19 +36,51 @@ class TraderDashboardScreen extends ConsumerWidget {
       TraderProfileScreen(),
     ];
 
-    return Scaffold(
-      body: IndexedStack(
-        index: currentIndex,
-        children: screens,
-      ),
-      bottomNavigationBar: _buildBottomNav(
-        context,
-        ref,
-        currentIndex,
-        unreadCount.when(
-          data: (count) => count,
-          loading: () => 0,
-          error: (_, __) => 0,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (currentIndex != 0) {
+          // Navigate back to home tab instead of exiting
+          ref.read(traderNavIndexProvider.notifier).state = 0;
+          return;
+        }
+        // On home tab — ask before exiting
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Exit App'),
+            content: const Text('Do you want to close the app?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Exit'),
+              ),
+            ],
+          ),
+        );
+        if (shouldExit == true && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: currentIndex,
+          children: screens,
+        ),
+        bottomNavigationBar: _buildBottomNav(
+          context,
+          ref,
+          currentIndex,
+          unreadCount.when(
+            data: (count) => count,
+            loading: () => 0,
+            error: (_, __) => 0,
+          ),
         ),
       ),
     );

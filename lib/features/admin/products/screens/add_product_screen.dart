@@ -19,6 +19,7 @@ import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/providers/category_provider.dart';
 import 'package:price_catalog_app/providers/product_provider.dart';import 'package:price_catalog_app/shared/widgets/custom_button.dart';
 import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AddProductScreen extends ConsumerStatefulWidget {
   final ProductModel? product; // null = add, not null = edit
@@ -1653,6 +1654,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 name: 'Catalog ${e.key + 1}',
                 icon: Iconsax.document_text,
                 color: AppColors.adminPrimary,
+                url: e.value,
                 onRemove: () => setState(
                   () => _existingCatalogUrls.removeAt(e.key),
                 ),
@@ -1702,6 +1704,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 name: 'Drawing ${e.key + 1}',
                 icon: Iconsax.pen_tool_2,
                 color: AppColors.counter,
+                url: e.value,
                 onRemove: () => setState(
                   () => _existingDrawingUrls.removeAt(e.key),
                 ),
@@ -1746,6 +1749,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     required Color color,
     required VoidCallback onRemove,
     bool isNew = false,
+    String? url,
   }) {
     return Container(
       margin: EdgeInsets.only(bottom: 8.h),
@@ -1787,6 +1791,27 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 ),
               ),
             ),
+          // View button — only for existing files (url provided)
+          if (!isNew && url != null) ...[
+            Gap(8.w),
+            GestureDetector(
+              onTap: () async {
+                final uri = Uri.parse(url);
+                try {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                } catch (_) {
+                  if (mounted) {
+                    CustomSnackbar.showError(context, 'Unable to open file');
+                  }
+                }
+              },
+              child: Icon(
+                Iconsax.eye,
+                size: 18.sp,
+                color: color,
+              ),
+            ),
+          ],
           Gap(8.w),
           GestureDetector(
             onTap: onRemove,

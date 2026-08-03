@@ -26,6 +26,10 @@ class AdminProductDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch live product so edits (including image deletions) reflect immediately
+    final liveProduct = ref.watch(productByIdProvider(product.id)).value;
+    final p = liveProduct ?? product;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
@@ -66,7 +70,7 @@ class AdminProductDetailScreen extends ConsumerWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        AddProductScreen(product: product),
+                        AddProductScreen(product: p),
                   ),
                 ),
                 child: Container(
@@ -107,7 +111,7 @@ class AdminProductDetailScreen extends ConsumerWidget {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: _buildImageGallery(context, product),
+              background: _buildImageGallery(context, p),
             ),
           ),
 
@@ -125,29 +129,29 @@ class AdminProductDetailScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   // Info Section
-                  _buildInfoSection(product),
+                  _buildInfoSection(p),
                   // Price Section
-                  _buildPriceSection(context, product, ref),
+                  _buildPriceSection(context, p, ref),
                   // Catalogs
-                  if (product.catalogUrls.isNotEmpty)
+                  if (p.catalogUrls.isNotEmpty)
                     _DocumentsCard(
                       title: 'Product Catalogs',
                       icon: Iconsax.document_text,
                       color: AppColors.adminPrimary,
-                      urls: product.catalogUrls,
+                      urls: p.catalogUrls,
                     ),
                   // Technical Drawings
-                  if (product.drawingUrls.isNotEmpty)
+                  if (p.drawingUrls.isNotEmpty)
                     _DocumentsCard(
                       title: 'Technical Drawings',
                       icon: Iconsax.pen_tool_2,
                       color: AppColors.counter,
-                      urls: product.drawingUrls,
+                      urls: p.drawingUrls,
                     ),
                   // Price History
-                  _buildPriceHistorySection(ref, product),
+                  _buildPriceHistorySection(ref, p),
                   // Actions
-                  _buildActionsSection(context, ref, product),
+                  _buildActionsSection(context, ref, p),
                   Gap(40.h),
                 ],
               ),

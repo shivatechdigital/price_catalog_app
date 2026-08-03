@@ -83,7 +83,7 @@ class TraderHomeScreen extends ConsumerWidget {
                       loading: () => _buildStatsShimmer(),
                       error: (_, __) => const SizedBox(),
                       data: (requirements) =>
-                          _buildQuickStats(requirements),
+                          _buildQuickStats(requirements, ref),
                     ),
                   ),
 
@@ -254,7 +254,7 @@ class TraderHomeScreen extends ConsumerWidget {
   // ═══════════════════════════════════════
   // QUICK STATS
   // ═══════════════════════════════════════
-  Widget _buildQuickStats(List<RequirementModel> requirements) {
+  Widget _buildQuickStats(List<RequirementModel> requirements, WidgetRef ref) {
     final pending = requirements
         .where((r) => r.status == RequirementStatus.pending)
         .length;
@@ -272,6 +272,9 @@ class TraderHomeScreen extends ConsumerWidget {
             icon: Iconsax.document,
             color: AppColors.adminPrimary,
             delay: 0,
+            onTap: () => ref
+                .read(traderNavIndexProvider.notifier)
+                .state = 2,
           ),
         ),
         Gap(10.w),
@@ -282,6 +285,9 @@ class TraderHomeScreen extends ConsumerWidget {
             icon: Iconsax.clock,
             color: AppColors.traderPrimary,
             delay: 100,
+            onTap: () => ref
+                .read(traderNavIndexProvider.notifier)
+                .state = 2,
           ),
         ),
         Gap(10.w),
@@ -292,6 +298,9 @@ class TraderHomeScreen extends ConsumerWidget {
             icon: Icons.check_circle_rounded,
             color: AppColors.approved,
             delay: 200,
+            onTap: () => ref
+                .read(traderNavIndexProvider.notifier)
+                .state = 2,
           ),
         ),
       ],
@@ -718,6 +727,7 @@ class _TraderStatCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final int delay;
+  final VoidCallback? onTap;
 
   const _TraderStatCard({
     required this.title,
@@ -725,11 +735,14 @@ class _TraderStatCard extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.delay,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -783,7 +796,8 @@ class _TraderStatCard extends StatelessWidget {
           begin: const Offset(0.9, 0.9),
           end: const Offset(1.0, 1.0),
           delay: Duration(milliseconds: delay),
-        );
+        ),
+    );
   }
 }
 

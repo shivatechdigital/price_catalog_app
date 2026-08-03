@@ -331,6 +331,20 @@ class ProductRepository {
   }
 
   // ═══════════════════════════════════════
+  // WATCH SINGLE PRODUCT BY ID (live)
+  // ═══════════════════════════════════════
+  Stream<ProductModel?> watchProductById(String productId) {
+    return _productsRef.doc(productId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      try {
+        return ProductModel.fromFirestore(doc);
+      } catch (_) {
+        return null;
+      }
+    });
+  }
+
+  // ═══════════════════════════════════════
   // INCREMENT VIEW COUNT
   // ═══════════════════════════════════════
   Future<void> incrementViewCount(String productId) async {

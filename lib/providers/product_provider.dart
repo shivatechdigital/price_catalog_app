@@ -126,6 +126,18 @@ final filteredProductsProvider =
 });
 
 // ═══════════════════════════════════════
+// WATCH SINGLE PRODUCT BY ID (live)
+// ═══════════════════════════════════════
+final productByIdProvider =
+    StreamProvider.family<ProductModel?, String>((ref, productId) {
+  final auth = ref.watch(authStateProvider);
+  if (auth is! AuthAuthenticatedAdmin && auth is! AuthAuthenticatedTrader) {
+    return Stream.value(null);
+  }
+  return ref.watch(productRepositoryProvider).watchProductById(productId);
+});
+
+// ═══════════════════════════════════════
 // PRICE HISTORY
 // ═══════════════════════════════════════
 final priceHistoryProvider = StreamProvider.family(
