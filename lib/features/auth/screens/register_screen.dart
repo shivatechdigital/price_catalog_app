@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -7,8 +6,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:image_cropper/image_cropper.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/shared/widgets/custom_button.dart';
@@ -38,10 +35,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _isLoading = false;
   int _currentPage = 0;
   bool _agreeToTerms = false;
-
-  // Document images
-  File? _frontDocImage;
-  File? _backDocImage;
 
   @override
   void dispose() {
@@ -75,7 +68,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         );
         return;
       }
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+      return;
     }
+    // Page 1 — validate and register directly
     if (_currentPage == 1) {
       if (!_formKey.currentState!.validate()) return;
       if (!_agreeToTerms) {
@@ -89,11 +88,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         CustomSnackbar.showError(context, 'Passwords do not match');
         return;
       }
+      _handleRegister();
     }
-    _pageController.nextPage(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-    );
   }
 
   // ═══════════════════════════════════════
@@ -110,14 +106,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // REGISTER ACTION
   // ═══════════════════════════════════════
   Future<void> _handleRegister() async {
-    if (_frontDocImage == null || _backDocImage == null) {
-      CustomSnackbar.showWarning(
-        context,
-        'Please upload both front and back document images',
-      );
-      return;
-    }
-
     setState(() => _isLoading = true);
     FocusScope.of(context).unfocus();
 
@@ -129,8 +117,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           email: _emailController.text,
           password: _passwordController.text,
           city: _cityController.text,
-          documentFront: _frontDocImage,
-          documentBack: _backDocImage,
         );
 
     if (!mounted) return;
@@ -177,7 +163,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     children: [
                       _buildPage1(),
                       _buildPage2(),
-                      _buildPage3(),
                     ],
                   ),
                 ),
@@ -250,7 +235,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       child: Column(
         children: [
           Row(
-            children: List.generate(3, (index) {
+            children: List.generate(2, (index) {
               final isActive = index <= _currentPage;
               final isCurrent = index == _currentPage;
               return Expanded(
@@ -282,7 +267,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Step ${_currentPage + 1} of 3',
+                'Step ${_currentPage + 1} of 2',
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: AppColors.textSecondary,
@@ -290,11 +275,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
               ),
               Text(
-                _currentPage == 0
-                    ? 'Basic Info'
-                    : _currentPage == 1
-                        ? 'Account Setup'
-                        : 'Documents',
+                _currentPage == 0 ? 'Basic Info' : 'Account Setup',
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: AppColors.adminPrimary,
@@ -673,13 +654,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         children: [
           // Main Action Button
           CustomButton(
-            label: _currentPage < 2 ? 'Continue' : 'Create Account',
+            label: _currentPage == 0 ? 'Continue' : 'Create Account',
             isLoading: _isLoading,
             gradient: AppColors.adminGradient,
-            prefixIcon: _currentPage < 2
+            prefixIcon: _currentPage == 0
                 ? Icons.arrow_forward_rounded
                 : Iconsax.user_add,
-            onPressed: _currentPage < 2 ? _nextPage : _handleRegister,
+            onPressed: _nextPage,
           ),
 
           Gap(16.h),

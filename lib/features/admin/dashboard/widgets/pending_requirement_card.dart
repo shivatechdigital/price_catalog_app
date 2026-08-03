@@ -8,18 +8,18 @@ import 'package:timeago/timeago.dart' as timeago;
 
 class PendingRequirementCard extends StatelessWidget {
   final RequirementModel requirement;
+  final VoidCallback? onTap;
 
   const PendingRequirementCard({
     super.key,
     required this.requirement,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        // Navigate to requirement detail
-      },
+      onTap: onTap,
       child: Container(
         width: 240.w,
         padding: EdgeInsets.all(16.w),

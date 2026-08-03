@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
@@ -61,6 +63,81 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
   bool _isImporting = false;
   int _importedCount = 0;
   int _failedCount = 0;
+
+  // ═══════════════════════════════════════
+  // DOWNLOAD TEMPLATE
+  // ═══════════════════════════════════════
+  Future<void> _downloadTemplate() async {
+    try {
+      final excel = Excel.createExcel();
+      final sheet = excel['Products'];
+
+      // Header row with column labels
+      final headers = [
+        'Product Name',
+        'Product Code',
+        'Category Name',
+        'Brand',
+        'Description',
+        'Unit',
+        'Purchase Price',
+        'Selling Price',
+        'Dealer Price',
+        'Min Accepted Price',
+        'Stock Quantity',
+      ];
+
+      for (int i = 0; i < headers.length; i++) {
+        final cell = sheet.cell(
+          CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0),
+        );
+        cell.value = TextCellValue(headers[i]);
+        cell.cellStyle = CellStyle(bold: true);
+      }
+
+      // One sample row
+      final sample = [
+        'Iron Sariya 8mm',
+        'SARIYA-8MM',
+        'Steel',
+        'SAIL',
+        'High tensile iron sariya',
+        'ton',
+        '45000',
+        '52000',
+        '50000',
+        '48000',
+        '100',
+      ];
+      for (int i = 0; i < sample.length; i++) {
+        sheet
+            .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 1))
+            .value = TextCellValue(sample[i]);
+      }
+
+      // Remove default Sheet1
+      excel.delete('Sheet1');
+
+      final bytes = excel.encode();
+      if (bytes == null) throw Exception('Failed to encode');
+
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/product_import_template.xlsx');
+      await file.writeAsBytes(bytes);
+
+      final result = await OpenFile.open(file.path);
+      if (result.type != ResultType.done && mounted) {
+        CustomSnackbar.showInfo(
+          context,
+          'Template saved to: ${file.path}',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomSnackbar.showError(context, 'Could not create template file.');
+      }
+    }
+  }
 
   // ═══════════════════════════════════════
   // PICK FILE
@@ -323,6 +400,36 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w700,
                           color: AppColors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  Gap(10.h),
+
+                  // Download Template Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _isImporting ? null : _downloadTemplate,
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColors.adminPrimary),
+                        padding: EdgeInsets.symmetric(vertical: 14.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                      icon: Icon(
+                        Iconsax.document_download,
+                        size: 20.sp,
+                        color: AppColors.adminPrimary,
+                      ),
+                      label: Text(
+                        'Download Excel Template',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.adminPrimary,
                         ),
                       ),
                     ),

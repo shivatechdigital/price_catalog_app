@@ -22,6 +22,9 @@ import 'package:price_catalog_app/core/services/firebase_service.dart';
 import 'package:price_catalog_app/data/models/user_model.dart';
 import 'package:price_catalog_app/shared/widgets/shimmer_loading.dart';
 import 'package:price_catalog_app/features/admin/dashboard/widgets/trader_request_notification.dart';
+import 'package:price_catalog_app/features/admin/products/screens/admin_product_detail_screen.dart';
+import 'package:price_catalog_app/features/admin/requirements/screens/admin_requirement_detail_screen.dart';
+import 'package:price_catalog_app/data/models/product_model.dart';
 
 // ═══════════════════════════════════════
 // TRADERS STREAM PROVIDER (for admin home stats)
@@ -172,7 +175,7 @@ class AdminHomeScreen extends ConsumerWidget {
                       if (requirements.isEmpty) {
                         return _buildEmptyRequirements();
                       }
-                      return _buildPendingList(requirements);
+                      return _buildPendingList(context, requirements);
                     },
                   ),
 
@@ -197,7 +200,7 @@ class AdminHomeScreen extends ConsumerWidget {
                       if (recentProducts.isEmpty) {
                         return _buildEmptyProducts();
                       }
-                      return _buildRecentProducts(recentProducts);
+                      return _buildRecentProducts(context, recentProducts);
                     },
                   ),
 
@@ -493,7 +496,7 @@ class AdminHomeScreen extends ConsumerWidget {
   // ═══════════════════════════════════════
   // PENDING REQUIREMENTS LIST
   // ═══════════════════════════════════════
-  Widget _buildPendingList(List<RequirementModel> requirements) {
+  Widget _buildPendingList(BuildContext context, List<RequirementModel> requirements) {
     return SizedBox(
       height: 180.h,
       child: ListView.separated(
@@ -504,6 +507,14 @@ class AdminHomeScreen extends ConsumerWidget {
         itemBuilder: (context, index) {
           return PendingRequirementCard(
             requirement: requirements[index],
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AdminRequirementDetailScreen(
+                  requirement: requirements[index],
+                ),
+              ),
+            ),
           ).animate().fadeIn(delay: Duration(milliseconds: index * 100));
         },
       ),
@@ -513,12 +524,22 @@ class AdminHomeScreen extends ConsumerWidget {
   // ═══════════════════════════════════════
   // RECENT PRODUCTS
   // ═══════════════════════════════════════
-  Widget _buildRecentProducts(List products) {
+  Widget _buildRecentProducts(BuildContext context, List products) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
         children: products
-            .map((product) => RecentPriceUpdateCard(product: product)
+            .map((product) => RecentPriceUpdateCard(
+                  product: product as ProductModel,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AdminProductDetailScreen(
+                        product: product as ProductModel,
+                      ),
+                    ),
+                  ),
+                )
                 .animate()
                 .fadeIn(
                   delay: Duration(

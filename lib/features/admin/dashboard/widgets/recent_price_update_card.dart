@@ -8,12 +8,15 @@ import 'package:timeago/timeago.dart' as timeago;
 
 class RecentPriceUpdateCard extends StatelessWidget {
   final ProductModel product;
+  final VoidCallback? onTap;
 
-  const RecentPriceUpdateCard({super.key, required this.product});
+  const RecentPriceUpdateCard({super.key, required this.product, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       margin: EdgeInsets.only(bottom: 10.h),
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
@@ -127,6 +130,7 @@ class RecentPriceUpdateCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 
