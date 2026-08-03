@@ -9,6 +9,7 @@ import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
 import 'package:price_catalog_app/features/admin/products/screens/excel_import_screen.dart';
 import 'package:price_catalog_app/features/admin/products/screens/admin_product_detail_screen.dart';
+import 'package:price_catalog_app/features/admin/products/screens/add_product_screen.dart';
 import 'package:price_catalog_app/features/admin/products/widgets/admin_product_grid_card.dart';
 import 'package:price_catalog_app/features/admin/products/widgets/admin_product_list_tile.dart';
 import 'package:price_catalog_app/features/admin/products/widgets/product_filter_sheet.dart';
@@ -31,8 +32,7 @@ class AdminProductsScreen extends ConsumerStatefulWidget {
       _AdminProductsScreenState();
 }
 
-class _AdminProductsScreenState
-    extends ConsumerState<AdminProductsScreen> {
+class _AdminProductsScreenState extends ConsumerState<AdminProductsScreen> {
   final _searchController = TextEditingController();
 
   @override
@@ -83,16 +83,14 @@ class _AdminProductsScreenState
                     _ViewToggleBtn(
                       icon: Icons.grid_view_rounded,
                       isActive: viewMode == ViewMode.grid,
-                      onTap: () => ref
-                          .read(viewModeProvider.notifier)
-                          .state = ViewMode.grid,
+                      onTap: () => ref.read(viewModeProvider.notifier).state =
+                          ViewMode.grid,
                     ),
                     _ViewToggleBtn(
                       icon: Icons.view_list_rounded,
                       isActive: viewMode == ViewMode.list,
-                      onTap: () => ref
-                          .read(viewModeProvider.notifier)
-                          .state = ViewMode.list,
+                      onTap: () => ref.read(viewModeProvider.notifier).state =
+                          ViewMode.list,
                     ),
                   ],
                 ),
@@ -101,9 +99,7 @@ class _AdminProductsScreenState
               IconButton(
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const ExcelImportScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const ExcelImportScreen()),
                 ),
                 tooltip: 'Import via Excel',
                 icon: Icon(
@@ -116,9 +112,7 @@ class _AdminProductsScreenState
               GestureDetector(
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const AddProductScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const AddProductScreen()),
                 ),
                 child: Container(
                   margin: EdgeInsets.only(right: 16.w),
@@ -221,22 +215,19 @@ class _AdminProductsScreenState
                   size: 20.sp,
                   color: AppColors.textHint,
                 ),
-                suffixIcon:
-                    ref.watch(searchQueryProvider).isNotEmpty
-                        ? IconButton(
-                            onPressed: () {
-                              _searchController.clear();
-                              ref
-                                  .read(searchQueryProvider.notifier)
-                                  .state = '';
-                            },
-                            icon: Icon(
-                              Icons.close_rounded,
-                              size: 18.sp,
-                              color: AppColors.textHint,
-                            ),
-                          )
-                        : null,
+                suffixIcon: ref.watch(searchQueryProvider).isNotEmpty
+                    ? IconButton(
+                        onPressed: () {
+                          _searchController.clear();
+                          ref.read(searchQueryProvider.notifier).state = '';
+                        },
+                        icon: Icon(
+                          Icons.close_rounded,
+                          size: 18.sp,
+                          color: AppColors.textHint,
+                        ),
+                      )
+                    : null,
                 filled: true,
                 fillColor: AppColors.background,
                 border: OutlineInputBorder(
@@ -303,9 +294,9 @@ class _AdminProductsScreenState
                 label: 'All',
                 icon: '📦',
                 isSelected: selectedCategory == null,
-                onTap: () => ref
-                    .read(selectedCategoryFilterProvider.notifier)
-                    .state = null,
+                onTap: () =>
+                    ref.read(selectedCategoryFilterProvider.notifier).state =
+                        null,
               );
             }
             final category = categories[index - 1];
@@ -313,9 +304,9 @@ class _AdminProductsScreenState
               label: category.name,
               icon: category.icon,
               isSelected: selectedCategory == category.id,
-              onTap: () => ref
-                  .read(selectedCategoryFilterProvider.notifier)
-                  .state = category.id,
+              onTap: () =>
+                  ref.read(selectedCategoryFilterProvider.notifier).state =
+                      category.id,
             );
           },
         ),
@@ -350,9 +341,9 @@ class _AdminProductsScreenState
       itemCount: products.length,
       itemBuilder: (context, index) {
         return AdminProductGridCard(
-          product: products[index],
-          onTap: () => _navigateToDetail(products[index]),
-        )
+              product: products[index],
+              onTap: () => _navigateToDetail(products[index]),
+            )
             .animate()
             .fadeIn(
               delay: Duration(milliseconds: index * 60),
@@ -377,9 +368,9 @@ class _AdminProductsScreenState
       separatorBuilder: (_, __) => Gap(10.h),
       itemBuilder: (context, index) {
         return AdminProductListTile(
-          product: products[index],
-          onTap: () => _navigateToDetail(products[index]),
-        )
+              product: products[index],
+              onTap: () => _navigateToDetail(products[index]),
+            )
             .animate()
             .fadeIn(
               delay: Duration(milliseconds: index * 60),
@@ -466,25 +457,17 @@ class _AdminProductsScreenState
           Gap(8.h),
           Text(
             'Add your first product to get started',
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
           ),
           Gap(28.h),
           ElevatedButton.icon(
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => const AddProductScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const AddProductScreen()),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.adminPrimary,
-              padding: EdgeInsets.symmetric(
-                horizontal: 24.w,
-                vertical: 12.h,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.r),
               ),
@@ -509,11 +492,7 @@ class _AdminProductsScreenState
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Iconsax.search_normal,
-            size: 52.sp,
-            color: AppColors.textHint,
-          ),
+          Icon(Iconsax.search_normal, size: 52.sp, color: AppColors.textHint),
           Gap(16.h),
           Text(
             'No products found',
@@ -526,19 +505,14 @@ class _AdminProductsScreenState
           Gap(8.h),
           Text(
             'Try different search or filters',
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
           ),
           Gap(16.h),
           TextButton(
             onPressed: () {
               _searchController.clear();
               ref.read(searchQueryProvider.notifier).state = '';
-              ref
-                  .read(selectedCategoryFilterProvider.notifier)
-                  .state = null;
+              ref.read(selectedCategoryFilterProvider.notifier).state = null;
             },
             child: Text(
               'Clear Filters',
@@ -613,8 +587,7 @@ class _ViewToggleBtn extends StatelessWidget {
         child: Icon(
           icon,
           size: 18.sp,
-          color:
-              isActive ? AppColors.white : AppColors.textSecondary,
+          color: isActive ? AppColors.white : AppColors.textSecondary,
         ),
       ),
     );
@@ -643,19 +616,12 @@ class _CategoryChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(
-          horizontal: 12.w,
-          vertical: 6.h,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.adminPrimary
-              : AppColors.background,
+          color: isSelected ? AppColors.adminPrimary : AppColors.background,
           borderRadius: BorderRadius.circular(20.r),
           border: Border.all(
-            color: isSelected
-                ? AppColors.adminPrimary
-                : AppColors.border,
+            color: isSelected ? AppColors.adminPrimary : AppColors.border,
           ),
         ),
         child: Row(
@@ -667,12 +633,8 @@ class _CategoryChip extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 12.sp,
-                fontWeight: isSelected
-                    ? FontWeight.w600
-                    : FontWeight.w400,
-                color: isSelected
-                    ? AppColors.white
-                    : AppColors.textSecondary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? AppColors.white : AppColors.textSecondary,
               ),
             ),
           ],

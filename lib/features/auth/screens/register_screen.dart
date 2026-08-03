@@ -53,19 +53,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // ═══════════════════════════════════════
   void _nextPage() {
     if (_currentPage == 0) {
-      if (_nameController.text.isEmpty ||
-          _phoneController.text.isEmpty) {
-        CustomSnackbar.showWarning(
-          context,
-          'Please fill all required fields',
-        );
+      if (_nameController.text.isEmpty || _phoneController.text.isEmpty) {
+        CustomSnackbar.showWarning(context, 'Please fill all required fields');
         return;
       }
       if (_phoneController.text.length < 10) {
-        CustomSnackbar.showWarning(
-          context,
-          'Please enter valid phone number',
-        );
+        CustomSnackbar.showWarning(context, 'Please enter valid phone number');
         return;
       }
       _pageController.nextPage(
@@ -160,10 +153,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     onPageChanged: (index) {
                       setState(() => _currentPage = index);
                     },
-                    children: [
-                      _buildPage1(),
-                      _buildPage2(),
-                    ],
+                    children: [_buildPage1(), _buildPage2()],
                   ),
                 ),
 
@@ -244,9 +234,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   margin: EdgeInsets.symmetric(horizontal: 4.w),
                   height: 4.h,
                   decoration: BoxDecoration(
-                    color: isActive
-                        ? AppColors.adminPrimary
-                        : AppColors.border,
+                    color: isActive ? AppColors.adminPrimary : AppColors.border,
                     borderRadius: BorderRadius.circular(10.r),
                     boxShadow: isCurrent
                         ? [
@@ -315,10 +303,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
           Text(
             'Tell us a bit about yourself',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
           ).animate().fadeIn(delay: 100.ms),
 
           Gap(28.h),
@@ -406,10 +391,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
           Text(
             'Create your login credentials',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 14.sp, color: AppColors.textSecondary),
           ).animate().fadeIn(delay: 100.ms),
 
           Gap(28.h),
@@ -434,8 +416,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               if (value == null || value.isEmpty) {
                 return 'Please enter email';
               }
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                  .hasMatch(value)) {
+              if (!RegExp(
+                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+              ).hasMatch(value)) {
                 return 'Please enter valid email';
               }
               return null;
@@ -459,9 +442,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 color: AppColors.textHint,
               ),
               suffixIcon: IconButton(
-                onPressed: () => setState(
-                  () => _obscurePassword = !_obscurePassword,
-                ),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
                 icon: Icon(
                   _obscurePassword ? Iconsax.eye_slash : Iconsax.eye,
                   size: 20.sp,
@@ -501,9 +483,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   () => _obscureConfirmPassword = !_obscureConfirmPassword,
                 ),
                 icon: Icon(
-                  _obscureConfirmPassword
-                      ? Iconsax.eye_slash
-                      : Iconsax.eye,
+                  _obscureConfirmPassword ? Iconsax.eye_slash : Iconsax.eye,
                   size: 20.sp,
                   color: AppColors.textHint,
                 ),
@@ -523,16 +503,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           Gap(24.h),
 
           // Terms & Conditions
-          _buildTermsCheckbox()
-              .animate()
-              .fadeIn(delay: 300.ms),
+          _buildTermsCheckbox().animate().fadeIn(delay: 300.ms),
 
           Gap(16.h),
 
           // Info Box
-          _buildInfoBox()
-              .animate()
-              .fadeIn(delay: 350.ms),
+          _buildInfoBox().animate().fadeIn(delay: 350.ms),
 
           Gap(32.h),
         ],
@@ -605,17 +581,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       decoration: BoxDecoration(
         color: AppColors.adminPrimary.withOpacity(0.06),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: AppColors.adminPrimary.withOpacity(0.2),
-        ),
+        border: Border.all(color: AppColors.adminPrimary.withOpacity(0.2)),
       ),
       child: Row(
         children: [
-          Icon(
-            Iconsax.info_circle,
-            size: 20.sp,
-            color: AppColors.adminPrimary,
-          ),
+          Icon(Iconsax.info_circle, size: 20.sp, color: AppColors.adminPrimary),
           Gap(12.w),
           Expanded(
             child: Text(
@@ -724,11 +694,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           : TextCapitalization.words,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(
-          icon,
-          size: 20.sp,
-          color: AppColors.textHint,
-        ),
+        prefixIcon: Icon(icon, size: 20.sp, color: AppColors.textHint),
       ),
       validator: isRequired
           ? (value) {
@@ -738,332 +704,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               return null;
             }
           : null,
-    );
-  }
-
-  // ═══════════════════════════════════════
-  // PAGE 3 - DOCUMENT UPLOAD
-  // ═══════════════════════════════════════
-  Widget _buildPage3() {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Gap(24.h),
-
-          Text(
-            'Document Verification',
-            style: TextStyle(
-              fontSize: 22.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ).animate().fadeIn().slideY(begin: 0.3, end: 0),
-
-          Gap(6.h),
-
-          Text(
-            'Upload front & back of your ID (Aadhar/PAN/GST)',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: AppColors.textSecondary,
-            ),
-          ).animate().fadeIn(delay: 100.ms),
-
-          Gap(28.h),
-
-          // Front Image
-          _buildLabel('Document Front Side *'),
-          Gap(10.h),
-          _buildDocImagePicker(
-            image: _frontDocImage,
-            label: 'Front Side',
-            icon: Iconsax.card,
-            onPick: () => _pickDocImage(isFront: true),
-          ).animate().fadeIn(delay: 150.ms),
-
-          Gap(20.h),
-
-          // Back Image
-          _buildLabel('Document Back Side *'),
-          Gap(10.h),
-          _buildDocImagePicker(
-            image: _backDocImage,
-            label: 'Back Side',
-            icon: Iconsax.card_slash,
-            onPick: () => _pickDocImage(isFront: false),
-          ).animate().fadeIn(delay: 200.ms),
-
-          Gap(20.h),
-
-          // Info box
-          Container(
-            padding: EdgeInsets.all(14.w),
-            decoration: BoxDecoration(
-              color: AppColors.adminPrimary.withOpacity(0.06),
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(
-                color: AppColors.adminPrimary.withOpacity(0.2),
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Iconsax.shield_tick,
-                  size: 18.sp,
-                  color: AppColors.adminPrimary,
-                ),
-                Gap(10.w),
-                Expanded(
-                  child: Text(
-                    'Your documents are encrypted and only visible to admin for verification.',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.adminPrimary,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ).animate().fadeIn(delay: 250.ms),
-
-          Gap(32.h),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDocImagePicker({
-    required File? image,
-    required String label,
-    required IconData icon,
-    required VoidCallback onPick,
-  }) {
-    return GestureDetector(
-      onTap: onPick,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: double.infinity,
-        height: 160.h,
-        decoration: BoxDecoration(
-          color: image != null
-              ? Colors.transparent
-              : AppColors.background,
-          borderRadius: BorderRadius.circular(14.r),
-          border: Border.all(
-            color: image != null
-                ? AppColors.adminPrimary
-                : AppColors.border,
-            width: image != null ? 2 : 1.5,
-          ),
-        ),
-        child: image != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(13.r),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.file(image, fit: BoxFit.cover),
-                    Positioned(
-                      bottom: 8,
-                      right: 8,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 4.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.adminPrimary,
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                        child: Text(
-                          'Tap to change',
-                          style: TextStyle(
-                            fontSize: 10.sp,
-                            color: AppColors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    icon,
-                    size: 36.sp,
-                    color: AppColors.textHint,
-                  ),
-                  Gap(10.h),
-                  Text(
-                    'Tap to upload $label',
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Gap(4.h),
-                  Text(
-                    'Camera or Gallery',
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      color: AppColors.textHint,
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-
-  void _pickDocImage({required bool isFront}) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(20.r)),
-        ),
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-            ),
-            Gap(16.h),
-            Text(
-              isFront ? 'Upload Front Side' : 'Upload Back Side',
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            Gap(20.h),
-            Row(
-              children: [
-                Expanded(
-                  child: _pickOption(
-                    icon: Iconsax.camera,
-                    label: 'Camera',
-                    onTap: () async {
-                      Navigator.pop(context);
-                      await _pickAndCrop(
-                        source: ImageSource.camera,
-                        isFront: isFront,
-                      );
-                    },
-                  ),
-                ),
-                Gap(12.w),
-                Expanded(
-                  child: _pickOption(
-                    icon: Iconsax.gallery,
-                    label: 'Gallery',
-                    onTap: () async {
-                      Navigator.pop(context);
-                      await _pickAndCrop(
-                        source: ImageSource.gallery,
-                        isFront: isFront,
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-            Gap(20.h),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickAndCrop({
-    required ImageSource source,
-    required bool isFront,
-  }) async {
-    final picked = await ImagePicker().pickImage(
-      source: source,
-      imageQuality: 90,
-    );
-    if (picked == null) return;
-
-    final cropped = await ImageCropper().cropImage(
-      sourcePath: picked.path,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: isFront ? 'Crop Front Side' : 'Crop Back Side',
-          toolbarColor: AppColors.adminPrimary,
-          toolbarWidgetColor: Colors.white,
-          activeControlsWidgetColor: AppColors.adminPrimary,
-          initAspectRatio: CropAspectRatioPreset.ratio16x9,
-          lockAspectRatio: false,
-          hideBottomControls: false,
-        ),
-        IOSUiSettings(
-          title: isFront ? 'Crop Front Side' : 'Crop Back Side',
-          aspectRatioLockEnabled: false,
-          resetAspectRatioEnabled: true,
-        ),
-      ],
-    );
-
-    if (cropped != null && mounted) {
-      setState(() {
-        if (isFront) {
-          _frontDocImage = File(cropped.path);
-        } else {
-          _backDocImage = File(cropped.path);
-        }
-      });
-    }
-  }
-
-  Widget _pickOption({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 16.h),
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 28.sp, color: AppColors.adminPrimary),
-            Gap(8.h),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

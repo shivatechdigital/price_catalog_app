@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -111,7 +109,6 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     });
   }
 
-
   Future<void> loadUserDataPublic(String uid) async {
     await _loadUserData(uid);
   }
@@ -123,6 +120,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
       await _loadUserData(uid);
     }
   }
+
   // ═══════════════════════════════════════
   // LOAD USER DATA FROM FIRESTORE
   // ═══════════════════════════════════════
@@ -210,8 +208,6 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     required String email,
     required String password,
     String? city,
-    File? documentFront,
-    File? documentBack,
   }) async {
     try {
       _isRegistering = true;
@@ -225,35 +221,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
 
       final uid = credential.user!.uid;
 
-      // Step 2: Upload document images (user is now authenticated)
-      String? documentFrontUrl;
-      String? documentBackUrl;
-
-      if (documentFront != null) {
-        try {
-          final ref = FirebaseStorage.instance
-              .ref()
-              .child('trader_documents/$uid/front.jpg');
-          final task = await ref.putFile(documentFront);
-          documentFrontUrl = await task.ref.getDownloadURL();
-        } catch (e) {
-          debugPrint('Front doc upload failed: $e');
-        }
-      }
-
-      if (documentBack != null) {
-        try {
-          final ref = FirebaseStorage.instance
-              .ref()
-              .child('trader_documents/$uid/back.jpg');
-          final task = await ref.putFile(documentBack);
-          documentBackUrl = await task.ref.getDownloadURL();
-        } catch (e) {
-          debugPrint('Back doc upload failed: $e');
-        }
-      }
-
-      // Step 3: Save user document to Firestore
+      // Step 2: Save user document to Firestore
       final user = UserModel(
         uid: uid,
         name: name.trim(),
@@ -263,15 +231,10 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
         role: UserRole.trader,
         traderStatus: TraderStatus.pending,
         city: city?.trim(),
-        documentFrontUrl: documentFrontUrl,
-        documentBackUrl: documentBackUrl,
         createdAt: DateTime.now(),
       );
 
-      await _firestore
-          .collection('users')
-          .doc(uid)
-          .set(user.toFirestore());
+      await _firestore.collection('users').doc(uid).set(user.toFirestore());
 
       // Notify admin about new trader registration
       await _notifyAdminNewTrader(user);
@@ -342,7 +305,9 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   }) async {
     final currentUser = _auth.currentUser;
     if (currentUser == null) {
-      return AuthResult.error('Unable to complete profile. Please login again.');
+      return AuthResult.error(
+        'Unable to complete profile. Please login again.',
+      );
     }
 
     try {
@@ -357,16 +322,16 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
             ? 'Admin'
             : (businessName?.trim() ?? ''),
         role: role,
-        traderStatus:
-            role == UserRole.trader ? TraderStatus.pending : null,
+        traderStatus: role == UserRole.trader ? TraderStatus.pending : null,
         city: city?.trim(),
         gstNumber: gstNumber?.trim(),
         createdAt: DateTime.now(),
       );
 
-      await _firestore.collection('users').doc(currentUser.uid).set(
-            user.toFirestore(),
-          );
+      await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .set(user.toFirestore());
 
       if (role == UserRole.admin) {
         _updateState(AuthAuthenticatedAdmin(user));
@@ -502,16 +467,18 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
       // Update password
       try {
         await user.updatePassword(newPassword);
-        
+
         // Sign out the user after password change
         await logout();
-        
+
         return const AuthResult.success();
       } on FirebaseAuthException catch (e) {
         return AuthResult.error(_getAuthErrorMessage(e.code));
       }
     } catch (e) {
-      return const AuthResult.error('Failed to change password. Please try again.');
+      return const AuthResult.error(
+        'Failed to change password. Please try again.',
+      );
     }
   }
 
@@ -532,15 +499,14 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
             .doc(adminDoc.id)
             .collection('items')
             .add({
-          'title': 'New Trader Registration',
-          'message':
-              '${trader.name} wants to join. Please review.',
-          'type': 'new_trader',
-          'traderId': trader.uid,
-          'traderName': trader.name,
-          'read': false,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+              'title': 'New Trader Registration',
+              'message': '${trader.name} wants to join. Please review.',
+              'type': 'new_trader',
+              'traderId': trader.uid,
+              'traderName': trader.name,
+              'read': false,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
       }
     } catch (e) {
       // Silently fail notification
@@ -580,9 +546,7 @@ class AuthResult {
   final bool isSuccess;
   final String? errorMessage;
 
-  const AuthResult.success()
-      : isSuccess = true,
-        errorMessage = null;
+  const AuthResult.success() : isSuccess = true, errorMessage = null;
 
   const AuthResult.error(this.errorMessage) : isSuccess = false;
 }
@@ -590,7 +554,8 @@ class AuthResult {
 // ═══════════════════════════════════════
 // PROVIDERS
 // ═══════════════════════════════════════
-final authStateProvider =
-    StateNotifierProvider<AuthStateNotifier, AuthState>((ref) {
+final authStateProvider = StateNotifierProvider<AuthStateNotifier, AuthState>((
+  ref,
+) {
   return AuthStateNotifier(ref);
 });

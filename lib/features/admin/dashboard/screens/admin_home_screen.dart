@@ -29,17 +29,17 @@ import 'package:price_catalog_app/data/models/product_model.dart';
 // ═══════════════════════════════════════
 // TRADERS STREAM PROVIDER (for admin home stats)
 // ═══════════════════════════════════════
-final _adminTradersStreamProvider =
-    StreamProvider<List<UserModel>>((ref) {
+final _adminTradersStreamProvider = StreamProvider<List<UserModel>>((ref) {
   return FirebaseService.usersRef
       .where('role', isEqualTo: 'trader')
       .snapshots()
       .map((snap) {
-    final traders =
-        snap.docs.map((d) => UserModel.fromFirestore(d)).toList();
-    traders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return traders;
-  });
+        final traders = snap.docs
+            .map((d) => UserModel.fromFirestore(d))
+            .toList();
+        traders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        return traders;
+      });
 });
 
 class AdminHomeScreen extends ConsumerWidget {
@@ -137,15 +137,16 @@ class AdminHomeScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Gap(20.h),
-                  
+
                   const PendingTradersBanner(),
-                  
+
                   // ═══════════════════════════════════════
                   // STATS CARDS
                   // ═══════════════════════════════════════
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20.w),
                     child: _buildStatsSection(
+                      context,
                       ref,
                       productsAsync,
                       categoriesAsync,
@@ -224,9 +225,7 @@ class AdminHomeScreen extends ConsumerWidget {
     int unreadCount,
   ) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: AppColors.adminGradient,
-      ),
+      decoration: const BoxDecoration(gradient: AppColors.adminGradient),
       child: SafeArea(
         child: Padding(
           padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 20.h),
@@ -250,9 +249,7 @@ class AdminHomeScreen extends ConsumerWidget {
                     ),
                     child: Center(
                       child: Text(
-                        name.isNotEmpty
-                            ? name[0].toUpperCase()
-                            : 'A',
+                        name.isNotEmpty ? name[0].toUpperCase() : 'A',
                         style: TextStyle(
                           fontSize: 20.sp,
                           fontWeight: FontWeight.w700,
@@ -333,6 +330,7 @@ class AdminHomeScreen extends ConsumerWidget {
   // STATS SECTION
   // ═══════════════════════════════════════
   Widget _buildStatsSection(
+    BuildContext context,
     WidgetRef ref,
     AsyncValue productsAsync,
     AsyncValue categoriesAsync,
@@ -424,9 +422,7 @@ class AdminHomeScreen extends ConsumerWidget {
                 delay: 300,
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const AdminTradersScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const AdminTradersScreen()),
                 ),
               ),
             ),
@@ -471,10 +467,7 @@ class AdminHomeScreen extends ConsumerWidget {
           ),
           if (trailing != null && trailing > 0)
             Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: 10.w,
-                vertical: 6.h,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
               decoration: BoxDecoration(
                 color: AppColors.pending.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(20.r),
@@ -496,7 +489,10 @@ class AdminHomeScreen extends ConsumerWidget {
   // ═══════════════════════════════════════
   // PENDING REQUIREMENTS LIST
   // ═══════════════════════════════════════
-  Widget _buildPendingList(BuildContext context, List<RequirementModel> requirements) {
+  Widget _buildPendingList(
+    BuildContext context,
+    List<RequirementModel> requirements,
+  ) {
     return SizedBox(
       height: 180.h,
       child: ListView.separated(
@@ -529,23 +525,24 @@ class AdminHomeScreen extends ConsumerWidget {
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Column(
         children: products
-            .map((product) => RecentPriceUpdateCard(
-                  product: product as ProductModel,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AdminProductDetailScreen(
-                        product: product as ProductModel,
+            .map(
+              (product) =>
+                  RecentPriceUpdateCard(
+                    product: product as ProductModel,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AdminProductDetailScreen(
+                          product: product as ProductModel,
+                        ),
                       ),
                     ),
+                  ).animate().fadeIn(
+                    delay: Duration(
+                      milliseconds: products.indexOf(product) * 100,
+                    ),
                   ),
-                )
-                .animate()
-                .fadeIn(
-                  delay: Duration(
-                    milliseconds: products.indexOf(product) * 100,
-                  ),
-                ))
+            )
             .toList(),
       ),
     );
@@ -584,10 +581,7 @@ class AdminHomeScreen extends ConsumerWidget {
             Gap(4.h),
             Text(
               'No pending requirements',
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -607,10 +601,7 @@ class AdminHomeScreen extends ConsumerWidget {
         child: Center(
           child: Text(
             'No products yet. Add your first product!',
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
           ),
         ),
       ),
@@ -636,10 +627,7 @@ class AdminHomeScreen extends ConsumerWidget {
             Gap(8.w),
             Text(
               'Something went wrong',
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: AppColors.rejected,
-              ),
+              style: TextStyle(fontSize: 13.sp, color: AppColors.rejected),
             ),
           ],
         ),
@@ -658,11 +646,8 @@ class AdminHomeScreen extends ConsumerWidget {
         padding: EdgeInsets.symmetric(horizontal: 20.w),
         itemCount: 3,
         separatorBuilder: (_, __) => Gap(12.w),
-        itemBuilder: (_, __) => ShimmerLoading(
-          width: 240.w,
-          height: 150.h,
-          borderRadius: 16.r,
-        ),
+        itemBuilder: (_, __) =>
+            ShimmerLoading(width: 240.w, height: 150.h, borderRadius: 16.r),
       ),
     );
   }

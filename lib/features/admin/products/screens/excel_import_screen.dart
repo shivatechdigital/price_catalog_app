@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:excel/excel.dart';
+import 'package:excel/excel.dart' hide Border;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -112,7 +112,9 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
       for (int i = 0; i < sample.length; i++) {
         sheet
             .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 1))
-            .value = TextCellValue(sample[i]);
+            .value = TextCellValue(
+          sample[i],
+        );
       }
 
       // Remove default Sheet1
@@ -127,10 +129,7 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
 
       final result = await OpenFile.open(file.path);
       if (result.type != ResultType.done && mounted) {
-        CustomSnackbar.showInfo(
-          context,
-          'Template saved to: ${file.path}',
-        );
+        CustomSnackbar.showInfo(context, 'Template saved to: ${file.path}');
       }
     } catch (e) {
       if (mounted) {
@@ -183,30 +182,40 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
         final stock = _cellDoubleNullable(row, 10);
 
         String? error;
-        if (name.isEmpty) error = 'Name required';
-        else if (code.isEmpty) error = 'Code required';
-        else if (category.isEmpty) error = 'Category required';
-        else if (brand.isEmpty) error = 'Brand required';
-        else if (unit.isEmpty) error = 'Unit required';
-        else if (purchase <= 0) error = 'Invalid purchase price';
-        else if (selling <= 0) error = 'Invalid selling price';
-        else if (dealer <= 0) error = 'Invalid dealer price';
+        if (name.isEmpty)
+          error = 'Name required';
+        else if (code.isEmpty)
+          error = 'Code required';
+        else if (category.isEmpty)
+          error = 'Category required';
+        else if (brand.isEmpty)
+          error = 'Brand required';
+        else if (unit.isEmpty)
+          error = 'Unit required';
+        else if (purchase <= 0)
+          error = 'Invalid purchase price';
+        else if (selling <= 0)
+          error = 'Invalid selling price';
+        else if (dealer <= 0)
+          error = 'Invalid dealer price';
 
-        rows.add(_ExcelRow(
-          name: name,
-          productCode: code,
-          categoryName: category,
-          brand: brand,
-          description: desc,
-          unit: unit,
-          purchasePrice: purchase,
-          sellingPrice: selling,
-          dealerPrice: dealer,
-          minAcceptedPrice: minPrice,
-          stockQuantity: stock,
-          hasError: error != null,
-          errorMessage: error,
-        ));
+        rows.add(
+          _ExcelRow(
+            name: name,
+            productCode: code,
+            categoryName: category,
+            brand: brand,
+            description: desc,
+            unit: unit,
+            purchasePrice: purchase,
+            sellingPrice: selling,
+            dealerPrice: dealer,
+            minAcceptedPrice: minPrice,
+            stockQuantity: stock,
+            hasError: error != null,
+            errorMessage: error,
+          ),
+        );
       }
 
       setState(() {
@@ -216,13 +225,19 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
 
       if (rows.isEmpty) {
         if (mounted) {
-          CustomSnackbar.showWarning(context, 'No data found in file (check header row).');
+          CustomSnackbar.showWarning(
+            context,
+            'No data found in file (check header row).',
+          );
         }
       }
     } catch (e) {
       setState(() => _isParsing = false);
       if (mounted) {
-        CustomSnackbar.showError(context, 'Failed to read file. Use .xlsx format.');
+        CustomSnackbar.showError(
+          context,
+          'Failed to read file. Use .xlsx format.',
+        );
       }
     }
   }
@@ -274,7 +289,9 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
         // Find or use category name directly (match by name)
         final matchedCat = categories.firstWhere(
           (c) => c.name.toLowerCase() == row.categoryName.toLowerCase(),
-          orElse: () => categories.isNotEmpty ? categories.first : throw Exception('No categories'),
+          orElse: () => categories.isNotEmpty
+              ? categories.first
+              : throw Exception('No categories'),
         );
 
         final price = PriceModel(
@@ -315,7 +332,10 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
           '${_failedCount > 0 ? ' $_failedCount failed.' : ''}',
         );
       } else {
-        CustomSnackbar.showError(context, 'Import failed. Check categories exist.');
+        CustomSnackbar.showError(
+          context,
+          'Import failed. Check categories exist.',
+        );
       }
     }
   }
@@ -393,9 +413,15 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
                                 strokeWidth: 2,
                               ),
                             )
-                          : Icon(Iconsax.document_upload, size: 20.sp, color: AppColors.white),
+                          : Icon(
+                              Iconsax.document_upload,
+                              size: 20.sp,
+                              color: AppColors.white,
+                            ),
                       label: Text(
-                        _isParsing ? 'Reading File...' : 'Select Excel File (.xlsx)',
+                        _isParsing
+                            ? 'Reading File...'
+                            : 'Select Excel File (.xlsx)',
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w700,
@@ -440,10 +466,16 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
                     // Summary
                     Row(
                       children: [
-                        _buildSummaryChip('$validCount Valid', AppColors.approved),
+                        _buildSummaryChip(
+                          '$validCount Valid',
+                          AppColors.approved,
+                        ),
                         Gap(8.w),
                         if (errorCount > 0)
-                          _buildSummaryChip('$errorCount Errors', AppColors.rejected),
+                          _buildSummaryChip(
+                            '$errorCount Errors',
+                            AppColors.rejected,
+                          ),
                       ],
                     ),
                     Gap(12.h),
@@ -490,7 +522,11 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
                             strokeWidth: 2,
                           ),
                         )
-                      : Icon(Icons.upload_rounded, size: 20.sp, color: AppColors.white),
+                      : Icon(
+                          Icons.upload_rounded,
+                          size: 20.sp,
+                          color: AppColors.white,
+                        ),
                   label: Text(
                     _isImporting
                         ? 'Importing... ($_importedCount done)'
@@ -541,7 +577,11 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
         children: [
           Row(
             children: [
-              Icon(Iconsax.info_circle, size: 18.sp, color: AppColors.adminPrimary),
+              Icon(
+                Iconsax.info_circle,
+                size: 18.sp,
+                color: AppColors.adminPrimary,
+              ),
               Gap(8.w),
               Text(
                 'Excel Template Format',
@@ -646,10 +686,8 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _rows.length,
-            separatorBuilder: (_, __) => Divider(
-              height: 1,
-              color: AppColors.border,
-            ),
+            separatorBuilder: (_, __) =>
+                Divider(height: 1, color: AppColors.border),
             itemBuilder: (context, index) {
               final row = _rows[index];
               return Container(
@@ -676,7 +714,9 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
                           style: TextStyle(
                             fontSize: 9.sp,
                             fontWeight: FontWeight.w700,
-                            color: row.hasError ? AppColors.rejected : AppColors.adminPrimary,
+                            color: row.hasError
+                                ? AppColors.rejected
+                                : AppColors.adminPrimary,
                           ),
                         ),
                       ),
@@ -726,9 +766,13 @@ class _ExcelImportScreenState extends ConsumerState<ExcelImportScreen> {
                       ),
                     ),
                     Icon(
-                      row.hasError ? Icons.close_rounded : Icons.check_circle_rounded,
+                      row.hasError
+                          ? Icons.close_rounded
+                          : Icons.check_circle_rounded,
                       size: 18.sp,
-                      color: row.hasError ? AppColors.rejected : AppColors.approved,
+                      color: row.hasError
+                          ? AppColors.rejected
+                          : AppColors.approved,
                     ),
                   ],
                 ),
