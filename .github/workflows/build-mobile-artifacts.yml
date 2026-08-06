@@ -74,12 +74,12 @@ jobs:
   build-android-signed-aab:
     name: Build Android Signed AAB
     runs-on: ubuntu-latest
-    if: ${{ (github.event_name == 'push' || inputs.build_android_signed_aab) && secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
 
     env:
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_ALIAS: upload
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
     steps:
@@ -100,6 +100,16 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Validate required Android secrets
+        run: |
+          missing=0
+          [ -z "$ANDROID_KEYSTORE_BASE64" ] && echo "Missing secret: ANDROID_KEYSTORE_BASE64" && missing=1
+          [ -z "$ANDROID_KEYSTORE_PASSWORD" ] && echo "Missing secret: ANDROID_KEYSTORE_PASSWORD" && missing=1
+          [ -z "$ANDROID_KEY_PASSWORD" ] && echo "Missing secret: ANDROID_KEY_PASSWORD" && missing=1
+          if [ "$missing" -eq 1 ]; then
+            exit 1
+          fi
 
       - name: Setup Android signing files
         run: |
