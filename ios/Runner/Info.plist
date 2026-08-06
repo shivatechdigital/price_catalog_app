@@ -35,26 +35,14 @@
 
     <!-- Camera -->
     <key>NSCameraUsageDescription</key>
-    <string>PriceCatalog needs camera access to take product photos for your catalog.</string>
+    <string>Anandeshwar Traders uses the camera so admins can capture live product photos while creating or updating catalog items.</string>
 
     <!-- Photo Library -->
     <key>NSPhotoLibraryUsageDescription</key>
-    <string>PriceCatalog needs photo library access to upload product images.</string>
+    <string>Anandeshwar Traders uses your photo library so admins can select existing product images for catalog listings.</string>
 
     <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>PriceCatalog needs permission to save catalog images to your photo library.</string>
-
-    <!-- Microphone (required for some camera features) -->
-    <key>NSMicrophoneUsageDescription</key>
-    <string>PriceCatalog needs microphone access for video recording features.</string>
-
-    <!-- Face ID / Biometrics -->
-    <key>NSFaceIDUsageDescription</key>
-    <string>PriceCatalog uses Face ID for secure login.</string>
-
-    <!-- Contacts (optional) -->
-    <key>NSContactsUsageDescription</key>
-    <string>PriceCatalog can access contacts to quickly add customer details.</string>
+    <string>Anandeshwar Traders saves generated catalog images to your photo library only when you choose to export or share them.</string>
 
     <!-- ═══════════════════════════════════════ -->
     <!-- FIREBASE & PUSH NOTIFICATIONS -->

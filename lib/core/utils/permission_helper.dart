@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class PermissionHelper {
+  static bool _notificationRationaleShown = false;
+
   // ═══════════════════════════════════════
   // REQUEST CAMERA PERMISSION
   // ═══════════════════════════════════════
@@ -53,7 +55,41 @@ class PermissionHelper {
   // ═══════════════════════════════════════
   // REQUEST NOTIFICATION PERMISSION
   // ═══════════════════════════════════════
-  static Future<bool> requestNotificationPermission() async {
+  static Future<bool> requestNotificationPermission(
+    BuildContext context,
+  ) async {
+    final currentStatus = await Permission.notification.status;
+
+    if (!_notificationRationaleShown &&
+        currentStatus.isDenied &&
+        context.mounted) {
+      _notificationRationaleShown = true;
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Enable Notifications'),
+          content: const Text(
+            'Notifications are used to alert you about new requirements, '
+            'approval or rejection updates, and important trading actions.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Not Now'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      );
+
+      if (proceed != true) {
+        return false;
+      }
+    }
+
     final status = await Permission.notification.request();
     return status.isGranted;
   }
@@ -63,7 +99,7 @@ class PermissionHelper {
   // ═══════════════════════════════════════
   static Future<void> requestAllPermissions(
       BuildContext context) async {
-    await requestNotificationPermission();
+    await requestNotificationPermission(context);
   }
 
   // ─── HELPERS ────────────────────────────────────────
