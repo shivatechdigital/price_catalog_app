@@ -13,3 +13,86 @@ ANDROID_KEYSTORE_BASE64 = keystore.base64 ka pura content
 ANDROID_KEYSTORE_PASSWORD = step 3 me keystore password
 ANDROID_KEY_ALIAS = upload
 ANDROID_KEY_PASSWORD = step 3 me key password
+
+
+
+
+PS C:\Users\prash\Downloads\price_catalog_app_KP_Digital\New folder\New folder\New folder\price_catalog_app> keytool -genkeypair -v -keystore upload-keystore.jks -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+Enter keystore password:  
+
+Re-enter new password: 
+
+What is your first and last name?
+  [Unknown]:  Shivatechdigital
+What is the name of your organizational unit?
+  [Unknown]:  IT/Mobile
+What is the name of your organization?
+  [Unknown]:  Shivatechdigital
+What is the name of your City or Locality?
+  [Unknown]:  Kanpur
+What is the name of your State or Province?
+  [Unknown]:  Uttar Pradesh
+What is the two-letter country code for this unit?
+  [Unknown]:  IN
+Is CN=Shivatechdigital, OU=IT/Mobile, O=Shivatechdigital, L=Kanpur, ST=Uttar Pradesh, C=IN correct?
+  [no]:  yes
+
+Generating 2,048 bit RSA key pair and self-signed certificate (SHA256withRSA) with avalidity of 10,000 days
+        for: CN=Shivatechdigital, OU=IT/Mobile, O=Shivatechdigital, L=Kanpur, ST=Uttar Pradesh, C=IN
+Enter key password for <upload>
+        (RETURN if same as keystore password):  
+
+Re-enter new password: 
+
+[Storing upload-keystore.jks]
+
+Warning:
+The JKS keystore uses a proprietary format. It is recommended to migrate to PKCS12 which is an industry standard format using "keytool -importkeystore -srckeystore upload-keystore.jks -destkeystore upload-keystore.jks -deststoretype pkcs12".
+PS C:\Users\prash\Downloads\price_catalog_app_KP_Digital\New folder\New folder\New folder\price_catalog_app> keytool -list -v -keystore upload-keystore.jks
+Enter keystore password:  
+
+Keystore type: JKS
+Keystore provider: SUN
+
+Your keystore contains 1 entry
+
+Alias name: upload
+Creation date: Aug 6, 2026
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: CN=Shivatechdigital, OU=IT/Mobile, O=Shivatechdigital, L=Kanpur, ST=Uttar Pradesh, C=IN
+Issuer: CN=Shivatechdigital, OU=IT/Mobile, O=Shivatechdigital, L=Kanpur, ST=Uttar Pradesh, C=IN
+Serial number: 19b81e42dd687dc9
+Valid from: Thu Aug 06 12:28:48 IST 2026 until: Mon Dec 22 12:28:48 IST 2053
+Certificate fingerprints:
+         SHA1: 41:0D:8B:9C:E4:6B:40:32:16:18:94:36:85:18:A2:B2:66:0C:11:47
+         SHA256: 2D:49:22:45:6C:A7:30:4B:E9:51:25:63:05:31:D0:60:52:30:F8:0E:21:23:62:42:34:EE:35:58:31:98:B9:22
+Signature algorithm name: SHA256withRSA
+Subject Public Key Algorithm: 2048-bit RSA key
+Version: 3
+
+Extensions: 
+
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 52 1E 23 D0 77 AB BC DB   55 3C 22 A5 7D 7C E7 47  R.#.w...U<"....G
+0010: 9B CE B9 5C                                        ...\
+]
+]
+
+
+
+*******************************************
+*******************************************
+
+
+
+Warning:
+The JKS keystore uses a proprietary format. It is recommended to migrate to PKCS12 which is an industry standard format using "keytool -importkeystore -srckeystore upload-keystore.jks -destkeystore upload-keystore.jks -deststoretype pkcs12".
+PS C:\Users\prash\Downloads\price_catalog_app_KP_Digital\New folder\New folder\New folder\price_catalog_app> [Convert]::ToBase64String([IO.File]::ReadAllBytes((Resolve-Path ".\upload-keystore.jks"))) | Set-Content -NoNewline -Path .\keystore.base64
+>> Get-Content -Raw .\keystore.base64
+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
+PS C:\Users\prash\Downloads\price_catalog_app_KP_Digital\New folder\New folder\New folder\price_catalog_app> ^C
+PS C:\Users\prash\Downloads\price_catalog_app_KP_Digital\New folder\New folder\New folder\price_catalog_app> 
