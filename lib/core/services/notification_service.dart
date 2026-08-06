@@ -2,8 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:price_catalog_app/core/services/firebase_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
+import 'package:price_catalog_app/core/services/navigation_service.dart'
+    as navigation_service;
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _localNotifications =
@@ -26,7 +30,71 @@ class NotificationService {
     await _initializeLocalNotifications();
     await _createAndroidNotificationChannel();
 
+    // Ensure the device FCM token is saved to the user's document so
+    // server-side code or Cloud Functions can target this device.
+    try {
+      final token = await _fcm.getToken();
+      if (token != null && FirebaseService.currentUserId != null) {
+        await FirebaseService.usersRef
+            .doc(FirebaseService.currentUserId)
+            .update({'fcmToken': token});
+      }
+
+      // Keep token up to date
+      _fcm.onTokenRefresh.listen((newToken) async {
+        if (FirebaseService.currentUserId != null) {
+          await FirebaseService.usersRef
+              .doc(FirebaseService.currentUserId)
+              .update({'fcmToken': newToken});
+        }
+      });
+    } catch (e) {
+      // Non-fatal: token saving failed — continue without blocking initialization
+    }
+
+    // While the app is running, listen for new notification documents for
+    // the current user and show a local notification. This helps when
+    // another device or user creates a notification while this app is
+    // active.
+    try {
+      final uid = FirebaseService.currentUserId;
+      if (uid != null) {
+        FirebaseService.notificationsRef(uid).snapshots().listen((snap) {
+          for (final change in snap.docChanges) {
+            if (change.type == DocumentChangeType.added) {
+              final data = change.doc.data();
+              if (data != null) {
+                final title = data['title'] as String?;
+                final message = data['message'] as String?;
+                _showNotification(
+                  id: change.doc.id.hashCode,
+                  title: title ?? 'Notification',
+                  body: message ?? '',
+                  payload: jsonEncode(data),
+                );
+              }
+            }
+          }
+        });
+      }
+    } catch (_) {}
+
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+
+    // When a notification is tapped (app in background / terminated)
+    FirebaseMessaging.onMessageOpenedApp.listen((message) async {
+      try {
+        final payload = jsonEncode(message.data);
+        await navigation_service.handleNotificationPayload(payload);
+      } catch (_) {}
+    });
+
+    // Handle app launched from terminated state via notification
+    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      final payload = jsonEncode(initialMessage.data);
+      await navigation_service.setPendingNotificationPayload(payload);
+    }
   }
 
   static Future<void> _requestPermission() async {
@@ -56,6 +124,14 @@ class NotificationService {
         android: androidSettings,
         iOS: iosSettings,
       ),
+      onDidReceiveNotificationResponse: (response) async {
+        final payload = response.payload;
+        await navigation_service.handleNotificationPayload(payload);
+      },
+      onDidReceiveBackgroundNotificationResponse: (response) async {
+        final payload = response.payload;
+        await navigation_service.handleNotificationPayload(payload);
+      },
     );
   }
 
@@ -117,6 +193,8 @@ class NotificationService {
       payload: payload,
     );
   }
+
+  // No helper here — navigation is handled by navigation_service.handleNotificationPayload
 
   static Future<void> showNotification({
     required int id,

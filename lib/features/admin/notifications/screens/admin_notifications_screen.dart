@@ -66,19 +66,13 @@ class AdminNotificationsScreen extends ConsumerWidget {
       ),
       body: notificationsAsync.when(
         loading: () => Center(
-          child: CircularProgressIndicator(
-            color: AppColors.adminPrimary,
-          ),
+          child: CircularProgressIndicator(color: AppColors.adminPrimary),
         ),
         error: (_, __) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Iconsax.warning_2,
-                size: 48.sp,
-                color: AppColors.rejected,
-              ),
+              Icon(Iconsax.warning_2, size: 48.sp, color: AppColors.rejected),
               Gap(16.h),
               Text(
                 'Failed to load notifications',
@@ -169,9 +163,7 @@ class AdminNotificationsScreen extends ConsumerWidget {
   ) {
     // Mark as read
     if (userId != null && !notif.read) {
-      ref
-          .read(notificationRepositoryProvider)
-          .markAsRead(userId, notif.id);
+      ref.read(notificationRepositoryProvider).markAsRead(userId, notif.id);
     }
 
     // Navigate based on notification type
@@ -182,7 +174,10 @@ class AdminNotificationsScreen extends ConsumerWidget {
         case NotificationType.requirementRejected:
         case NotificationType.counterOffer:
           // Navigate to requirement detail - admin view
-          context.push('/admin/requirements/${notif.referenceId}');
+          context.pushNamed(
+            'adminRequirementDetailById',
+            pathParameters: {'requirementId': notif.referenceId!},
+          );
           break;
         case NotificationType.newTrader:
           // Navigate to traders screen
@@ -244,143 +239,139 @@ class _AdminNotificationCard extends ConsumerWidget {
     final color = _getNotifColor(notification.type);
 
     return Dismissible(
-      key: Key(notification.id),
-      direction: DismissDirection.endToStart,
-      onDismissed: (_) => onDelete(),
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: EdgeInsets.only(right: 20.w),
-        decoration: BoxDecoration(
-          color: AppColors.rejected,
-          borderRadius: BorderRadius.circular(14.r),
-        ),
-        child: Icon(
-          Iconsax.trash,
-          color: AppColors.white,
-          size: 20.sp,
-        ),
-      ),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          margin: EdgeInsets.only(bottom: 12.h),
-          padding: EdgeInsets.all(14.w),
-          decoration: BoxDecoration(
-            color: notification.read
-                ? AppColors.white
-                : color.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(14.r),
-            border: Border.all(
-              color: notification.read
-                  ? AppColors.border
-                  : color.withOpacity(0.25),
-              width: 1,
+          key: Key(notification.id),
+          direction: DismissDirection.endToStart,
+          onDismissed: (_) => onDelete(),
+          background: Container(
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.only(right: 20.w),
+            decoration: BoxDecoration(
+              color: AppColors.rejected,
+              borderRadius: BorderRadius.circular(14.r),
             ),
-            boxShadow: notification.read
-                ? []
-                : [
-                    BoxShadow(
-                      color: color.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+            child: Icon(Iconsax.trash, color: AppColors.white, size: 20.sp),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon Container with Gradient
-              Container(
-                width: 48.w,
-                height: 48.w,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      color.withOpacity(0.2),
-                      color.withOpacity(0.1),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12.r),
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              margin: EdgeInsets.only(bottom: 12.h),
+              padding: EdgeInsets.all(14.w),
+              decoration: BoxDecoration(
+                color: notification.read
+                    ? AppColors.white
+                    : color.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(
+                  color: notification.read
+                      ? AppColors.border
+                      : color.withOpacity(0.25),
+                  width: 1,
                 ),
-                child: Icon(
-                  _getNotifIcon(notification.type),
-                  size: 24.sp,
-                  color: color,
-                ),
+                boxShadow: notification.read
+                    ? []
+                    : [
+                        BoxShadow(
+                          color: color.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
               ),
-              Gap(12.w),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Icon Container with Gradient
+                  Container(
+                    width: 48.w,
+                    height: 48.w,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          color.withOpacity(0.2),
+                          color.withOpacity(0.1),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Icon(
+                      _getNotifIcon(notification.type),
+                      size: 24.sp,
+                      color: color,
+                    ),
+                  ),
+                  Gap(12.w),
 
-              // Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                  // Content
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(
-                            notification.title,
-                            style: TextStyle(
-                              fontSize: 13.sp,
-                              fontWeight: notification.read
-                                  ? FontWeight.w500
-                                  : FontWeight.w700,
-                              color: AppColors.textPrimary,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                notification.title,
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  fontWeight: notification.read
+                                      ? FontWeight.w500
+                                      : FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            if (!notification.read)
+                              Container(
+                                width: 6.w,
+                                height: 6.w,
+                                margin: EdgeInsets.only(left: 8.w),
+                                decoration: BoxDecoration(
+                                  color: color,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                          ],
+                        ),
+                        Gap(6.h),
+                        Text(
+                          notification.message,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: AppColors.textSecondary,
+                            height: 1.5,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Gap(8.h),
+                        Text(
+                          timeago.format(notification.createdAt),
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: AppColors.textHint,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        if (!notification.read)
-                          Container(
-                            width: 6.w,
-                            height: 6.w,
-                            margin: EdgeInsets.only(left: 8.w),
-                            decoration: BoxDecoration(
-                              color: color,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
                       ],
                     ),
-                    Gap(6.h),
-                    Text(
-                      notification.message,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: AppColors.textSecondary,
-                        height: 1.5,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Gap(8.h),
-                    Text(
-                      timeago.format(notification.createdAt),
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        color: AppColors.textHint,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
 
-              // Action Icon
-              Gap(8.w),
-              Icon(
-                Iconsax.arrow_right_3,
-                size: 16.sp,
-                color: color.withOpacity(0.5),
+                  // Action Icon
+                  Gap(8.w),
+                  Icon(
+                    Iconsax.arrow_right_3,
+                    size: 16.sp,
+                    color: color.withOpacity(0.5),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-    )
+        )
         .animate(delay: Duration(milliseconds: 50 * index))
         .slideX(
           begin: 0.1,

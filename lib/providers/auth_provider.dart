@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:price_catalog_app/core/services/notification_service.dart';
+import 'package:price_catalog_app/core/services/firebase_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -139,6 +141,16 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
 
       // Save current user
       _ref.read(currentUserProvider.notifier).state = user;
+
+      // Ensure user's FCM token (if available) is saved to their document.
+      try {
+        final token = await NotificationService.getFCMToken();
+        if (token != null && token.isNotEmpty) {
+          await FirebaseService.usersRef.doc(user.uid).update({
+            'fcmToken': token,
+          });
+        }
+      } catch (_) {}
 
       if (user.isAdmin) {
         _updateState(AuthAuthenticatedAdmin(user));
@@ -362,7 +374,9 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     }
 
     try {
-      _updateState(const AuthLoading());
+      // Do not set global AuthLoading here — the UI shows a local loader.
+      // Setting global loading can trigger router redirects or splash
+      // because the auth state changes briefly. Avoid that.
 
       final updatedUser = currentUser.copyWith(
         name: name.trim(),

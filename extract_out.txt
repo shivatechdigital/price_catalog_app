@@ -1,0 +1,79 @@
+1: // TODO Implement this library.import 'dart:io';
+2: // ignore_for_file: unused_import
+3: 
+4: import 'dart:io';
+5: 
+6: import 'package:file_picker/file_picker.dart';
+7: import 'package:flutter/material.dart';
+8: import 'package:flutter/services.dart';
+9: import 'package:flutter_animate/flutter_animate.dart';
+10: import 'package:flutter_riverpod/flutter_riverpod.dart';
+11: import 'package:flutter_screenutil/flutter_screenutil.dart';
+12: import 'package:gap/gap.dart';
+13: import 'package:iconsax_flutter/iconsax_flutter.dart';
+14: import 'package:image_picker/image_picker.dart';
+15: import 'package:price_catalog_app/core/constants/app_colors.dart';
+16: import 'package:price_catalog_app/data/models/category_model.dart';
+17: import 'package:price_catalog_app/data/models/product_model.dart';
+18: import 'package:price_catalog_app/providers/auth_provider.dart';
+19: import 'package:price_catalog_app/providers/category_provider.dart';
+20: import 'package:price_catalog_app/providers/product_provider.dart';import 'package:price_catalog_app/shared/widgets/custom_button.dart';
+21: import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
+22: import 'package:url_launcher/url_launcher.dart';
+23: 
+24: class AddProductScreen extends ConsumerStatefulWidget {
+25:   final ProductModel? product; // null = add, not null = edit
+26: 
+27:   const AddProductScreen({super.key, this.product});
+28: 
+29:   bool get isEditing => product != null;
+30: 
+31:   @override
+32:   ConsumerState<AddProductScreen> createState() =>
+33:       _AddProductScreenState();
+34: }
+35: 
+36: class _AddProductScreenState extends ConsumerState<AddProductScreen> {
+37:   final _formKey = GlobalKey<FormState>();
+38:   final _pageController = PageController();
+39:   int _currentStep = 0;
+40: 
+41:   // Controllers
+42:   final _nameController = TextEditingController();
+43:   final _codeController = TextEditingController();
+44:   final _brandController = TextEditingController();
+45:   final _descController = TextEditingController();
+46:   final _purchasePriceController = TextEditingController();
+47:   final _sellingPriceController = TextEditingController();
+48:   final _dealerPriceController = TextEditingController();
+49:   final _minPriceController = TextEditingController();
+50:   final _stockQtyController = TextEditingController();
+51: 
+52:   // State
+53:   String? _selectedCategoryId;
+54:   String? _selectedCategoryName;
+55:   String? _selectedSubCategoryId;
+56:   String? _selectedSubCategoryName;
+57:   String _selectedUnit = 'ton';
+58:   ProductAvailability _availability = ProductAvailability.inStock;
+59:   List<File> _newImages = [];
+60:   List<String> _existingImages = [];
+61:   List<File> _newCatalogFiles = [];
+62:   List<String> _existingCatalogUrls = [];
+63:   List<File> _newDrawingFiles = [];
+64:   List<String> _existingDrawingUrls = [];
+65:   bool _isLoading = false;
+66: 
+67:   final List<String> _units = [
+68:     'ton', 'kg', 'gram', 'meter', 'feet',
+69:     'inch', 'piece', 'box', 'bag', 'liter',
+70:     'bundle', 'roll', 'sheet',
+71:   ];
+72: 
+73:   @override
+74:   void initState() {
+75:     super.initState();
+76:     // Live update Price Summary box
+77:     _purchasePriceController.addListener(_onPriceChanged);
+78:     _sellingPriceController.addListener(_onPriceChanged);
+79:     _dealerPriceController.addListener(_onPriceChanged);

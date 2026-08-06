@@ -17,7 +17,8 @@ import 'package:price_catalog_app/data/models/category_model.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/providers/category_provider.dart';
-import 'package:price_catalog_app/providers/product_provider.dart';import 'package:price_catalog_app/shared/widgets/custom_button.dart';
+import 'package:price_catalog_app/providers/product_provider.dart';
+import 'package:price_catalog_app/shared/widgets/custom_button.dart';
 import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -29,8 +30,7 @@ class AddProductScreen extends ConsumerStatefulWidget {
   bool get isEditing => product != null;
 
   @override
-  ConsumerState<AddProductScreen> createState() =>
-      _AddProductScreenState();
+  ConsumerState<AddProductScreen> createState() => _AddProductScreenState();
 }
 
 class _AddProductScreenState extends ConsumerState<AddProductScreen> {
@@ -65,9 +65,19 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   bool _isLoading = false;
 
   final List<String> _units = [
-    'ton', 'kg', 'gram', 'meter', 'feet',
-    'inch', 'piece', 'box', 'bag', 'liter',
-    'bundle', 'roll', 'sheet',
+    'ton',
+    'kg',
+    'gram',
+    'meter',
+    'feet',
+    'inch',
+    'piece',
+    'box',
+    'bag',
+    'liter',
+    'bundle',
+    'roll',
+    'sheet',
   ];
 
   @override
@@ -90,19 +100,20 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     _codeController.text = p.productCode;
     _brandController.text = p.brand;
     _descController.text = p.description;
-    _purchasePriceController.text =
-        p.currentPrice.purchasePrice.toStringAsFixed(0);
-    _sellingPriceController.text =
-        p.currentPrice.sellingPrice.toStringAsFixed(0);
-    _dealerPriceController.text =
-        p.currentPrice.dealerPrice.toStringAsFixed(0);
-    _minPriceController.text =
-        (p.currentPrice.minAcceptedPrice ?? 0).toStringAsFixed(0);
+    _purchasePriceController.text = p.currentPrice.purchasePrice
+        .toStringAsFixed(0);
+    _sellingPriceController.text = p.currentPrice.sellingPrice.toStringAsFixed(
+      0,
+    );
+    _dealerPriceController.text = p.currentPrice.dealerPrice.toStringAsFixed(0);
+    _minPriceController.text = (p.currentPrice.minAcceptedPrice ?? 0)
+        .toStringAsFixed(0);
     _selectedCategoryId = p.categoryId;
     _selectedCategoryName = p.categoryName;
     _selectedSubCategoryId = p.subCategoryId;
     _selectedSubCategoryName = p.subCategoryName;
-    _selectedUnit = p.unit;
+    // Guard against legacy / Excel-imported products with an empty unit.
+    _selectedUnit = p.unit.trim().isEmpty ? 'ton' : p.unit;
     _availability = p.availability;
     _existingImages = List.from(p.images);
     _existingCatalogUrls = List.from(p.catalogUrls);
@@ -137,10 +148,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
 
     if (remaining <= 0) {
       if (mounted) {
-        CustomSnackbar.showWarning(
-          context,
-          'Maximum 10 images allowed',
-        );
+        CustomSnackbar.showWarning(context, 'Maximum 10 images allowed');
       }
       return;
     }
@@ -157,9 +165,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
         if (images.isNotEmpty) {
           final allowed = images.take(remaining).toList();
           setState(() {
-            _newImages.addAll(
-              allowed.map((e) => File(e.path)).toList(),
-            );
+            _newImages.addAll(allowed.map((e) => File(e.path)).toList());
           });
           if (images.length > remaining && mounted) {
             CustomSnackbar.showWarning(
@@ -229,9 +235,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       builder: (_) => Container(
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(20.r),
-          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
         ),
         padding: EdgeInsets.all(20.w),
         child: Column(
@@ -309,9 +313,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
         );
         if (images.isNotEmpty) {
           setState(() {
-            _newDrawingFiles.addAll(
-              images.map((e) => File(e.path)).toList(),
-            );
+            _newDrawingFiles.addAll(images.map((e) => File(e.path)).toList());
           });
         }
       } else {
@@ -342,9 +344,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       builder: (_) => Container(
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(20.r),
-          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
         ),
         padding: EdgeInsets.all(20.w),
         child: Column(
@@ -407,10 +407,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedCategoryId == null) {
-      CustomSnackbar.showWarning(
-        context,
-        'Please select a category',
-      );
+      CustomSnackbar.showWarning(context, 'Please select a category');
       return;
     }
 
@@ -422,12 +419,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       final repo = ref.read(productRepositoryProvider);
 
       final price = PriceModel(
-        purchasePrice:
-            double.parse(_purchasePriceController.text),
-        sellingPrice:
-            double.parse(_sellingPriceController.text),
-        dealerPrice:
-            double.parse(_dealerPriceController.text),
+        purchasePrice: double.parse(_purchasePriceController.text),
+        sellingPrice: double.parse(_sellingPriceController.text),
+        dealerPrice: double.parse(_dealerPriceController.text),
         minAcceptedPrice: _minPriceController.text.isNotEmpty
             ? double.tryParse(_minPriceController.text)
             : null,
@@ -646,8 +640,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               child: PageView(
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (i) =>
-                    setState(() => _currentStep = i),
+                onPageChanged: (i) => setState(() => _currentStep = i),
                 children: [
                   _buildStep1BasicInfo(),
                   _buildStep2Pricing(),
@@ -672,10 +665,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     final steps = ['Basic Info', 'Pricing', 'Images', 'Documents'];
     return Container(
       color: AppColors.white,
-      padding: EdgeInsets.symmetric(
-        horizontal: 20.w,
-        vertical: 12.h,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
       child: Row(
         children: steps.asMap().entries.map((entry) {
           final index = entry.key;
@@ -793,9 +783,8 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 color: AppColors.textHint,
               ),
             ),
-            validator: (v) => v == null || v.trim().isEmpty
-                ? 'Brand name is required'
-                : null,
+            validator: (v) =>
+                v == null || v.trim().isEmpty ? 'Brand name is required' : null,
           ),
 
           Gap(16.h),
@@ -805,19 +794,15 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           Gap(8.h),
           categoriesAsync.when(
             loading: () => const CircularProgressIndicator(),
-            error: (_, __) =>
-                const Text('Failed to load categories'),
-            data: (categories) =>
-                _buildCategoryDropdown(categories),
+            error: (_, __) => const Text('Failed to load categories'),
+            data: (categories) => _buildCategoryDropdown(categories),
           ),
 
           Gap(16.h),
 
           // Sub Category (if category selected)
           if (_selectedCategoryId != null)
-            _buildSubCategorySection(
-              categoriesAsync.asData?.value ?? [],
-            ),
+            _buildSubCategorySection(categoriesAsync.asData?.value ?? []),
 
           Gap(16.h),
 
@@ -833,17 +818,21 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 color: AppColors.textHint,
               ),
             ),
-            items: _units
-                .map((u) => DropdownMenuItem(
-                      value: u,
-                      child: Text(
-                        u.toUpperCase(),
-                        style: TextStyle(fontSize: 14.sp),
+            items:
+                (_units.contains(_selectedUnit)
+                        ? _units
+                        : [..._units, _selectedUnit])
+                    .map(
+                      (u) => DropdownMenuItem(
+                        value: u,
+                        child: Text(
+                          u.toUpperCase(),
+                          style: TextStyle(fontSize: 14.sp),
+                        ),
                       ),
-                    ))
-                .toList(),
-            onChanged: (v) =>
-                setState(() => _selectedUnit = v ?? 'ton'),
+                    )
+                    .toList(),
+            onChanged: (v) => setState(() => _selectedUnit = v ?? 'ton'),
           ),
 
           Gap(16.h),
@@ -862,9 +851,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             controller: _stockQtyController,
             keyboardType: TextInputType.number,
             inputFormatters: [
-              FilteringTextInputFormatter.allow(
-                RegExp(r'^\d*\.?\d*'),
-              ),
+              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
             ],
             decoration: InputDecoration(
               hintText: 'e.g. 500 (leave blank = unlimited)',
@@ -907,6 +894,29 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   // CATEGORY DROPDOWN
   // ═══════════════════════════════════════
   Widget _buildCategoryDropdown(List<CategoryModel> categories) {
+    // If the product's category was deleted, keep showing it as a fallback
+    // item so DropdownButtonFormField does not throw its build-time
+    // "exactly one item with value" assertion (black screen / app hang).
+    final displayCategories = List<CategoryModel>.from(categories);
+    if (_selectedCategoryId != null &&
+        !displayCategories.any((c) => c.id == _selectedCategoryId)) {
+      displayCategories.insert(
+        0,
+        CategoryModel(
+          id: _selectedCategoryId!,
+          name: _selectedCategoryName ?? 'Unknown Category',
+          description: '',
+          icon: '📦',
+          productCount: 0,
+          isActive: true,
+          sortOrder: 0,
+          subCategories: const [],
+          createdAt: DateTime(2000),
+          createdBy: '',
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -914,10 +924,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           value: _selectedCategoryId,
           hint: Text(
             'Select Category',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: AppColors.textHint,
-            ),
+            style: TextStyle(fontSize: 14.sp, color: AppColors.textHint),
           ),
           decoration: InputDecoration(
             prefixIcon: Icon(
@@ -926,23 +933,37 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               color: AppColors.textHint,
             ),
           ),
-          items: categories
-              .map((c) => DropdownMenuItem(
-                    value: c.id,
-                    child: Row(
-                      children: [
-                        Text(c.icon),
-                        Gap(8.w),
-                        Text(
-                          c.name,
-                          style: TextStyle(fontSize: 14.sp),
-                        ),
-                      ],
-                    ),
-                  ))
+          items: displayCategories
+              .map(
+                (c) => DropdownMenuItem(
+                  value: c.id,
+                  child: Row(
+                    children: [
+                      Text(c.icon),
+                      Gap(8.w),
+                      Text(c.name, style: TextStyle(fontSize: 14.sp)),
+                    ],
+                  ),
+                ),
+              )
               .toList(),
           onChanged: (v) {
-            final category = categories.firstWhere((c) => c.id == v);
+            if (v == null) return;
+            final category = displayCategories.firstWhere(
+              (c) => c.id == v,
+              orElse: () => CategoryModel(
+                id: v ?? '',
+                name: _selectedCategoryName ?? 'Unknown Category',
+                description: '',
+                icon: '📦',
+                productCount: 0,
+                isActive: true,
+                sortOrder: 0,
+                subCategories: const [],
+                createdAt: DateTime(2000),
+                createdBy: '',
+              ),
+            );
             setState(() {
               _selectedCategoryId = v;
               _selectedCategoryName = category.name;
@@ -950,8 +971,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               _selectedSubCategoryName = null;
             });
           },
-          validator: (v) =>
-              v == null ? 'Please select a category' : null,
+          validator: (v) => v == null ? 'Please select a category' : null,
         ),
         Gap(8.h),
         GestureDetector(
@@ -993,10 +1013,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       builder: (ctx) => AlertDialog(
         title: Text(
           'Add New Category',
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1051,10 +1068,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.adminPrimary,
             ),
-            child: const Text(
-              'Create',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Create', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1071,12 +1085,28 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
 
     if (selectedCat == null) return const SizedBox();
 
+    // If the saved sub-category was removed from its category, keep showing
+    // it as a fallback item so DropdownButtonFormField does not throw its
+    // build-time assertion (black screen / app hang).
+    final subItems = List<SubCategoryModel>.from(selectedCat.subCategories);
+    if (_selectedSubCategoryId != null &&
+        !subItems.any((s) => s.id == _selectedSubCategoryId)) {
+      subItems.insert(
+        0,
+        SubCategoryModel(
+          id: _selectedSubCategoryId!,
+          name: _selectedSubCategoryName ?? 'Unknown Sub Category',
+          icon: '📦',
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildFieldLabel('Sub Category'),
         Gap(8.h),
-        if (selectedCat.subCategories.isEmpty)
+        if (subItems.isEmpty)
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(12.w),
@@ -1087,10 +1117,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             ),
             child: Text(
               'No subcategories yet. Add one below.',
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: AppColors.textHint,
-              ),
+              style: TextStyle(fontSize: 13.sp, color: AppColors.textHint),
             ),
           )
         else
@@ -1098,10 +1125,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             value: _selectedSubCategoryId,
             hint: Text(
               'Select Sub Category (Optional)',
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: AppColors.textHint,
-              ),
+              style: TextStyle(fontSize: 14.sp, color: AppColors.textHint),
             ),
             decoration: InputDecoration(
               prefixIcon: Icon(
@@ -1110,24 +1134,30 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 color: AppColors.textHint,
               ),
             ),
-            items: selectedCat.subCategories
-                .map((s) => DropdownMenuItem(
-                      value: s.id,
-                      child: Row(
-                        children: [
-                          Text(s.icon),
-                          Gap(8.w),
-                          Text(
-                            s.name,
-                            style: TextStyle(fontSize: 14.sp),
-                          ),
-                        ],
-                      ),
-                    ))
+            items: subItems
+                .map(
+                  (s) => DropdownMenuItem(
+                    value: s.id,
+                    child: Row(
+                      children: [
+                        Text(s.icon),
+                        Gap(8.w),
+                        Text(s.name, style: TextStyle(fontSize: 14.sp)),
+                      ],
+                    ),
+                  ),
+                )
                 .toList(),
             onChanged: (v) {
-              final sub = selectedCat.subCategories
-                  .firstWhere((s) => s.id == v);
+              if (v == null) return;
+              final sub = subItems.firstWhere(
+                (s) => s.id == v,
+                orElse: () => SubCategoryModel(
+                  id: v ?? '',
+                  name: _selectedSubCategoryName ?? 'Unknown Sub Category',
+                  icon: '📦',
+                ),
+              );
               setState(() {
                 _selectedSubCategoryId = v;
                 _selectedSubCategoryName = sub.name;
@@ -1172,10 +1202,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       builder: (ctx) => AlertDialog(
         title: Text(
           'Add New Sub Category',
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700),
         ),
         content: TextField(
           controller: nameCtrl,
@@ -1212,10 +1239,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.adminPrimary,
             ),
-            child: const Text(
-              'Create',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Create', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1232,29 +1256,24 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           label: '✅ In Stock',
           isSelected: _availability == ProductAvailability.inStock,
           color: AppColors.approved,
-          onTap: () => setState(
-            () => _availability = ProductAvailability.inStock,
-          ),
+          onTap: () =>
+              setState(() => _availability = ProductAvailability.inStock),
         ),
         Gap(8.w),
         _AvailabilityChip(
           label: '⚠️ Limited',
-          isSelected:
-              _availability == ProductAvailability.limitedStock,
+          isSelected: _availability == ProductAvailability.limitedStock,
           color: AppColors.counter,
-          onTap: () => setState(
-            () => _availability = ProductAvailability.limitedStock,
-          ),
+          onTap: () =>
+              setState(() => _availability = ProductAvailability.limitedStock),
         ),
         Gap(8.w),
         _AvailabilityChip(
           label: '❌ Out',
-          isSelected:
-              _availability == ProductAvailability.outOfStock,
+          isSelected: _availability == ProductAvailability.outOfStock,
           color: AppColors.rejected,
-          onTap: () => setState(
-            () => _availability = ProductAvailability.outOfStock,
-          ),
+          onTap: () =>
+              setState(() => _availability = ProductAvailability.outOfStock),
         ),
       ],
     );
@@ -1346,10 +1365,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           Gap(4.h),
           Text(
             'Requirements below this price will need special approval',
-            style: TextStyle(
-              fontSize: 11.sp,
-              color: AppColors.textHint,
-            ),
+            style: TextStyle(fontSize: 11.sp, color: AppColors.textHint),
           ),
           Gap(8.h),
           _buildPriceField(
@@ -1380,9 +1396,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   }) {
     return TextFormField(
       controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(
-        decimal: false,
-      ),
+      keyboardType: const TextInputType.numberWithOptions(decimal: false),
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       decoration: InputDecoration(
         hintText: hint,
@@ -1499,10 +1513,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             children: [
               _buildFieldLabel('Product Images'),
               Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 10.w,
-                  vertical: 4.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                 decoration: BoxDecoration(
                   color: AppColors.adminPrimary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8.r),
@@ -1523,10 +1534,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
 
           Text(
             'Tap image to set as main photo. First image = main.',
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: AppColors.textHint,
-            ),
+            style: TextStyle(fontSize: 12.sp, color: AppColors.textHint),
           ),
 
           Gap(16.h),
@@ -1540,9 +1548,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               crossAxisSpacing: 10.w,
               mainAxisSpacing: 10.h,
             ),
-            itemCount: totalImages < 10
-                ? totalImages + 1
-                : totalImages,
+            itemCount: totalImages < 10 ? totalImages + 1 : totalImages,
             itemBuilder: (context, index) {
               // Add button
               if (index == totalImages && totalImages < 10) {
@@ -1551,18 +1557,12 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
 
               // Existing images
               if (index < _existingImages.length) {
-                return _buildExistingImageCard(
-                  _existingImages[index],
-                  index,
-                );
+                return _buildExistingImageCard(_existingImages[index], index);
               }
 
               // New images
               final newIndex = index - _existingImages.length;
-              return _buildNewImageCard(
-                _newImages[newIndex],
-                newIndex,
-              );
+              return _buildNewImageCard(_newImages[newIndex], newIndex);
             },
           ),
 
@@ -1582,8 +1582,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 Gap(6.h),
                 _buildTip('🎯 Show product from multiple angles'),
                 Gap(6.h),
-                _buildTip(
-                    '📏 Max 5MB per image, JPG/PNG format'),
+                _buildTip('📏 Max 5MB per image, JPG/PNG format'),
               ],
             ),
           ),
@@ -1649,28 +1648,27 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           Gap(12.h),
 
           // Existing catalog URLs
-          ..._existingCatalogUrls.asMap().entries.map((e) =>
-              _buildFileListTile(
-                name: 'Catalog ${e.key + 1}',
-                icon: Iconsax.document_text,
-                color: AppColors.adminPrimary,
-                url: e.value,
-                onRemove: () => setState(
-                  () => _existingCatalogUrls.removeAt(e.key),
-                ),
-              )),
+          ..._existingCatalogUrls.asMap().entries.map(
+            (e) => _buildFileListTile(
+              name: 'Catalog ${e.key + 1}',
+              icon: Iconsax.document_text,
+              color: AppColors.adminPrimary,
+              url: e.value,
+              onRemove: () =>
+                  setState(() => _existingCatalogUrls.removeAt(e.key)),
+            ),
+          ),
 
           // New catalog files
-          ..._newCatalogFiles.asMap().entries.map((e) =>
-              _buildFileListTile(
-                name: e.value.path.split('/').last,
-                icon: Iconsax.document_text,
-                color: AppColors.adminPrimary,
-                isNew: true,
-                onRemove: () => setState(
-                  () => _newCatalogFiles.removeAt(e.key),
-                ),
-              )),
+          ..._newCatalogFiles.asMap().entries.map(
+            (e) => _buildFileListTile(
+              name: e.value.path.split('/').last,
+              icon: Iconsax.document_text,
+              color: AppColors.adminPrimary,
+              isNew: true,
+              onRemove: () => setState(() => _newCatalogFiles.removeAt(e.key)),
+            ),
+          ),
 
           Gap(8.h),
           OutlinedButton.icon(
@@ -1680,10 +1678,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.adminPrimary,
               side: BorderSide(color: AppColors.adminPrimary),
-              padding: EdgeInsets.symmetric(
-                horizontal: 16.w,
-                vertical: 10.h,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
             ),
           ),
 
@@ -1699,28 +1694,27 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
           Gap(12.h),
 
           // Existing drawing URLs
-          ..._existingDrawingUrls.asMap().entries.map((e) =>
-              _buildFileListTile(
-                name: 'Drawing ${e.key + 1}',
-                icon: Iconsax.pen_tool_2,
-                color: AppColors.counter,
-                url: e.value,
-                onRemove: () => setState(
-                  () => _existingDrawingUrls.removeAt(e.key),
-                ),
-              )),
+          ..._existingDrawingUrls.asMap().entries.map(
+            (e) => _buildFileListTile(
+              name: 'Drawing ${e.key + 1}',
+              icon: Iconsax.pen_tool_2,
+              color: AppColors.counter,
+              url: e.value,
+              onRemove: () =>
+                  setState(() => _existingDrawingUrls.removeAt(e.key)),
+            ),
+          ),
 
           // New drawing files
-          ..._newDrawingFiles.asMap().entries.map((e) =>
-              _buildFileListTile(
-                name: e.value.path.split('/').last,
-                icon: Iconsax.pen_tool_2,
-                color: AppColors.counter,
-                isNew: true,
-                onRemove: () => setState(
-                  () => _newDrawingFiles.removeAt(e.key),
-                ),
-              )),
+          ..._newDrawingFiles.asMap().entries.map(
+            (e) => _buildFileListTile(
+              name: e.value.path.split('/').last,
+              icon: Iconsax.pen_tool_2,
+              color: AppColors.counter,
+              isNew: true,
+              onRemove: () => setState(() => _newDrawingFiles.removeAt(e.key)),
+            ),
+          ),
 
           Gap(8.h),
           OutlinedButton.icon(
@@ -1730,10 +1724,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.counter,
               side: BorderSide(color: AppColors.counter),
-              padding: EdgeInsets.symmetric(
-                horizontal: 16.w,
-                vertical: 10.h,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
             ),
           ),
 
@@ -1805,11 +1796,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                   }
                 }
               },
-              child: Icon(
-                Iconsax.eye,
-                size: 18.sp,
-                color: color,
-              ),
+              child: Icon(Iconsax.eye, size: 18.sp, color: color),
             ),
           ],
           Gap(8.w),
@@ -1901,8 +1888,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       builder: (_) => Container(
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(20.r)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
         ),
         padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 32.h),
         child: Column(
@@ -1942,10 +1928,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 ),
                 subtitle: Text(
                   'This image will appear as the product cover',
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    color: AppColors.textHint,
-                  ),
+                  style: TextStyle(fontSize: 11.sp, color: AppColors.textHint),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -2020,10 +2003,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               bottom: 6,
               left: 6,
               child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 6.w,
-                  vertical: 2.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                 decoration: BoxDecoration(
                   color: AppColors.adminPrimary,
                   borderRadius: BorderRadius.circular(4.r),
@@ -2055,10 +2035,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               bottom: 6,
               left: 6,
               child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 5.w,
-                  vertical: 2.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.45),
                   borderRadius: BorderRadius.circular(4.r),
@@ -2120,14 +2097,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             bottom: 6,
             left: 6,
             child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: 6.w,
-                vertical: 2.h,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
               decoration: BoxDecoration(
-                color: isMain
-                    ? AppColors.adminPrimary
-                    : AppColors.counter,
+                color: isMain ? AppColors.adminPrimary : AppColors.counter,
                 borderRadius: BorderRadius.circular(4.r),
               ),
               child: Row(
@@ -2159,10 +2131,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               bottom: 6,
               right: 30.w,
               child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 5.w,
-                  vertical: 2.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.45),
                   borderRadius: BorderRadius.circular(4.r),
@@ -2205,10 +2174,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       children: [
         Text(
           text,
-          style: TextStyle(
-            fontSize: 12.sp,
-            color: AppColors.textSecondary,
-          ),
+          style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
         ),
       ],
     );
@@ -2268,9 +2234,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             flex: 2,
             child: CustomButton(
               label: _currentStep == 3
-                  ? (widget.isEditing
-                      ? 'Update Product'
-                      : 'Save Product')
+                  ? (widget.isEditing ? 'Update Product' : 'Save Product')
                   : 'Continue',
               isLoading: _isLoading,
               gradient: AppColors.adminGradient,
@@ -2328,14 +2292,9 @@ class _AvailabilityChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(
-          horizontal: 12.w,
-          vertical: 8.h,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
         decoration: BoxDecoration(
-          color: isSelected
-              ? color.withOpacity(0.15)
-              : AppColors.background,
+          color: isSelected ? color.withOpacity(0.15) : AppColors.background,
           borderRadius: BorderRadius.circular(10.r),
           border: Border.all(
             color: isSelected ? color : AppColors.border,
@@ -2346,9 +2305,7 @@ class _AvailabilityChip extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12.sp,
-            fontWeight: isSelected
-                ? FontWeight.w700
-                : FontWeight.w400,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
             color: isSelected ? color : AppColors.textSecondary,
           ),
         ),
@@ -2391,11 +2348,7 @@ class _ImageSourceOption extends StatelessWidget {
                 gradient: AppColors.adminGradient,
                 borderRadius: BorderRadius.circular(14.r),
               ),
-              child: Icon(
-                icon,
-                size: 24.sp,
-                color: AppColors.white,
-              ),
+              child: Icon(icon, size: 24.sp, color: AppColors.white),
             ),
             Gap(10.h),
             Text(

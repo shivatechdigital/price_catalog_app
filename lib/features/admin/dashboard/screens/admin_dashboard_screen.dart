@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
-import 'package:price_catalog_app/features/admin/categories/screens/admin_categories_screen.dart';
 import 'package:price_catalog_app/features/admin/dashboard/screens/admin_home_screen.dart';
 import 'package:price_catalog_app/features/admin/products/screens/admin_products_screen.dart';
 import 'package:price_catalog_app/features/admin/requirements/screens/admin_requirements_screen.dart';
 import 'package:price_catalog_app/features/admin/settings/screens/admin_settings_screen.dart';
-import 'package:price_catalog_app/providers/auth_provider.dart';
-import 'package:price_catalog_app/providers/notification_provider.dart';
+import 'package:price_catalog_app/providers/requirement_provider.dart';
 
 // ═══════════════════════════════════════
 // BOTTOM NAV INDEX PROVIDER
@@ -23,12 +22,9 @@ class AdminDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(adminNavIndexProvider);
-    final currentUser = ref.watch(currentUserProvider);
 
-    // Unread notifications count
-    final unreadCount = currentUser != null
-        ? ref.watch(unreadCountProvider(currentUser.uid))
-        : const AsyncValue.data(0);
+    // Pending requirements count (for the Requirements tab badge)
+    final pendingCount = ref.watch(pendingRequirementsCountProvider);
 
     final screens = const [
       AdminHomeScreen(),
@@ -65,20 +61,17 @@ class AdminDashboardScreen extends ConsumerWidget {
           ),
         );
         if (shouldExit == true && context.mounted) {
-          // Pop using the system navigator
-          Navigator.of(context).pop();
+          // Close the app instead of popping the root route
+          SystemNavigator.pop();
         }
       },
       child: Scaffold(
-        body: IndexedStack(
-          index: currentIndex,
-          children: screens,
-        ),
+        body: IndexedStack(index: currentIndex, children: screens),
         bottomNavigationBar: _buildBottomNav(
           context,
           ref,
           currentIndex,
-          unreadCount.asData?.value ?? 0,
+          pendingCount.asData?.value ?? 0,
         ),
       ),
     );
@@ -91,7 +84,7 @@ class AdminDashboardScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     int currentIndex,
-    int unreadCount,
+    int pendingCount,
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -106,10 +99,7 @@ class AdminDashboardScreen extends ConsumerWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: 8.w,
-            vertical: 8.h,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
           child: Row(
             children: [
               Expanded(
@@ -117,9 +107,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                   icon: Icons.dashboard_rounded,
                   label: 'Dashboard',
                   isActive: currentIndex == 0,
-                  onTap: () => ref
-                      .read(adminNavIndexProvider.notifier)
-                      .state = 0,
+                  onTap: () =>
+                      ref.read(adminNavIndexProvider.notifier).state = 0,
                 ),
               ),
               Expanded(
@@ -127,9 +116,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                   icon: Icons.inventory_2_rounded,
                   label: 'Products',
                   isActive: currentIndex == 1,
-                  onTap: () => ref
-                      .read(adminNavIndexProvider.notifier)
-                      .state = 1,
+                  onTap: () =>
+                      ref.read(adminNavIndexProvider.notifier).state = 1,
                 ),
               ),
               Expanded(
@@ -137,10 +125,9 @@ class AdminDashboardScreen extends ConsumerWidget {
                   icon: Icons.assignment_rounded,
                   label: 'Requirements',
                   isActive: currentIndex == 2,
-                  badgeCount: unreadCount,
-                  onTap: () => ref
-                      .read(adminNavIndexProvider.notifier)
-                      .state = 2,
+                  badgeCount: pendingCount,
+                  onTap: () =>
+                      ref.read(adminNavIndexProvider.notifier).state = 2,
                 ),
               ),
               Expanded(
@@ -148,9 +135,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                   icon: Iconsax.user,
                   label: 'Profile',
                   isActive: currentIndex == 3,
-                  onTap: () => ref
-                      .read(adminNavIndexProvider.notifier)
-                      .state = 3,
+                  onTap: () =>
+                      ref.read(adminNavIndexProvider.notifier).state = 3,
                 ),
               ),
             ],
@@ -205,9 +191,7 @@ class _NavItem extends StatelessWidget {
                 Icon(
                   icon,
                   size: 20.sp,
-                  color: isActive
-                      ? AppColors.adminPrimary
-                      : AppColors.textHint,
+                  color: isActive ? AppColors.adminPrimary : AppColors.textHint,
                 ),
                 if (badgeCount > 0)
                   Positioned(
@@ -239,12 +223,8 @@ class _NavItem extends StatelessWidget {
               duration: const Duration(milliseconds: 250),
               style: TextStyle(
                 fontSize: 10.sp,
-                fontWeight: isActive
-                    ? FontWeight.w700
-                    : FontWeight.w500,
-                color: isActive
-                    ? AppColors.adminPrimary
-                    : AppColors.textHint,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                color: isActive ? AppColors.adminPrimary : AppColors.textHint,
               ),
               child: Text(label),
             ),
@@ -253,4 +233,4 @@ class _NavItem extends StatelessWidget {
       ),
     );
   }
-} 
+}

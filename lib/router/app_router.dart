@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:price_catalog_app/core/services/navigation_service.dart';
 import 'package:price_catalog_app/features/admin/dashboard/screens/admin_dashboard_screen.dart';
+import 'package:price_catalog_app/features/admin/products/screens/admin_products_screen.dart';
+import 'package:price_catalog_app/features/admin/requirements/screens/admin_requirement_route_screen.dart';
+import 'package:price_catalog_app/features/admin/traders/screens/admin_traders_screen.dart';
 import 'package:price_catalog_app/features/auth/screens/login_screen.dart';
 import 'package:price_catalog_app/features/auth/screens/register_admin_screen.dart';
 import 'package:price_catalog_app/features/auth/screens/register_screen.dart';
@@ -9,6 +13,7 @@ import 'package:price_catalog_app/features/auth/screens/complete_profile_screen.
 import 'package:price_catalog_app/features/auth/screens/pending_approval_screen.dart';
 import 'package:price_catalog_app/features/splash/splash_screen.dart';
 import 'package:price_catalog_app/features/trader/dashboard/screens/trader_dashboard_screen.dart';
+import 'package:price_catalog_app/features/trader/requirements/screens/trader_requirement_route_screen.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 
 // ═══════════════════════════════════════
@@ -61,6 +66,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
     refreshListenable: GoRouterRefreshStream(
@@ -203,10 +209,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // More admin routes will be added as we build them
-      // GoRoute(path: AppRoutes.adminCategories, ...),
-      // GoRoute(path: AppRoutes.adminProducts, ...),
-      // etc.
+      // Admin notification deep links
+      GoRoute(
+        path: AppRoutes.adminProducts,
+        name: 'adminProducts',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const AdminProductsScreen(),
+          transitionsBuilder: _fadeTransition,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.adminTraders,
+        name: 'adminTraders',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const AdminTradersScreen(),
+          transitionsBuilder: _fadeTransition,
+        ),
+      ),
+      GoRoute(
+        path: '/admin/requirements/:requirementId',
+        name: 'adminRequirementDetailById',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: AdminRequirementRouteScreen(
+            requirementId: state.pathParameters['requirementId']!,
+          ),
+          transitionsBuilder: _fadeTransition,
+        ),
+      ),
 
       // ═══════════════════════════════════════
       // TRADER ROUTES
@@ -221,15 +253,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // More trader routes will be added as we build them
+      // Trader notification deep link
+      GoRoute(
+        path: '/trader/requirements/:requirementId',
+        name: 'traderRequirementDetailById',
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: TraderRequirementRouteScreen(
+            requirementId: state.pathParameters['requirementId']!,
+          ),
+          transitionsBuilder: _fadeTransition,
+        ),
+      ),
     ],
 
     // Error page
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Text('Page not found: ${state.error}'),
-      ),
-    ),
+    errorBuilder: (context, state) =>
+        Scaffold(body: Center(child: Text('Page not found: ${state.error}'))),
   );
 });
 
@@ -255,10 +295,7 @@ Widget _slideTransition(
     position: Tween<Offset>(
       begin: const Offset(1.0, 0.0),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeInOut,
-    )),
+    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeInOut)),
     child: child,
   );
 }
@@ -270,8 +307,8 @@ class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
     _subscription = stream.asBroadcastStream().listen(
-          (dynamic _) => notifyListeners(),
-        );
+      (dynamic _) => notifyListeners(),
+    );
   }
 
   late final dynamic _subscription;

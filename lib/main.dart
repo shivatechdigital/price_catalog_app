@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:price_catalog_app/core/services/navigation_service.dart';
 import 'package:price_catalog_app/core/services/notification_service.dart';
 import 'package:price_catalog_app/core/theme/app_theme.dart';
 import 'package:price_catalog_app/core/utils/permission_helper.dart';
@@ -35,9 +36,6 @@ void main() async {
   // Background notification handler
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // Notification Service Init
-  await NotificationService.initialize();
-
   // Screen Orientation Lock
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -52,11 +50,7 @@ void main() async {
     ),
   );
 
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerStatefulWidget {
@@ -72,6 +66,9 @@ class _MyAppState extends ConsumerState<MyApp> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       PermissionHelper.requestAllPermissions(context);
+      NotificationService.initialize().then((_) async {
+        await processPendingNotification();
+      });
     });
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -64,14 +65,11 @@ class TraderDashboardScreen extends ConsumerWidget {
           ),
         );
         if (shouldExit == true && context.mounted) {
-          Navigator.of(context).pop();
+          SystemNavigator.pop();
         }
       },
       child: Scaffold(
-        body: IndexedStack(
-          index: currentIndex,
-          children: screens,
-        ),
+        body: IndexedStack(index: currentIndex, children: screens),
         bottomNavigationBar: _buildBottomNav(
           context,
           ref,
@@ -105,10 +103,7 @@ class TraderDashboardScreen extends ConsumerWidget {
       ),
       child: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: 8.w,
-            vertical: 8.h,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -116,36 +111,32 @@ class TraderDashboardScreen extends ConsumerWidget {
                 icon: Icons.home_rounded,
                 label: 'Home',
                 isActive: currentIndex == 0,
-                onTap: () => ref
-                    .read(traderNavIndexProvider.notifier)
-                    .state = 0,
+                onTap: () =>
+                    ref.read(traderNavIndexProvider.notifier).state = 0,
                 primaryColor: AppColors.traderPrimary,
               ),
               _TraderNavItem(
                 icon: Icons.grid_view_rounded,
                 label: 'Catalog',
                 isActive: currentIndex == 1,
-                onTap: () => ref
-                    .read(traderNavIndexProvider.notifier)
-                    .state = 1,
+                onTap: () =>
+                    ref.read(traderNavIndexProvider.notifier).state = 1,
                 primaryColor: AppColors.traderPrimary,
               ),
               _TraderNavItem(
                 icon: Icons.assignment_rounded,
                 label: 'My Deals',
                 isActive: currentIndex == 2,
-                onTap: () => ref
-                    .read(traderNavIndexProvider.notifier)
-                    .state = 2,
+                onTap: () =>
+                    ref.read(traderNavIndexProvider.notifier).state = 2,
                 primaryColor: AppColors.traderPrimary,
               ),
               _TraderNavItem(
                 icon: Iconsax.user,
                 label: 'Profile',
                 isActive: currentIndex == 3,
-                onTap: () => ref
-                    .read(traderNavIndexProvider.notifier)
-                    .state = 3,
+                onTap: () =>
+                    ref.read(traderNavIndexProvider.notifier).state = 3,
                 primaryColor: AppColors.traderPrimary,
               ),
             ],
@@ -188,9 +179,7 @@ class _TraderNavItem extends StatelessWidget {
           vertical: 6.h,
         ),
         decoration: BoxDecoration(
-          color: isActive
-              ? primaryColor.withOpacity(0.12)
-              : Colors.transparent,
+          color: isActive ? primaryColor.withOpacity(0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: Column(
@@ -202,9 +191,7 @@ class _TraderNavItem extends StatelessWidget {
                 Icon(
                   icon,
                   size: 20.sp,
-                  color: isActive
-                      ? primaryColor
-                      : AppColors.textHint,
+                  color: isActive ? primaryColor : AppColors.textHint,
                 ),
                 if (badgeCount > 0)
                   Positioned(
@@ -236,12 +223,8 @@ class _TraderNavItem extends StatelessWidget {
               duration: const Duration(milliseconds: 250),
               style: TextStyle(
                 fontSize: 10.sp,
-                fontWeight: isActive
-                    ? FontWeight.w700
-                    : FontWeight.w500,
-                color: isActive
-                    ? primaryColor
-                    : AppColors.textHint,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                color: isActive ? primaryColor : AppColors.textHint,
               ),
               child: Text(label),
             ),
