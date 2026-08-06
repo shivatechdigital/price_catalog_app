@@ -16,7 +16,7 @@ on:
       build_ios_signed_ipa:
         description: Build signed iOS IPA artifact (requires secrets)
         required: true
-        default: false
+        default: true
         type: boolean
       ios_export_method:
         description: iOS export method for signed IPA
