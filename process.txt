@@ -1,0 +1,15 @@
+java -version
+keytool -help
+
+keytool -genkeypair -v -keystore upload-keystore.jks -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+
+keytool -list -v -keystore upload-keystore.jks
+
+[Convert]::ToBase64String([IO.File]::ReadAllBytes((Resolve-Path ".\upload-keystore.jks"))) | Set-Content -NoNewline -Path .\keystore.base64
+Get-Content -Raw .\keystore.base64
+
+
+ANDROID_KEYSTORE_BASE64 = keystore.base64 ka pura content
+ANDROID_KEYSTORE_PASSWORD = step 3 me keystore password
+ANDROID_KEY_ALIAS = upload
+ANDROID_KEY_PASSWORD = step 3 me key password
