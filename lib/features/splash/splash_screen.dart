@@ -19,6 +19,7 @@ class SplashScreen extends ConsumerStatefulWidget {
 class _SplashScreenState extends ConsumerState<SplashScreen> {
   bool _hasNavigated = false;
   Timer? _fallbackTimer;
+  ProviderSubscription<AuthState>? _authSubscription;
 
   @override
   void initState() {
@@ -34,10 +35,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   void _listenAuthState() {
-    ref.listen<AuthState>(authStateProvider, (previous, next) {
-      if (_hasNavigated) return;
-      _navigateForState(next);
-    });
+    _authSubscription = ref.listenManual<AuthState>(
+      authStateProvider,
+      (previous, next) {
+        if (_hasNavigated) return;
+        _navigateForState(next);
+      },
+      fireImmediately: true,
+    );
   }
 
   void _navigateForState(AuthState authState) {
@@ -75,6 +80,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void dispose() {
     _fallbackTimer?.cancel();
+    _authSubscription?.close();
     super.dispose();
   }
 

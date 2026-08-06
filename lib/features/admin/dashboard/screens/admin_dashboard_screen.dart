@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
+import 'package:price_catalog_app/core/services/app_exit_service.dart';
 import 'package:price_catalog_app/features/admin/dashboard/screens/admin_home_screen.dart';
 import 'package:price_catalog_app/features/admin/products/screens/admin_products_screen.dart';
 import 'package:price_catalog_app/features/admin/requirements/screens/admin_requirements_screen.dart';
@@ -61,8 +61,7 @@ class AdminDashboardScreen extends ConsumerWidget {
           ),
         );
         if (shouldExit == true && context.mounted) {
-          // Close the app instead of popping the root route
-          SystemNavigator.pop();
+          await AppExitService.exitApp();
         }
       },
       child: Scaffold(

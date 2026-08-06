@@ -80,8 +80,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final currentPath = state.matchedLocation;
 
       return authState.when(
-        initial: () => null,
-        loading: () => null,
+        initial: () {
+          if (currentPath == AppRoutes.splash) return null;
+          return AppRoutes.splash;
+        },
+        loading: () {
+          if (currentPath == AppRoutes.splash) return null;
+          return AppRoutes.splash;
+        },
         unauthenticated: () {
           // Public routes - allow access
           final publicRoutes = [

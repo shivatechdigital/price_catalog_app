@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
+import 'package:price_catalog_app/core/services/app_exit_service.dart';
 import 'package:price_catalog_app/features/trader/catalog/screens/trader_catalog_screen.dart';
 import 'package:price_catalog_app/features/trader/dashboard/screens/trader_home_screen.dart';
 import 'package:price_catalog_app/features/trader/notifications/screens/trader_notifications_screen.dart';
@@ -65,7 +65,7 @@ class TraderDashboardScreen extends ConsumerWidget {
           ),
         );
         if (shouldExit == true && context.mounted) {
-          SystemNavigator.pop();
+          await AppExitService.exitApp();
         }
       },
       child: Scaffold(
