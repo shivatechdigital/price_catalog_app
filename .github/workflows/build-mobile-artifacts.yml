@@ -74,7 +74,7 @@ jobs:
   build-android-signed-aab:
     name: Build Android Signed AAB
     runs-on: ubuntu-latest
-    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
 
     env:
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
