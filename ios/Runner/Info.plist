@@ -44,6 +44,10 @@
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>Anandeshwar Traders saves generated catalog images to your photo library only when you choose to export or share them.</string>
 
+    <!-- Location (required by linked SDK APIs) -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Anandeshwar Traders may request location access while using the app to support location-related features when available.</string>
+
     <!-- ═══════════════════════════════════════ -->
     <!-- FIREBASE & PUSH NOTIFICATIONS -->
     <!-- ═══════════════════════════════════════ -->
