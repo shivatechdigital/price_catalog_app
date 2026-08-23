@@ -276,6 +276,38 @@ class TraderProfileScreen extends ConsumerWidget {
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: GestureDetector(
+                    onTap: () => _confirmDeleteAccount(context, ref),
+                    child: Container(
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        color: AppColors.rejectedLight,
+                        borderRadius: BorderRadius.circular(14.r),
+                        border: Border.all(
+                          color: AppColors.rejected.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Iconsax.trash, color: AppColors.rejected, size: 20.sp),
+                          Gap(10.w),
+                          Text(
+                            'Delete Account',
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              color: AppColors.rejected,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Gap(12.h),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: GestureDetector(
                     onTap: () => ref.read(authStateProvider.notifier).logout(),
                     child: Container(
                       padding: EdgeInsets.all(16.w),
@@ -312,6 +344,34 @@ class TraderProfileScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Account?'),
+        content: const Text(
+          'Your account profile will be permanently deleted. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.rejected),
+            child: const Text('Delete Account'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+    final result = await ref.read(authStateProvider.notifier).deleteAccount();
+    if (!context.mounted || result.isSuccess) return;
+    CustomSnackbar.showError(context, result.errorMessage!);
   }
 }
 

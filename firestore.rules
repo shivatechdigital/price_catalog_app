@@ -84,8 +84,8 @@ service cloud.firestore {
         || isAdmin()
       );
 
-      // Delete: Only admin
-      allow delete: if isAdmin();
+      // Delete: Users may delete their own profile; admins may delete any user.
+      allow delete: if isLoggedIn() && (isOwner(userId) || isAdmin());
 
       // Helper: User can update these fields on their own profile
       function allowedFieldsForUser() {

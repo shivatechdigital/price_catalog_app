@@ -433,6 +433,32 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<AuthResult> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return const AuthResult.error('No user is currently signed in.');
+    }
+
+    try {
+      await _firestore.collection('users').doc(user.uid).delete();
+      await user.delete();
+      _ref.read(currentUserProvider.notifier).state = null;
+      _updateState(const AuthUnauthenticated());
+      return const AuthResult.success();
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        return const AuthResult.error(
+          'For your security, please log out, log in again, and retry account deletion.',
+        );
+      }
+      return AuthResult.error(_getAuthErrorMessage(e.code));
+    } catch (e) {
+      return const AuthResult.error(
+        'Unable to delete your account right now. Please try again.',
+      );
+    }
+  }
+
   // ═══════════════════════════════════════
   // FORGOT PASSWORD
   // ═══════════════════════════════════════
