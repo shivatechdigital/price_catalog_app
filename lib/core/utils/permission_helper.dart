@@ -7,8 +7,7 @@ class PermissionHelper {
   // ═══════════════════════════════════════
   // REQUEST CAMERA PERMISSION
   // ═══════════════════════════════════════
-  static Future<bool> requestCameraPermission(
-      BuildContext context) async {
+  static Future<bool> requestCameraPermission(BuildContext context) async {
     final status = await Permission.camera.request();
 
     if (status.isGranted) return true;
@@ -27,8 +26,7 @@ class PermissionHelper {
   // ═══════════════════════════════════════
   // REQUEST STORAGE PERMISSION
   // ═══════════════════════════════════════
-  static Future<bool> requestStoragePermission(
-      BuildContext context) async {
+  static Future<bool> requestStoragePermission(BuildContext context) async {
     Permission permission;
 
     if (await _isAndroid13OrAbove()) {
@@ -97,8 +95,7 @@ class PermissionHelper {
   // ═══════════════════════════════════════
   // CHECK ALL PERMISSIONS AT STARTUP
   // ═══════════════════════════════════════
-  static Future<void> requestAllPermissions(
-      BuildContext context) async {
+  static Future<void> requestAllPermissions(BuildContext context) async {
     await requestNotificationPermission(context);
   }
 
@@ -106,8 +103,7 @@ class PermissionHelper {
   static Future<bool> _isAndroid13OrAbove() async {
     try {
       final status = await Permission.photos.status;
-      return status != PermissionStatus.permanentlyDenied ||
-          true;
+      return status != PermissionStatus.permanentlyDenied || true;
     } catch (_) {
       return false;
     }

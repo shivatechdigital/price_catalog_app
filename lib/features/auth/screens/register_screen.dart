@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,6 +8,7 @@ import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
+import 'package:price_catalog_app/features/auth/screens/legal_information_screen.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/shared/widgets/custom_button.dart';
 import 'package:price_catalog_app/shared/widgets/custom_snackbar.dart';
@@ -554,6 +556,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       color: AppColors.adminPrimary,
                       fontWeight: FontWeight.w600,
                     ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () => _openLegal(showTerms: true),
                   ),
                   const TextSpan(text: ' and '),
                   TextSpan(
@@ -562,12 +566,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       color: AppColors.adminPrimary,
                       fontWeight: FontWeight.w600,
                     ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () => _openLegal(),
                   ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _openLegal({bool showTerms = false}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LegalInformationScreen(
+          title: showTerms ? 'Terms & Conditions' : 'Privacy Policy',
+          showTerms: showTerms,
+        ),
       ),
     );
   }

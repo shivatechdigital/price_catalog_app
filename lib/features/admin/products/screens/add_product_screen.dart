@@ -13,6 +13,7 @@ import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
+import 'package:price_catalog_app/core/utils/permission_helper.dart';
 import 'package:price_catalog_app/data/models/category_model.dart';
 import 'package:price_catalog_app/data/models/product_model.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
@@ -152,6 +153,11 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       }
       return;
     }
+
+    final permissionGranted = source == ImageSource.camera
+        ? await PermissionHelper.requestCameraPermission(context)
+        : await PermissionHelper.requestStoragePermission(context);
+    if (!permissionGranted || !mounted) return;
 
     try {
       if (source == ImageSource.gallery) {

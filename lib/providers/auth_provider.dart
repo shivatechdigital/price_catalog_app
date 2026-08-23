@@ -433,13 +433,50 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<AuthResult> deleteAccount() async {
+  Future<AuthResult> deleteAccount({String? password}) async {
     final user = _auth.currentUser;
     if (user == null) {
       return const AuthResult.error('No user is currently signed in.');
     }
 
     try {
+      if (password != null && password.isNotEmpty && user.email != null) {
+        final credential = EmailAuthProvider.credential(
+          email: user.email!,
+          password: password,
+        );
+        await user.reauthenticateWithCredential(credential);
+      }
+
+      final notificationSnapshot = await _firestore
+          .collection('notifications')
+          .doc(user.uid)
+          .collection('items')
+          .get();
+      if (notificationSnapshot.docs.isNotEmpty) {
+        final batch = _firestore.batch();
+        for (final notification in notificationSnapshot.docs) {
+          batch.delete(notification.reference);
+        }
+        await batch.commit();
+      }
+
+      for (final path in [
+        'users/${user.uid}',
+        'trader_documents/${user.uid}',
+        'traders/${user.uid}/catalog',
+        'exports/${user.uid}',
+      ]) {
+        try {
+          final listing = await FirebaseService.storage.ref(path).listAll();
+          for (final file in listing.items) {
+            await file.delete();
+          }
+        } catch (_) {
+          // A missing or already-cleaned storage folder should not block deletion.
+        }
+      }
+
       await _firestore.collection('users').doc(user.uid).delete();
       await user.delete();
       _ref.read(currentUserProvider.notifier).state = null;

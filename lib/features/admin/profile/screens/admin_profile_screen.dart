@@ -124,38 +124,6 @@ class AdminProfileScreen extends ConsumerWidget {
                                       horizontal: 8.w,
                                       vertical: 4.h,
                                     ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w),
-                          child: GestureDetector(
-                            onTap: () => _confirmDeleteAccount(context, ref),
-                            child: Container(
-                              padding: EdgeInsets.all(16.w),
-                              decoration: BoxDecoration(
-                                color: AppColors.rejectedLight,
-                                borderRadius: BorderRadius.circular(14.r),
-                                border: Border.all(
-                                  color: AppColors.rejected.withOpacity(0.2),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Iconsax.trash, color: AppColors.rejected, size: 20.sp),
-                                  Gap(10.w),
-                                  Text(
-                                    'Delete Account',
-                                    style: TextStyle(
-                                      fontSize: 15.sp,
-                                      color: AppColors.rejected,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        Gap(12.h),
                                     decoration: BoxDecoration(
                                       color: AppColors.white.withOpacity(0.2),
                                       borderRadius:
@@ -245,6 +213,21 @@ class AdminProfileScreen extends ConsumerWidget {
                           ),
                         ),
                         color: const Color(0xFF7C3AED),
+                      ),
+                      Gap(12.h),
+                      _ProfileActionTile(
+                        icon: Iconsax.shield_tick,
+                        label: 'Privacy Policy',
+                        subtitle: 'View privacy and data deletion details',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LegalInformationScreen(
+                              title: 'Privacy Policy',
+                            ),
+                          ),
+                        ),
+                        color: AppColors.textSecondary,
                       ),
                       Gap(12.h),
                       _ProfileActionTile(
@@ -348,6 +331,43 @@ class AdminProfileScreen extends ConsumerWidget {
 
                 Gap(28.h),
 
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: GestureDetector(
+                    onTap: () => _confirmDeleteAccount(context, ref),
+                    child: Container(
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        color: AppColors.rejectedLight,
+                        borderRadius: BorderRadius.circular(14.r),
+                        border: Border.all(
+                          color: AppColors.rejected.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Iconsax.trash,
+                            color: AppColors.rejected,
+                            size: 20.sp,
+                          ),
+                          Gap(10.w),
+                          Text(
+                            'Delete Account',
+                            style: TextStyle(
+                              fontSize: 15.sp,
+                              color: AppColors.rejected,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Gap(12.h),
+
                 // ═══════════════════════════════════════
                 // LOGOUT BUTTON
                 // ═══════════════════════════════════════
@@ -397,12 +417,28 @@ class AdminProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
+    final passwordController = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Account?'),
-        content: const Text(
-          'Your admin account profile will be permanently deleted. This action cannot be undone.',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Your admin account profile and uploaded personal files will be permanently deleted. This action cannot be undone.',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Confirm password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -418,8 +454,12 @@ class AdminProfileScreen extends ConsumerWidget {
       ),
     );
 
+    final password = passwordController.text;
+    passwordController.dispose();
     if (confirmed != true || !context.mounted) return;
-    final result = await ref.read(authStateProvider.notifier).deleteAccount();
+    final result = await ref.read(authStateProvider.notifier).deleteAccount(
+          password: password,
+        );
     if (!context.mounted || result.isSuccess) return;
     CustomSnackbar.showError(context, result.errorMessage!);
   }

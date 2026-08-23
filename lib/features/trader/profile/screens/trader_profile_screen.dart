@@ -21,10 +21,9 @@ class TraderProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
     final unreadCount = currentUser != null
-        ? ref.watch(unreadCountProvider(currentUser.uid)).maybeWhen(
-              data: (count) => count,
-              orElse: () => 0,
-            )
+        ? ref
+              .watch(unreadCountProvider(currentUser.uid))
+              .maybeWhen(data: (count) => count, orElse: () => 0)
         : 0;
 
     return Scaffold(
@@ -215,6 +214,21 @@ class TraderProfileScreen extends ConsumerWidget {
                         color: AppColors.adminPrimary,
                       ),
                     ],
+                    Gap(12.h),
+                    _ProfileActionTile(
+                      icon: Iconsax.shield_tick,
+                      label: 'Privacy Policy',
+                      subtitle: 'View privacy and data deletion details',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LegalInformationScreen(
+                            title: 'Privacy Policy',
+                          ),
+                        ),
+                      ),
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
                 Gap(24.h),
@@ -289,7 +303,11 @@ class TraderProfileScreen extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Iconsax.trash, color: AppColors.rejected, size: 20.sp),
+                          Icon(
+                            Iconsax.trash,
+                            color: AppColors.rejected,
+                            size: 20.sp,
+                          ),
                           Gap(10.w),
                           Text(
                             'Delete Account',
@@ -346,13 +364,32 @@ class TraderProfileScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
+  Future<void> _confirmDeleteAccount(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final passwordController = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Account?'),
-        content: const Text(
-          'Your account profile will be permanently deleted. This action cannot be undone.',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Your account profile and uploaded personal files will be permanently deleted. This action cannot be undone.',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Confirm password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -368,8 +405,12 @@ class TraderProfileScreen extends ConsumerWidget {
       ),
     );
 
+    final password = passwordController.text;
+    passwordController.dispose();
     if (confirmed != true || !context.mounted) return;
-    final result = await ref.read(authStateProvider.notifier).deleteAccount();
+    final result = await ref
+        .read(authStateProvider.notifier)
+        .deleteAccount(password: password);
     if (!context.mounted || result.isSuccess) return;
     CustomSnackbar.showError(context, result.errorMessage!);
   }
@@ -412,11 +453,7 @@ class _ProfileActionTile extends StatelessWidget {
                 color: color.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(14.r),
               ),
-              child: Icon(
-                icon,
-                size: 22.sp,
-                color: color,
-              ),
+              child: Icon(icon, size: 22.sp, color: color),
             ),
             Gap(12.w),
             Expanded(
@@ -473,10 +510,7 @@ class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _DetailRow({
-    required this.label,
-    required this.value,
-  });
+  const _DetailRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -489,10 +523,7 @@ class _DetailRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textHint,
-                  ),
+                  style: TextStyle(fontSize: 12.sp, color: AppColors.textHint),
                 ),
               ),
               Expanded(
@@ -521,14 +552,13 @@ class _DetailRow extends StatelessWidget {
 class _ExportRequirementsActionTile extends ConsumerWidget {
   final String currentUserId;
 
-  const _ExportRequirementsActionTile({
-    required this.currentUserId,
-  });
+  const _ExportRequirementsActionTile({required this.currentUserId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final requirementsAsync =
-        ref.watch(traderRequirementsProvider(currentUserId));
+    final requirementsAsync = ref.watch(
+      traderRequirementsProvider(currentUserId),
+    );
 
     return requirementsAsync.when(
       loading: () => Container(
@@ -619,13 +649,13 @@ class _ExportRequirementsActionTile extends ConsumerWidget {
                         TextButton(
                           onPressed: () async {
                             Navigator.pop(ctx);
-                            final success = await RequirementExportService
-                                .shareRequirementsExport(
-                              requirements,
-                              range: ExportRange.all,
-                              fileNamePrefix: 'My_Requirements',
-                              format: ExportFormat.pdf,
-                            );
+                            final success =
+                                await RequirementExportService.shareRequirementsExport(
+                                  requirements,
+                                  range: ExportRange.all,
+                                  fileNamePrefix: 'My_Requirements',
+                                  format: ExportFormat.pdf,
+                                );
 
                             if (context.mounted) {
                               CustomSnackbar.showSuccess(

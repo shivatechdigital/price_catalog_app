@@ -25,8 +25,10 @@ class NotificationService {
   // ═══════════════════════════════════════
   // INITIALIZE
   // ═══════════════════════════════════════
-  static Future<void> initialize() async {
-    await _requestPermission();
+  static Future<void> initialize({bool requestPermission = false}) async {
+    if (requestPermission) {
+      await _requestPermission();
+    }
     await _initializeLocalNotifications();
     await _createAndroidNotificationChannel();
 
@@ -114,9 +116,9 @@ class NotificationService {
       '@mipmap/ic_launcher',
     );
     final iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     await _localNotifications.initialize(

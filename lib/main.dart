@@ -8,6 +8,7 @@ import 'package:price_catalog_app/core/services/navigation_service.dart';
 import 'package:price_catalog_app/core/services/notification_service.dart';
 import 'package:price_catalog_app/core/theme/app_theme.dart';
 import 'package:price_catalog_app/core/utils/permission_helper.dart';
+import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/router/app_router.dart';
 
 // Background message handler - must be top level
@@ -65,7 +66,6 @@ class _MyAppState extends ConsumerState<MyApp> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      PermissionHelper.requestAllPermissions(context);
       NotificationService.initialize().then((_) async {
         await processPendingNotification();
       });
@@ -74,6 +74,15 @@ class _MyAppState extends ConsumerState<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AuthState>(authStateProvider, (_, next) {
+      if (next is AuthAuthenticatedAdmin || next is AuthAuthenticatedTrader) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) {
+            PermissionHelper.requestNotificationPermission(context);
+          }
+        });
+      }
+    });
     final router = ref.watch(appRouterProvider);
 
     return ScreenUtilInit(
