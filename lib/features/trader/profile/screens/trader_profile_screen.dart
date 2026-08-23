@@ -6,6 +6,7 @@ import 'package:gap/gap.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/core/services/requirement_export_service.dart';
+import 'package:price_catalog_app/features/auth/screens/legal_information_screen.dart';
 import 'package:price_catalog_app/features/trader/reports/screens/trader_reports_screen.dart';
 import 'package:price_catalog_app/features/auth/screens/profile_edit_screen.dart';
 import 'package:price_catalog_app/features/trader/notifications/screens/trader_notifications_screen.dart';
