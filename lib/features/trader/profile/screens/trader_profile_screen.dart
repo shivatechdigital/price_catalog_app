@@ -213,22 +213,22 @@ class TraderProfileScreen extends ConsumerWidget {
                         },
                         color: AppColors.adminPrimary,
                       ),
-                    ],
-                    Gap(12.h),
-                    _ProfileActionTile(
-                      icon: Iconsax.shield_tick,
-                      label: 'Privacy Policy',
-                      subtitle: 'View privacy and data deletion details',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const LegalInformationScreen(
-                            title: 'Privacy Policy',
+                      Gap(12.h),
+                      _ProfileActionTile(
+                        icon: Iconsax.shield_tick,
+                        label: 'Privacy Policy',
+                        subtitle: 'View privacy and data deletion details',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LegalInformationScreen(
+                              title: 'Privacy Policy',
+                            ),
                           ),
                         ),
+                        color: AppColors.textSecondary,
                       ),
-                      color: AppColors.textSecondary,
-                    ),
+                    ],
                   ),
                 ),
                 Gap(24.h),
