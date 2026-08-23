@@ -8,6 +8,7 @@ import 'package:price_catalog_app/core/constants/app_colors.dart';
 import 'package:price_catalog_app/core/services/requirement_export_service.dart';
 import 'package:price_catalog_app/features/admin/reports/screens/admin_reports_screen.dart';
 import 'package:price_catalog_app/features/auth/screens/profile_edit_screen.dart';
+import 'package:price_catalog_app/features/auth/screens/legal_information_screen.dart';
 import 'package:price_catalog_app/providers/auth_provider.dart';
 import 'package:price_catalog_app/providers/notification_provider.dart';
 import 'package:price_catalog_app/providers/requirement_provider.dart';
@@ -20,10 +21,9 @@ class AdminProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
     final unreadCount = currentUser != null
-        ? ref.watch(unreadCountProvider(currentUser.uid)).maybeWhen(
-              data: (count) => count,
-              orElse: () => 0,
-            )
+        ? ref
+              .watch(unreadCountProvider(currentUser.uid))
+              .maybeWhen(data: (count) => count, orElse: () => 0)
         : 0;
 
     return Scaffold(
@@ -50,7 +50,6 @@ class AdminProfileScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Gap(20.h),
-                Padding(
                 // ═══════════════════════════════════════
                 // PROFILE HEADER WITH GRADIENT
                 // ═══════════════════════════════════════
@@ -126,8 +125,7 @@ class AdminProfileScreen extends ConsumerWidget {
                                     ),
                                     decoration: BoxDecoration(
                                       color: AppColors.white.withOpacity(0.2),
-                                      borderRadius:
-                                          BorderRadius.circular(8.r),
+                                      borderRadius: BorderRadius.circular(8.r),
                                     ),
                                     child: Text(
                                       'Admin',
@@ -315,10 +313,7 @@ class AdminProfileScreen extends ConsumerWidget {
                           label: 'Phone',
                           value: currentUser?.phone ?? '-',
                         ),
-                        _DetailRow(
-                          label: 'Role',
-                          value: 'Administrator',
-                        ),
+                        _DetailRow(label: 'Role', value: 'Administrator'),
                         _DetailRow(
                           label: 'Status',
                           value: 'Active',
@@ -416,7 +411,10 @@ class AdminProfileScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
+  Future<void> _confirmDeleteAccount(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final passwordController = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
@@ -457,9 +455,9 @@ class AdminProfileScreen extends ConsumerWidget {
     final password = passwordController.text;
     passwordController.dispose();
     if (confirmed != true || !context.mounted) return;
-    final result = await ref.read(authStateProvider.notifier).deleteAccount(
-          password: password,
-        );
+    final result = await ref
+        .read(authStateProvider.notifier)
+        .deleteAccount(password: password);
     if (!context.mounted || result.isSuccess) return;
     CustomSnackbar.showError(context, result.errorMessage!);
   }
@@ -505,11 +503,7 @@ class _ProfileActionTile extends StatelessWidget {
                 color: color.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(14.r),
               ),
-              child: Icon(
-                icon,
-                size: 22.sp,
-                color: color,
-              ),
+              child: Icon(icon, size: 22.sp, color: color),
             ),
             Gap(12.w),
             Expanded(
@@ -593,10 +587,7 @@ class _DetailRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: AppColors.textHint,
-                  ),
+                  style: TextStyle(fontSize: 12.sp, color: AppColors.textHint),
                 ),
               ),
               Expanded(
@@ -718,13 +709,13 @@ class _AdminExportRequirementsActionTile extends ConsumerWidget {
                         TextButton(
                           onPressed: () async {
                             Navigator.pop(ctx);
-                            final success = await RequirementExportService
-                                .shareRequirementsExport(
-                              requirements,
-                              range: ExportRange.all,
-                              fileNamePrefix: 'All_Requirements_Export',
-                              format: ExportFormat.pdf,
-                            );
+                            final success =
+                                await RequirementExportService.shareRequirementsExport(
+                                  requirements,
+                                  range: ExportRange.all,
+                                  fileNamePrefix: 'All_Requirements_Export',
+                                  format: ExportFormat.pdf,
+                                );
 
                             if (context.mounted) {
                               CustomSnackbar.showSuccess(
