@@ -18,7 +18,7 @@ if (hasKeystoreProperties) {
 }
 
 android {
-    namespace = "com.example.price_catalog_app"
+    namespace = "com.shrianandeshwartraders"
 
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
@@ -34,7 +34,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.price_catalog_app"
+        applicationId = "com.shrianandeshwartraders"
 
         minSdk = flutter.minSdkVersion
         targetSdk = 36

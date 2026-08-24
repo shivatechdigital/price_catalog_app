@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:10680253495:android:e0115e1281590993b013b2",
+        "mobilesdk_app_id": "1:10680253495:android:8e1108ad5cfd93b8b013b2",
         "android_client_info": {
-          "package_name": "com.example.price_catalog_app"
+          "package_name": "com.shrianandeshwartraders"
         }
       },
       "oauth_client": [],

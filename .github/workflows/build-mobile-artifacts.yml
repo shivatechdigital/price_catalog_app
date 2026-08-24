@@ -86,6 +86,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Show Firebase package used
+        run: |
+          grep -n '"package_name"' android/app/google-services.json
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
