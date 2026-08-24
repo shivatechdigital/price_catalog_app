@@ -41,19 +41,28 @@ jobs:
     name: Build Android APK
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' || inputs.build_android_apk }}
+    env:
+      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Write Google Services JSON
+        run: |
+          mkdir -p android/app
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+
+      - name: Show Firebase package used
+        run: |
+          grep -n '"package_name"' android/app/google-services.json
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Show Firebase package used
-        run: |
-          grep -n '"package_name"' android/app/google-services.json
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -79,6 +88,7 @@ jobs:
     if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
 
     env:
+      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: upload
@@ -87,6 +97,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Write Google Services JSON
+        run: |
+          mkdir -p android/app
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
 
       - name: Show Firebase package used
         run: |
