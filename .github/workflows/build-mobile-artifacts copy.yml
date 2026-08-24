@@ -1,0 +1,269 @@
+name: Build Mobile Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_android_apk:
+        description: Build Android APK artifact
+        required: true
+        default: true
+        type: boolean
+      build_android_signed_aab:
+        description: Build signed Android AAB artifact (requires secrets)
+        required: true
+        default: true
+        type: boolean
+      build_ios_app:
+        description: Build iOS .app artifact (no codesign)
+        required: true
+        default: true
+        type: boolean
+      build_ios_signed_ipa:
+        description: Build signed iOS IPA artifact (requires secrets)
+        required: true
+        default: true
+        type: boolean
+      ios_export_method:
+        description: iOS export method for signed IPA
+        required: true
+        default: app-store
+        type: choice
+        options:
+          - app-store
+          - ad-hoc
+          - development
+  push:
+    branches:
+      - main
+
+jobs:
+  build-android-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || inputs.build_android_apk }}
+    env:
+      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Write Google Services JSON
+        run: |
+          mkdir -p android/app
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+
+      - name: Show Firebase package used
+        run: |
+          grep -n '"package_name"' android/app/google-services.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Clean Flutter build cache
+        run: flutter clean
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+  build-android-signed-aab:
+    name: Build Android Signed AAB
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+
+    env:
+      GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: upload
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Write Google Services JSON
+        run: |
+          mkdir -p android/app
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+
+      - name: Show Firebase package used
+        run: |
+          grep -n '"package_name"' android/app/google-services.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Clean Flutter build cache
+        run: flutter clean
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Validate required Android secrets
+        run: |
+          missing=0
+          [ -z "$ANDROID_KEYSTORE_BASE64" ] && echo "Missing secret: ANDROID_KEYSTORE_BASE64" && missing=1
+          [ -z "$ANDROID_KEYSTORE_PASSWORD" ] && echo "Missing secret: ANDROID_KEYSTORE_PASSWORD" && missing=1
+          [ -z "$ANDROID_KEY_PASSWORD" ] && echo "Missing secret: ANDROID_KEY_PASSWORD" && missing=1
+          if [ "$missing" -eq 1 ]; then
+            exit 1
+          fi
+
+      - name: Setup Android signing files
+        run: |
+          echo -n "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Build signed release AAB
+        run: flutter build appbundle --release
+
+      - name: Upload signed AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-signed-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+  build-ios-app:
+    name: Build iOS App (No Codesign)
+    runs-on: macos-latest
+    if: ${{ github.event_name == 'push' || inputs.build_ios_app }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod install
+          cd ..
+
+      - name: Build iOS app (no codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Package Runner.app
+        run: |
+          cd build/ios/iphoneos
+          zip -r Runner.app.zip Runner.app
+
+      - name: Upload iOS app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-runner-app
+          path: build/ios/iphoneos/Runner.app.zip
+          if-no-files-found: error
+
+  build-ios-signed-ipa:
+    name: Build iOS Signed IPA
+    runs-on: macos-latest
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_ios_signed_ipa }}
+
+    env:
+      APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          missing=0
+          [ -z "$APPLE_CERTIFICATE_BASE64" ] && echo "Missing secret: APPLE_CERTIFICATE_BASE64" && missing=1
+          [ -z "$APPLE_CERTIFICATE_PASSWORD" ] && echo "Missing secret: APPLE_CERTIFICATE_PASSWORD" && missing=1
+          [ -z "$APPLE_PROVISIONING_PROFILE_BASE64" ] && echo "Missing secret: APPLE_PROVISIONING_PROFILE_BASE64" && missing=1
+          [ -z "$KEYCHAIN_PASSWORD" ] && echo "Missing secret: KEYCHAIN_PASSWORD" && missing=1
+          if [ "$missing" -eq 1 ]; then
+            exit 1
+          fi
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod install
+          cd ..
+
+      - name: Setup signing certificate and provisioning profile
+        run: |
+          CERT_PATH=$RUNNER_TEMP/certificate.p12
+          PROFILE_PATH=$RUNNER_TEMP/profile.mobileprovision
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          echo -n "$APPLE_CERTIFICATE_BASE64" | base64 --decode -o $CERT_PATH
+          echo -n "$APPLE_PROVISIONING_PROFILE_BASE64" | base64 --decode -o $PROFILE_PATH
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security list-keychains -d user -s $KEYCHAIN_PATH
+
+          security import $CERT_PATH -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PROFILE_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Build signed IPA
+        run: flutter build ipa --release --export-method "${{ inputs.ios_export_method }}"
+
+      - name: Upload signed IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-signed-ipa
+          path: build/ios/ipa/*.ipa
+          if-no-files-found: error
