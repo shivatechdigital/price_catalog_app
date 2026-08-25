@@ -1,4 +1,4 @@
-package com.example.price_catalog_app
+package com.shrianandeshwartraders
 
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.android.FlutterActivity
