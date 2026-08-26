@@ -108,11 +108,12 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
                     _buildTextField(
                       controller: _phoneController,
                       label: 'Phone Number',
-                      hint: 'Enter phone number',
+                      hint: 'Enter phone number (optional)',
                       icon: Iconsax.call,
                       keyboardType: TextInputType.phone,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       maxLength: 10,
+                      isRequired: false,
                     ),
                     Gap(16.h),
                     _buildTextField(
@@ -165,6 +166,7 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
     TextInputType keyboardType = TextInputType.text,
     List<TextInputFormatter>? inputFormatters,
     int? maxLength,
+    bool isRequired = true,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,6 +191,9 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
             prefixIcon: Icon(icon, size: 20.sp, color: AppColors.textHint),
           ),
           validator: (value) {
+            if (!isRequired && (value == null || value.isEmpty)) {
+              return null;
+            }
             if (value == null || value.isEmpty) {
               return 'Please enter $label'.toLowerCase();
             }

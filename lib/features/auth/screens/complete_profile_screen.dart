@@ -136,11 +136,12 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
                     _buildTextField(
                       controller: _phoneController,
                       label: 'Phone Number',
-                      hint: 'Enter phone number',
+                      hint: 'Enter phone number (optional)',
                       icon: Iconsax.call,
                       keyboardType: TextInputType.phone,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       maxLength: 10,
+                      isRequired: false,
                     ),
                     if (_selectedRole == UserRole.trader) ...[
                       Gap(16.h),
@@ -249,6 +250,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
     TextInputType keyboardType = TextInputType.text,
     List<TextInputFormatter>? inputFormatters,
     int? maxLength,
+    bool isRequired = true,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,6 +275,9 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
             prefixIcon: Icon(icon, size: 20.sp, color: AppColors.textHint),
           ),
           validator: (value) {
+            if (!isRequired && (value == null || value.isEmpty)) {
+              return null;
+            }
             if (value == null || value.isEmpty) {
               return 'Please enter $label'.toLowerCase();
             }

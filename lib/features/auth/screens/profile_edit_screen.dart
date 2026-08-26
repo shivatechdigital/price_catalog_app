@@ -127,11 +127,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   _buildTextField(
                     controller: _phoneController,
                     label: 'Phone Number',
-                    hint: 'Enter phone number',
+                    hint: 'Enter phone number (optional)',
                     icon: Iconsax.call,
                     keyboardType: TextInputType.phone,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     maxLength: 10,
+                    isRequired: false,
                   ),
                   if (isTrader) ...[
                     Gap(16.h),

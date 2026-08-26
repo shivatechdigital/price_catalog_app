@@ -55,11 +55,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // ═══════════════════════════════════════
   void _nextPage() {
     if (_currentPage == 0) {
-      if (_nameController.text.isEmpty || _phoneController.text.isEmpty) {
+      if (_nameController.text.isEmpty) {
         CustomSnackbar.showWarning(context, 'Please fill all required fields');
         return;
       }
-      if (_phoneController.text.length < 10) {
+      if (_phoneController.text.isNotEmpty && _phoneController.text.length < 10) {
         CustomSnackbar.showWarning(context, 'Please enter valid phone number');
         return;
       }
@@ -323,7 +323,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           Gap(16.h),
 
           // Phone
-          _buildLabel('Phone Number *'),
+          _buildLabel('Phone Number'),
           Gap(8.h),
           TextFormField(
             controller: _phoneController,
@@ -332,7 +332,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             maxLength: 10,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(
-              hintText: 'Enter 10 digit number',
+              hintText: 'Enter 10 digit number (optional)',
               counterText: '',
               prefixIcon: Icon(
                 Iconsax.call,
